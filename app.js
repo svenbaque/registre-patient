@@ -427,7 +427,7 @@ function renderFiches() {
         ${f.integree ? '' : `<button type="button" class="swipe-delete" data-delete="${esc(f.id)}" aria-label="Supprimer la fiche">✕</button>`}
         <div class="card fiche" data-id="${esc(f.id)}">
         <div class="card-head"><strong>${esc(f.titre)}</strong><span class="chevron">›</span></div>
-        <div class="card-date">${done ? `Réalisée ${done} fois` : 'Pas encore réalisée'}${helped ? ` · aide ${helped} fois` : ''}${store.data.astuces[f.id] ? ' · 💡 astuces notées' : ''}${ficheImages(f.id).length ? ` · 🖼 ${plural(ficheImages(f.id).length, 'image')}` : ''}</div>
+        <div class="card-date">${done ? `Réalisée ${done} fois` : 'Pas encore réalisée'}${helped ? ` · aide ${helped} fois` : ''}${ficheImages(f.id).length ? ` · 🖼 ${plural(ficheImages(f.id).length, 'image')}` : ''}</div>
         </div>
       </li>`;
     }).join('') : '<li class="empty">Aucune fiche pour l’instant.<br>Touchez <b>+</b> pour créer une fiche d’opération.</li>'}</ul>
@@ -454,7 +454,7 @@ function renderFiches() {
     });
     $('.swipe-delete', row)?.addEventListener('click', () => {
       const f = store.data.fiches.find(x => x.id === card.dataset.id);
-      if (!confirm(`Supprimer définitivement la fiche « ${f.titre} », ses astuces et ses images ?`)) { row.classList.remove('swiped'); return; }
+      if (!confirm(`Supprimer définitivement la fiche « ${f.titre} », et ses images ?`)) { row.classList.remove('swiped'); return; }
       deleteFiche(f);
       store.save();
       render();
@@ -608,7 +608,7 @@ const imageBlock = (imgKey, label) => `
     <label class="btn ghost file">📷 ${label}<input type="file" accept="image/*" multiple hidden></label>
   </div>`;
 
-// Branche les blocs d'images affichés : enregistrées dès l'ajout, comme les astuces.
+// Branche les blocs d'images affichés : enregistrées dès l'ajout, sans bouton de validation.
 function mountImageBlocks() {
   view.querySelectorAll('.img-block').forEach(block => {
     const imgKey = block.dataset.key;
@@ -668,11 +668,6 @@ function renderFiche() {
   const hidden = (f.integree && store.data.ficheEdits?.[f.id]?.hidden) || [];
   view.innerHTML = `
     <button class="back" id="back">‹ Toutes les fiches</button>
-    <section class="tips">
-      <h2>💡 Mes astuces</h2>
-      <textarea id="tips" rows="5" placeholder="Trucs et astuces pour cette opération…">${esc(store.data.astuces[f.id] || '')}</textarea>
-      <small id="tips-state">Enregistré automatiquement</small>
-    </section>
     <section class="fiche-images">
       <h2>🖼 Mes images</h2>
       ${imageBlock(f.id, 'Ajouter une image')}
@@ -747,11 +742,6 @@ function renderFiche() {
     render();
   });
   $('#back').addEventListener('click', () => { openFicheId = null; render(); });
-  $('#tips').addEventListener('input', e => {
-    const text = e.target.value;
-    if (text.trim()) store.data.astuces[f.id] = text; else delete store.data.astuces[f.id];
-    store.save();
-  });
   $('#edit-fiche').addEventListener('click', () => (f.integree ? openRenameForm(f) : openFicheForm(f.id)));
   mountImageBlocks();
 }
@@ -772,7 +762,7 @@ function openFicheForm(id) {
     </form>`);
   $('#cancel').addEventListener('click', closeSheet);
   $('#delete-fiche')?.addEventListener('click', () => {
-    if (!confirm(`Supprimer définitivement la fiche « ${f.titre} », ses astuces et ses images ?`)) return;
+    if (!confirm(`Supprimer définitivement la fiche « ${f.titre} », et ses images ?`)) return;
     deleteFiche(f);
     openFicheId = null;
     store.save(); closeSheet(); render();
@@ -899,7 +889,7 @@ function openSectionForm(f, sec) {
 function openSettings() {
   openSheet(`
     <h2>Réglages</h2>
-    <p class="hint">Les patients, radios, fiches, astuces et images sont enregistrés <b>uniquement sur cet appareil</b>. Un rappel de sauvegarde s’affiche tous les ${BACKUP_EVERY} nouveaux patients : choisissez « Enregistrer dans Fichiers » puis iCloud Drive.</p>
+    <p class="hint">Les patients, radios, fiches et images sont enregistrés <b>uniquement sur cet appareil</b>. Un rappel de sauvegarde s’affiche tous les ${BACKUP_EVERY} nouveaux patients : choisissez « Enregistrer dans Fichiers » puis iCloud Drive.</p>
     <p class="hint">Dernière sauvegarde : <b>${backup.state.date ? new Date(backup.state.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'jamais'}</b></p>
     <div class="actions column">
       <button class="btn primary" id="export">Sauvegarder mes données</button>
@@ -1084,7 +1074,7 @@ function showTutorial() {
       <section>
         <h2>🔒 Où sont enregistrées vos données</h2>
         <ul>
-          <li><b>Uniquement sur votre téléphone.</b> Patients, radios, fiches et astuces ne sont jamais envoyés sur internet : personne d’autre n’y a accès, pas même l’auteur de l’appli.</li>
+          <li><b>Uniquement sur votre téléphone.</b> Patients, radios et fiches ne sont jamais envoyés sur internet : personne d’autre n’y a accès, pas même l’auteur de l’appli.</li>
           <li><b>L’appli fonctionne sans réseau</b>, par exemple au bloc.</li>
           <li><b>Chaque téléphone a ses propres données.</b> Ce que vous saisissez ici dans le navigateur ne passe pas dans l’appli installée.</li>
         </ul>
