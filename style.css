@@ -49,13 +49,17 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+/* Sur iPhone (appli installée, barre d'état translucide), une page plus courte que l'écran laisse un vide
+   sous la barre d'onglets : on force la page à couvrir tout l'écran, zone de la barre d'état comprise. */
+html { -webkit-text-size-adjust: 100%; min-height: calc(100% + env(safe-area-inset-top)); background: var(--bg); }
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 body.no-scroll { overflow: hidden; }
 button, input, textarea { font: inherit; color: inherit; }
