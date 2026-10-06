@@ -1,34 +1,50 @@
 :root {
-  --bg: #eaf3fc;
+  color-scheme: light;
+  --accent: #2f8fed;       /* couleur choisie dans les réglages : toutes les teintes de l'appli en découlent */
+  --bg: color-mix(in srgb, var(--accent) 10%, #f8fafc);
   --card: #ffffff;
   --text: #10233a;
   --muted: #6b7f95;
-  --line: #dbe7f3;
-  --brand: #1f7fe0;        /* textes et accents */
-  --brand-fill: #2f8fed;   /* boutons pleins */
-  --brand-soft: #dcecfc;
-  --header: linear-gradient(135deg, #3d9be9, #74c0f9);
+  --line: color-mix(in srgb, var(--accent) 14%, #e8edf2);
+  --brand: color-mix(in srgb, var(--accent) 86%, #000);   /* textes et accents */
+  --brand-fill: var(--accent);                            /* boutons pleins */
+  --brand-soft: color-mix(in srgb, var(--accent) 16%, #fff);
+  --brand-glow: color-mix(in srgb, var(--accent) 38%, transparent);
+  --header: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 76%, #fff));
   --shadow: 0 1px 2px rgba(16, 35, 58, .05), 0 4px 14px rgba(16, 35, 58, .06);
   --star: #f5a623;
   --danger: #e5484d;
   --aide: #7c3aed;
-  --aide-soft: #efe8fe;
+  --aide-soft: color-mix(in srgb, var(--aide) 14%, var(--card));
   --tabbar-h: 60px;
 }
+/* Mode sombre : choisi dans les réglages (data-theme), ou celui du téléphone en mode automatique */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: color-mix(in srgb, var(--accent) 7%, #0a0f15);
+  --card: color-mix(in srgb, var(--accent) 9%, #141a22);
+  --text: #e6eef7;
+  --muted: #8fa3b8;
+  --line: color-mix(in srgb, var(--accent) 14%, #222b36);
+  --brand: color-mix(in srgb, var(--accent) 66%, #fff);
+  --brand-soft: color-mix(in srgb, var(--accent) 26%, #141a22);
+  --header: linear-gradient(135deg, color-mix(in srgb, var(--accent) 58%, #000), var(--accent));
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  --aide: #a78bfa;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a131e;
-    --card: #142131;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: color-mix(in srgb, var(--accent) 7%, #0a0f15);
+    --card: color-mix(in srgb, var(--accent) 9%, #141a22);
     --text: #e6eef7;
     --muted: #8fa3b8;
-    --line: #223347;
-    --brand: #6cb8ff;
-    --brand-fill: #2f8fed;
-    --brand-soft: #173252;
-    --header: linear-gradient(135deg, #1b5e9e, #2f8fed);
+    --line: color-mix(in srgb, var(--accent) 14%, #222b36);
+    --brand: color-mix(in srgb, var(--accent) 66%, #fff);
+    --brand-soft: color-mix(in srgb, var(--accent) 26%, #141a22);
+    --header: linear-gradient(135deg, color-mix(in srgb, var(--accent) 58%, #000), var(--accent));
     --shadow: 0 1px 2px rgba(0, 0, 0, .3);
     --aide: #a78bfa;
-    --aide-soft: #2a2145;
   }
 }
 
@@ -275,7 +291,7 @@ details.section { background: var(--card); border: 1px solid var(--line); border
 .month .bars .month-n { margin-bottom: 3px; }
 
 /* Habillage façon iOS : bleu clair, formes arrondies, ombres douces */
-.topbar { padding-bottom: 14px; border-radius: 0 0 24px 24px; box-shadow: 0 4px 16px rgba(47, 143, 237, .25); }
+.topbar { padding-bottom: 14px; border-radius: 0 0 24px 24px; box-shadow: 0 4px 16px var(--brand-glow); }
 .topbar h1 { font-size: 24px; font-weight: 800; letter-spacing: -.01em; }
 .counter { background: rgba(255, 255, 255, .28); }
 .card, .tile, .months, details.section, .fiche-images, .fiche-content { border-color: transparent; box-shadow: var(--shadow); }
@@ -285,7 +301,7 @@ details.section .fiche-content { box-shadow: none; border-top-color: var(--line)
 .btn { border-radius: 999px; padding: 12px 20px; }
 .btn.danger { padding-left: 6px; }
 .sheet label.btn.file, .img-block .btn.file { border-radius: 16px; border-style: dashed; border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
-.fab { box-shadow: 0 8px 20px rgba(47, 143, 237, .45); }
+.fab { box-shadow: 0 8px 20px var(--brand-glow); }
 .sheet input:not([type=file]), .sheet textarea, .editor { border-radius: 14px; }
 .sheet input:not([type=file]):focus, .sheet textarea:focus, .search:focus { outline: 2px solid var(--brand-fill); outline-offset: 0; border-color: transparent; }
 .segmented input:checked + span { background: var(--brand-fill); border-color: var(--brand-fill); }
@@ -299,7 +315,7 @@ details.section .fiche-content { box-shadow: none; border-top-color: var(--line)
 /* Tutoriel d'installation (affiché seulement dans le navigateur) */
 .tuto { position: fixed; inset: 0; z-index: 40; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
 .tuto-body { max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 28px) 18px calc(env(safe-area-inset-bottom) + 32px); }
-.tuto-icon { display: block; width: 84px; height: 84px; margin: 0 auto 14px; border-radius: 20px; box-shadow: 0 8px 20px rgba(47, 143, 237, .35); }
+.tuto-icon { display: block; width: 84px; height: 84px; margin: 0 auto 14px; border-radius: 20px; box-shadow: 0 8px 20px var(--brand-glow); }
 .tuto h1 { margin: 0 0 8px; text-align: center; font-size: 28px; font-weight: 800; letter-spacing: -.01em; }
 .tuto-lead { margin: 0 0 20px; text-align: center; color: var(--muted); line-height: 1.5; }
 .tuto section { background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px; line-height: 1.5; }
@@ -321,3 +337,42 @@ details.section .fiche-content { box-shadow: none; border-top-color: var(--line)
 
 .open-radios { margin-top: 10px; padding: 7px 14px; border-radius: 999px; border: 0; background: var(--brand-soft); color: var(--brand); font-size: 14px; font-weight: 600; }
 .card.patient.aide .open-radios { background: color-mix(in srgb, var(--aide) 16%, transparent); color: var(--aide); }
+
+/* Réglages, présentés comme ceux d'iOS : groupes arrondis, lignes avec pastille d'icône */
+.set-title { margin: 22px 14px 7px; font-size: 13px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+.set-group { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+.sheet .set-row, .set-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; margin: 0; padding: 9px 14px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); font-size: 16px; font-weight: 400; text-align: left; cursor: pointer; }
+.set-group > :last-child { border-bottom: 0; }
+.set-row.block { display: block; cursor: default; padding-bottom: 14px; }
+.set-row.static { cursor: default; }
+.set-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.set-ico { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 16px; color: #fff; }
+.set-name { flex: 1; }
+.set-value { color: var(--muted); font-size: 15px; white-space: nowrap; }
+.set-chev { color: var(--muted); font-size: 20px; line-height: 1; opacity: .6; }
+.set-note { margin: 8px 14px 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.sheet .set-row select { border: 0; background: none; color: var(--muted); font-size: 15px; text-align: right; max-width: 55%; -webkit-appearance: none; appearance: none; }
+.segmented.small span { padding: 8px 6px; font-size: 14px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.swatches button { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 3px solid var(--card); background: var(--c); box-shadow: 0 0 0 1px var(--line); }
+.swatches button.on { box-shadow: 0 0 0 3px var(--c); }
+.sheet .btn.set-close { display: block; width: 100%; margin-top: 22px; }
+
+/* Éditeur de rubrique : barre d'outils par groupes, qui reste visible pendant qu'on écrit */
+.toolbar { position: sticky; top: 0; z-index: 1; gap: 8px; margin: 6px -4px 8px; padding: 8px 46px 8px 4px; background: var(--bg); }
+.tool-group { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+.toolbar .tool-group button { min-width: 38px; height: 38px; padding: 0 9px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; }
+.toolbar .tool-group button:last-child { border-right: 0; }
+.toolbar .tool-group button.on { background: var(--brand-soft); color: var(--brand); }
+.fiche-content .blue, .toolbar .blue { color: #1f7fe0; }
+.fiche-content .green, .toolbar .green { color: #1f9d55; }
+.toolbar .red { color: #e0392b; }
+.fiche-content mark, .toolbar mark { background: #fff2a8; color: #3d3210; border-radius: 3px; padding: 0 2px; }
+.fiche-content ol { margin: 0 0 10px; padding-left: 24px; }
+.fiche-content ul ul, .fiche-content ol ol, .fiche-content ul ol, .fiche-content ol ul { margin-bottom: 0; }
+.fiche-content blockquote { margin: 0 0 8px 20px; padding: 0; }
+.fiche-content s { opacity: .7; }
+
+/* Visionneuse : fermeture en glissant vers le haut */
+.viewer-track { touch-action: pan-x; }
+.viewer.leaving { transition: transform .2s ease, opacity .2s ease; transform: translateY(-100%) !important; opacity: 0 !important; }

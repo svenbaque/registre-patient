@@ -1,7 +1,37 @@
 // Registre opératoire — toutes les données restent sur l'appareil (localStorage), rien n'est envoyé en ligne.
 const STORAGE_KEY = 'registre-operatoire-v1';
 const BACKUP_KEY = 'registre-operatoire-sauvegarde';
-const BACKUP_EVERY = 10; // rappel de sauvegarde tous les 10 nouveaux patients
+
+// Préférences propres à cet appareil (apparence, rappel de sauvegarde) : hors des données, donc hors des sauvegardes.
+const PREFS_KEY = 'registre-operatoire-reglages';
+const ACCENTS = [['Bleu', '#2f8fed'], ['Turquoise', '#12a5a5'], ['Vert', '#2fa56a'], ['Violet', '#7c5ce6'],
+  ['Rose', '#e6508f'], ['Orange', '#ef8a24'], ['Rouge', '#e5484d'], ['Graphite', '#5f6f82']];
+const prefs = {
+  data: { theme: 'auto', accent: ACCENTS[0][1], rappel: 10 }, // theme : auto | light | dark ; rappel : tous les n patients, 0 = jamais
+  load() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PREFS_KEY)) || {};
+      if (['auto', 'light', 'dark'].includes(saved.theme)) this.data.theme = saved.theme;
+      if (ACCENTS.some(([, color]) => color === saved.accent)) this.data.accent = saved.accent;
+      if ([0, 5, 10, 20].includes(saved.rappel)) this.data.rappel = saved.rappel;
+    } catch (e) { /* préférences illisibles : valeurs par défaut */ }
+    this.apply();
+  },
+  set(changes) {
+    Object.assign(this.data, changes);
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(this.data)); } catch (e) { /* stockage indisponible */ }
+    this.apply();
+  },
+  apply() {
+    const root = document.documentElement;
+    if (this.data.theme === 'auto') delete root.dataset.theme; else root.dataset.theme = this.data.theme;
+    root.style.setProperty('--accent', this.data.accent);
+    // l'aide est en violet : si l'appli elle-même passe en violet, l'aide passe en orange pour rester distincte
+    if (this.data.accent === '#7c5ce6') root.style.setProperty('--aide', '#ef8a24'); else root.style.removeProperty('--aide');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', this.data.accent);
+  },
+};
+prefs.load();
 
 const store = {
   data: { patients: [], fiches: [], astuces: {}, ficheImages: {}, ficheEdits: {}, autoFiches: false },
@@ -28,7 +58,7 @@ const backup = {
   set state(value) { localStorage.setItem(BACKUP_KEY, JSON.stringify(value)); },
   patientAdded() { const s = this.state; this.state = { ...s, ajouts: s.ajouts + 1 }; },
   done() { this.state = { ajouts: 0, date: new Date().toISOString() }; },
-  get due() { return this.state.ajouts >= BACKUP_EVERY; },
+  get due() { return prefs.data.rappel > 0 && this.state.ajouts >= prefs.data.rappel; },
 };
 let backupSnoozed = false;
 
@@ -98,7 +128,7 @@ function openViewer(srcs, index = 0) {
   const viewer = document.createElement('div');
   viewer.className = 'viewer';
   viewer.innerHTML = `
-    <div class="viewer-track">${srcs.map(src => `<div class="viewer-slide"><img src="${src}" alt="Image"></div>`).join('')}</div>
+    <div class="viewer-track">${srcs.map(src => `<div class="viewer-slide"><img src="${src}" alt="Image" draggable="false"></div>`).join('')}</div>
     <button type="button" class="viewer-close" aria-label="Fermer">✕</button>
     ${srcs.length > 1 ? `<span class="viewer-count"></span>
     <button type="button" class="viewer-nav prev" aria-label="Image précédente">‹</button>
@@ -116,7 +146,33 @@ function openViewer(srcs, index = 0) {
   go(index, false);
   paint();
   track.addEventListener('scroll', paint);
+
+  // Glisser vers le haut referme la visionneuse, comme on quitte une appli sur iPhone : l'image suit le doigt.
+  let start = null;
+  let dragged = false;
+  const release = () => { viewer.style.transform = ''; viewer.style.opacity = ''; };
+  track.addEventListener('pointerdown', e => { start = { x: e.clientX, y: e.clientY }; dragged = false; });
+  track.addEventListener('pointermove', e => {
+    if (!start) return;
+    const dy = e.clientY - start.y;
+    if (dy > -8 || Math.abs(dy) < Math.abs(e.clientX - start.x)) return;
+    dragged = true;
+    viewer.style.transform = `translateY(${dy}px)`;
+    viewer.style.opacity = String(Math.max(0.35, 1 + dy / 500));
+  });
+  track.addEventListener('pointerup', e => {
+    if (!start) return;
+    const dy = e.clientY - start.y;
+    start = null;
+    if (dragged && dy < -90) {
+      viewer.classList.add('leaving');
+      setTimeout(() => viewer.remove(), 200);
+    } else release();
+  });
+  track.addEventListener('pointercancel', () => { start = null; release(); });
+
   viewer.addEventListener('click', e => {
+    if (dragged) { dragged = false; return; } // fin d'un glissement trop court : on reste dans la visionneuse
     if (e.target.closest('.prev')) go(current() - 1);
     else if (e.target.closest('.next')) go(current() + 1);
     else if (e.target.tagName !== 'IMG') viewer.remove(); // la croix, ou le fond noir autour de l'image
@@ -527,9 +583,27 @@ function renderTexte(texte) {
   return out.join('');
 }
 
-// Ne garde du HTML saisi dans l'éditeur (ou venu d'une sauvegarde) que la mise en forme prévue : aucun script, lien ni style.
-const SAFE_TAGS = new Set(['B', 'I', 'U', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'H4']);
-const TAG_ALIASES = { STRONG: 'B', EM: 'I', H1: 'H4', H2: 'H4', H3: 'H4', H5: 'H4', H6: 'H4' };
+// Ne garde du HTML saisi dans l'éditeur (ou venu d'une sauvegarde) que la mise en forme prévue : aucun script, lien ni style libre.
+const SAFE_TAGS = new Set(['B', 'I', 'U', 'S', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'H4', 'MARK', 'BLOCKQUOTE']);
+const TAG_ALIASES = { STRONG: 'B', EM: 'I', STRIKE: 'S', DEL: 'S', H1: 'H4', H2: 'H4', H3: 'H4', H5: 'H4', H6: 'H4' };
+// Couleurs de texte proposées par l'éditeur ; enregistrées sous forme de classe (red, blue, green).
+const TEXT_COLORS = { red: '#e0392b', blue: '#1f7fe0', green: '#1f9d55' };
+const HIGHLIGHT = '#fff2a8';
+const cssColor = value => { const probe = document.createElement('span'); probe.style.color = value; return probe.style.color; };
+const COLOR_CLASSES = Object.fromEntries(Object.entries(TEXT_COLORS).map(([name, hex]) => [cssColor(hex), name]));
+
+function colorClass(el) {
+  const known = Object.keys(TEXT_COLORS).find(name => el.classList.contains(name));
+  if (known) return known;
+  const value = el.tagName === 'FONT' ? el.getAttribute('color') : el.style.color;
+  return (value && COLOR_CLASSES[cssColor(value)]) || null;
+}
+
+function isHighlighted(el) {
+  const bg = el.style.backgroundColor;
+  return el.tagName === 'MARK' || (!!bg && !['transparent', 'rgba(0, 0, 0, 0)', 'initial', 'inherit'].includes(bg));
+}
+
 function sanitizeHtml(html) {
   const tpl = document.createElement('template');
   tpl.innerHTML = String(html || '');
@@ -538,15 +612,20 @@ function sanitizeHtml(html) {
       if (child.nodeType === Node.TEXT_NODE) continue;
       if (child.nodeType !== Node.ELEMENT_NODE || ['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED'].includes(child.tagName)) { child.remove(); continue; }
       walk(child);
-      // texte passé en rouge par l'éditeur : <font color>, style « color » ou notre classe
-      const red = child.classList.contains('red') || (child.tagName === 'FONT' && child.hasAttribute('color'))
-        || /(^|[;\s])color\s*:/i.test(child.getAttribute('style') || '');
+      const color = colorClass(child);
+      const marked = isHighlighted(child);
       const tag = TAG_ALIASES[child.tagName] || (SAFE_TAGS.has(child.tagName) ? child.tagName : null);
-      if (!tag && !red) { child.replaceWith(...child.childNodes); continue; }
-      const clean = document.createElement(tag || 'SPAN');
-      if (red) clean.className = 'red';
-      else if (tag === 'LI' && child.classList.contains('sub')) clean.className = 'sub';
-      clean.append(...child.childNodes);
+      if (!tag && !color && !marked) { child.replaceWith(...child.childNodes); continue; }
+      const clean = document.createElement(tag || (marked ? 'MARK' : 'SPAN'));
+      if (tag === 'LI' && child.classList.contains('sub')) clean.className = 'sub';
+      // surlignage et couleur portés par un style : recréés avec <mark> et une classe de couleur
+      let holder = clean;
+      if (marked && clean.tagName !== 'MARK') { holder = holder.appendChild(document.createElement('mark')); }
+      if (color) {
+        if (holder.tagName !== 'SPAN') holder = holder.appendChild(document.createElement('span'));
+        holder.className = color;
+      }
+      holder.append(...child.childNodes);
       child.replaceWith(clean);
     }
   };
@@ -811,17 +890,37 @@ function openSectionForm(f, sec) {
       <label>Titre<input name="titre" value="${esc(sec?.titre || '')}" autocomplete="off" required></label>
       <div class="field">Contenu
         <div class="toolbar" id="toolbar">
-          <button type="button" data-cmd="bold" aria-label="Gras"><b>G</b></button>
-          <button type="button" data-cmd="italic" aria-label="Italique"><i>I</i></button>
-          <button type="button" data-cmd="underline" aria-label="Souligné"><u>S</u></button>
-          <button type="button" data-cmd="red" aria-label="Rouge"><span class="red">A</span></button>
-          <button type="button" data-cmd="insertUnorderedList">• Liste</button>
-          <button type="button" data-cmd="h4">Sous-titre</button>
-          <button type="button" data-cmd="removeFormat">Effacer</button>
+          <div class="tool-group">
+            <button type="button" data-cmd="undo" aria-label="Annuler la dernière modification">↶</button>
+            <button type="button" data-cmd="redo" aria-label="Rétablir">↷</button>
+          </div>
+          <div class="tool-group">
+            <button type="button" data-cmd="bold" aria-label="Gras"><b>G</b></button>
+            <button type="button" data-cmd="italic" aria-label="Italique"><i>I</i></button>
+            <button type="button" data-cmd="underline" aria-label="Souligné"><u>S</u></button>
+            <button type="button" data-cmd="strikeThrough" aria-label="Barré"><s>ab</s></button>
+          </div>
+          <div class="tool-group">
+            <button type="button" data-cmd="color" data-value="" aria-label="Couleur normale">A</button>
+            <button type="button" data-cmd="color" data-value="red" aria-label="Texte rouge"><span class="red">A</span></button>
+            <button type="button" data-cmd="color" data-value="blue" aria-label="Texte bleu"><span class="blue">A</span></button>
+            <button type="button" data-cmd="color" data-value="green" aria-label="Texte vert"><span class="green">A</span></button>
+            <button type="button" data-cmd="highlight" aria-label="Surligner"><mark>ab</mark></button>
+          </div>
+          <div class="tool-group">
+            <button type="button" data-cmd="insertUnorderedList" aria-label="Liste à puces">• Liste</button>
+            <button type="button" data-cmd="insertOrderedList" aria-label="Liste numérotée">1. Liste</button>
+            <button type="button" data-cmd="outdent" aria-label="Diminuer le retrait">⇤</button>
+            <button type="button" data-cmd="indent" aria-label="Augmenter le retrait">⇥</button>
+          </div>
+          <div class="tool-group">
+            <button type="button" data-cmd="h4">Sous-titre</button>
+            <button type="button" data-cmd="removeFormat" aria-label="Effacer la mise en forme">Effacer</button>
+          </div>
         </div>
         <div class="editor fiche-content" id="editor" contenteditable="true" role="textbox" aria-multiline="true"></div>
       </div>
-      <p class="hint">Sélectionnez du texte puis touchez <b>G</b> (gras), <b>I</b> (italique), <b>S</b> (souligné) ou <b>A</b> (rouge). « Effacer » retire la mise en forme.</p>
+      <p class="hint">Sélectionnez du texte puis touchez un bouton : gras, italique, souligné, barré, couleur ou surlignage. <b>⇥</b> crée une sous-puce, <b>↶</b> annule la dernière modification, « Effacer » retire la mise en forme.</p>
       <div class="actions">
         ${sec?.perso ? '<button type="button" class="btn danger" id="delete-section">Supprimer</button>' : ''}
         ${sec?.modifiee ? '<button type="button" class="btn danger" id="reset-section">Rétablir l’original</button>' : ''}
@@ -834,16 +933,33 @@ function openSectionForm(f, sec) {
   editor.innerHTML = sec ? sectionHtml(sec) : '';
 
   // Boutons de mise en forme : ils agissent sur la sélection, sans faire perdre le curseur à l'éditeur.
-  const paintToolbar = () => ['bold', 'italic', 'underline', 'insertUnorderedList'].forEach(cmd => {
+  const paintToolbar = () => ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList'].forEach(cmd => {
     $(`[data-cmd="${cmd}"]`, toolbar).classList.toggle('on', document.queryCommandState(cmd));
   });
+  // La sélection touche-t-elle du texte déjà surligné ? (pour que le bouton retire le surlignage au lieu d'en remettre)
+  const selectionHighlighted = () => {
+    const selection = getSelection();
+    if (!selection.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    const node = range.commonAncestorContainer;
+    const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    const marks = 'mark, [style*="background"]';
+    const around = el.closest(marks);
+    if (around && around !== editor && editor.contains(around)) return true;
+    return [...el.querySelectorAll(marks)].some(m => editor.contains(m) && range.intersectsNode(m));
+  };
   ['pointerdown', 'mousedown'].forEach(type => toolbar.addEventListener(type, e => e.preventDefault()));
   toolbar.addEventListener('click', e => {
-    const cmd = e.target.closest('button')?.dataset.cmd;
+    const button = e.target.closest('button');
+    const cmd = button?.dataset.cmd;
     if (!cmd) return;
     editor.focus();
-    if (cmd === 'red') document.execCommand('foreColor', false, '#e0392b');
-    else if (cmd === 'h4') document.execCommand('formatBlock', false, document.queryCommandValue('formatBlock').toLowerCase() === 'h4' ? 'p' : 'h4');
+    // couleur « normale » : celle du texte courant, que l'enregistrement ne garde pas comme couleur
+    if (cmd === 'color') document.execCommand('foreColor', false, TEXT_COLORS[button.dataset.value] || getComputedStyle(editor).color);
+    else if (cmd === 'highlight') {
+      const color = selectionHighlighted() ? 'transparent' : HIGHLIGHT;
+      if (!document.execCommand('hiliteColor', false, color)) document.execCommand('backColor', false, color);
+    } else if (cmd === 'h4') document.execCommand('formatBlock', false, document.queryCommandValue('formatBlock').toLowerCase() === 'h4' ? 'p' : 'h4');
     else document.execCommand(cmd);
     paintToolbar();
   });
@@ -887,22 +1003,90 @@ function openSectionForm(f, sec) {
 /* ---------- Réglages : sauvegarde ---------- */
 
 function openSettings() {
+  const lastBackup = backup.state.date ? new Date(backup.state.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : 'jamais';
+  const images = store.data.patients.reduce((n, p) => n + (p.radios?.length || 0), 0) + Object.values(store.data.ficheImages || {}).flat().length;
+  const row = (id, icon, color, name, value = '') => `
+    <button type="button" class="set-row" id="${id}"><span class="set-ico" style="background:${color}">${icon}</span><span class="set-name">${name}</span><span class="set-value">${value}</span><span class="set-chev">›</span></button>`;
+  const fileRow = (id, icon, color, name) => `
+    <label class="set-row"><span class="set-ico" style="background:${color}">${icon}</span><span class="set-name">${name}</span><span class="set-chev">›</span><input type="file" id="${id}" accept="application/json,.json" hidden></label>`;
+  const info = (icon, color, name, value) => `
+    <div class="set-row static"><span class="set-ico" style="background:${color}">${icon}</span><span class="set-name">${name}</span><span class="set-value">${value}</span></div>`;
+
   openSheet(`
     <h2>Réglages</h2>
-    <p class="hint">Les patients, radios, fiches et images sont enregistrés <b>uniquement sur cet appareil</b>. Un rappel de sauvegarde s’affiche tous les ${BACKUP_EVERY} nouveaux patients : choisissez « Enregistrer dans Fichiers » puis iCloud Drive.</p>
-    <p class="hint">Dernière sauvegarde : <b>${backup.state.date ? new Date(backup.state.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'jamais'}</b></p>
-    <div class="actions column">
-      <button class="btn primary" id="export">Sauvegarder mes données</button>
-      <label class="btn ghost file">Restaurer une sauvegarde<input type="file" id="import" accept="application/json,.json" hidden></label>
-      <label class="btn ghost file">Importer des fiches<input type="file" id="import-fiches" accept="application/json,.json" hidden></label>
-      <button class="btn ghost" id="share-app">Partager l’appli</button>
-      <button class="btn ghost" id="cancel">Fermer</button>
-    </div>`);
+
+    <div class="set-title">Apparence</div>
+    <div class="set-group">
+      <div class="set-row block">
+        <div class="set-head"><span class="set-ico" style="background:#5f6f82">🌗</span><span class="set-name">Mode</span></div>
+        <div class="segmented small" id="theme-choice">${[['auto', 'Automatique'], ['light', 'Clair'], ['dark', 'Sombre']].map(([value, label]) => `
+          <label><input type="radio" name="theme" value="${value}"${prefs.data.theme === value ? ' checked' : ''}><span>${label}</span></label>`).join('')}
+        </div>
+      </div>
+      <div class="set-row block">
+        <div class="set-head"><span class="set-ico" style="background:var(--accent)">🎨</span><span class="set-name">Couleur de l’appli</span><span class="set-value" id="accent-name"></span></div>
+        <div class="swatches" id="accent-choice">${ACCENTS.map(([name, color]) => `
+          <button type="button" data-accent="${color}" style="--c:${color}" aria-label="${name}"></button>`).join('')}
+        </div>
+      </div>
+    </div>
+    <p class="set-note">« Automatique » suit le mode clair ou sombre de votre téléphone.</p>
+
+    <div class="set-title">Sauvegarde</div>
+    <div class="set-group">
+      ${row('export', '💾', '#2fa56a', 'Sauvegarder mes données', lastBackup)}
+      ${fileRow('import', '↩︎', '#ef8a24', 'Restaurer une sauvegarde')}
+      <div class="set-row static"><span class="set-ico" style="background:#e5484d">🔔</span><span class="set-name">Rappel de sauvegarde</span>
+        <select id="rappel" aria-label="Rappel de sauvegarde">${[[5, 'Tous les 5 patients'], [10, 'Tous les 10 patients'], [20, 'Tous les 20 patients'], [0, 'Jamais']].map(([value, label]) => `
+          <option value="${value}"${prefs.data.rappel === value ? ' selected' : ''}>${label}</option>`).join('')}
+        </select><span class="set-chev">›</span>
+      </div>
+    </div>
+    <p class="set-note">Patients, radios, fiches et images sont enregistrés <b>uniquement sur cet appareil</b>. Pour sauvegarder, choisissez « Enregistrer dans Fichiers » puis iCloud Drive. Supprimer l’appli efface ses données.</p>
+
+    <div class="set-title">Fiches</div>
+    <div class="set-group">
+      ${fileRow('import-fiches', '📋', '#7c5ce6', 'Importer des fiches')}
+    </div>
+    <p class="set-note">Ajoute les fiches d’un fichier sans toucher à vos patients.</p>
+
+    <div class="set-title">Application</div>
+    <div class="set-group">
+      ${row('share-app', '↗︎', '#2f8fed', 'Partager l’appli')}
+      ${row('show-tuto', '❔', '#12a5a5', 'Guide d’installation et de sauvegarde')}
+    </div>
+    <p class="set-note">Le partage envoie seulement le lien du site, jamais vos données.</p>
+
+    <div class="set-title">Contenu de l’appareil</div>
+    <div class="set-group">
+      ${info('🩺', '#2f8fed', 'Patients', store.data.patients.length)}
+      ${info('📋', '#7c5ce6', 'Fiches', allFiches().length)}
+      ${info('🩻', '#5f6f82', 'Radios et images', images)}
+    </div>
+
+    <button class="btn ghost set-close" id="cancel">Fermer</button>`);
+
+  // Apparence : appliquée tout de suite, sans bouton de validation.
+  const paintAccent = () => {
+    sheetBody.querySelectorAll('#accent-choice button').forEach(b => b.classList.toggle('on', b.dataset.accent === prefs.data.accent));
+    $('#accent-name').textContent = ACCENTS.find(([, color]) => color === prefs.data.accent)[0];
+  };
+  paintAccent();
+  $('#theme-choice').addEventListener('change', e => prefs.set({ theme: e.target.value }));
+  $('#accent-choice').addEventListener('click', e => {
+    const accent = e.target.dataset.accent;
+    if (!accent) return;
+    prefs.set({ accent });
+    paintAccent();
+  });
+  $('#rappel').addEventListener('change', e => { prefs.set({ rappel: Number(e.target.value) }); render(); });
+
   $('#cancel').addEventListener('click', closeSheet);
   $('#export').addEventListener('click', exportData);
   $('#import').addEventListener('change', importData);
   $('#import-fiches').addEventListener('change', importFiches);
   $('#share-app').addEventListener('click', shareApp);
+  $('#show-tuto').addEventListener('click', () => { closeSheet(); showTutorial(); });
 }
 
 // Envoie le lien du site (jamais les données : chacun repart d'une appli vide sur son propre téléphone).
@@ -1083,13 +1267,13 @@ function showTutorial() {
       <section>
         <h2>💾 Sauvegarder</h2>
         <ul>
-          <li>Tous les <b>10 nouveaux patients</b>, l’appli propose une sauvegarde : touchez <b>Sauvegarder</b>, puis <b>Enregistrer dans Fichiers</b> et choisissez <b>iCloud Drive</b>.</li>
+          <li>Tous les <b>10 nouveaux patients</b> (réglable), l’appli propose une sauvegarde : touchez <b>Sauvegarder</b>, puis <b>Enregistrer dans Fichiers</b> et choisissez <b>iCloud Drive</b>.</li>
           <li>À tout moment : <b>⚙︎</b> en haut à droite, puis <b>Sauvegarder mes données</b>.</li>
           <li><b>Supprimer l’appli efface ses données.</b> Pour les retrouver (nouveau téléphone, réinstallation) : <b>⚙︎</b>, puis <b>Restaurer une sauvegarde</b>.</li>
         </ul>
       </section>
 
-      <button class="btn ghost" id="tuto-skip">Continuer sans installer</button>
+      <button class="btn ghost" id="tuto-skip">${isInstalled ? 'Fermer' : 'Continuer sans installer'}</button>
     </div>`;
   document.body.append(tuto);
   $('#tuto-skip', tuto).addEventListener('click', () => {
