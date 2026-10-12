@@ -304,8 +304,8 @@ function render() {
   const n = store.data.patients.length;
   $('#counter').textContent = plural(n, 'patient');
   document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
-  $('#title').textContent = { patients: 'Patients', stats: 'Statistiques', fiches: 'Fiches' }[currentTab];
-  ({ patients: renderPatients, stats: renderStats, fiches: openFicheId ? renderFiche : renderFiches })[currentTab]();
+  $('#title').textContent = { patients: 'Patients', stats: 'Statistiques', fiches: 'Fiches', voies: 'Voies d’abord' }[currentTab];
+  ({ patients: renderPatients, stats: renderStats, fiches: openFicheId ? renderFiche : renderFiches, voies: renderVoies })[currentTab]();
 }
 
 /* ---------- Patients ---------- */
@@ -604,6 +604,39 @@ function renderStats() {
       <div class="month"><div class="bars"><span class="month-n">${m.op + m.aide || ''}</span>${m.aide ? `<i class="aide" style="height:${(m.aide / maxMonth) * 100}%"></i>` : ''}<i style="height:${(m.op / maxMonth) * 100}%"></i></div><span>${esc(m.label)}</span></div>`).join('')}</div>
     <p class="legend"><i></i>Opérateur <i class="aide"></i>Aide</p>`;
 }
+
+/* ---------- Voies d'abord ---------- */
+
+// Catalogue des voies d'abord par région (voies.js). Celles qui ont un modèle 3D ouvrent le visualiseur ; les autres sont annoncées.
+function renderVoies() {
+  const ready = VOIES_ABORD.reduce((n, [, voies]) => n + voies.filter(v => v[2]).length, 0);
+  view.innerHTML = `
+    <p class="voies-intro"><b>${plural(ready, 'voie')} en 3D</b> pour l’instant. Touchez une voie marquée <span class="tag-3d">3D</span> pour l’ouvrir : anatomie plan par plan, étapes et structures à risque.</p>
+    ${VOIES_ABORD.map(([region, voies]) => `
+      <h2 class="section">${esc(region)}</h2>
+      <ul class="list">${voies.map(([nom, usage, voie3d]) => `
+        <li class="card voie${voie3d ? ' ready' : ''}"${voie3d ? ` data-voie="${esc(voie3d)}"` : ''}>
+          <div class="card-head"><strong>${esc(nom)}</strong>${voie3d ? '<span class="tag-3d">3D</span>' : '<span class="tag-soon">à venir</span>'}</div>
+          <div class="card-date">${esc(usage)}</div>
+        </li>`).join('')}</ul>`).join('')}
+    <p class="voies-intro">Anatomie : BodyParts3D, © The Database Center for Life Science, licence CC BY-SA 2.1 Japon. Nerfs, vaisseaux fémoraux, capsule et incisions sont des tracés schématiques. Outil de révision, sans valeur de référence chirurgicale.</p>`;
+  view.querySelectorAll('.voie.ready').forEach(li => li.addEventListener('click', () => openVoie3D(li.dataset.voie)));
+}
+
+// Visualiseur 3D en plein écran, dans un cadre : il se referme par son bouton retour (message « fermer-3d »).
+function openVoie3D(voie) {
+  if (document.querySelector('.viewer3d')) return;
+  const frame = document.createElement('div');
+  frame.className = 'viewer3d';
+  frame.innerHTML = `<iframe src="anatomie/index.html?voie=${encodeURIComponent(voie)}" title="Voie d’abord en 3D" allowfullscreen></iframe>`;
+  document.body.append(frame);
+  document.body.classList.add('no-scroll');
+}
+addEventListener('message', e => {
+  if (e.origin !== location.origin || e.data !== 'fermer-3d') return;
+  document.querySelector('.viewer3d')?.remove();
+  document.body.classList.remove('no-scroll');
+});
 
 /* ---------- Fiches ---------- */
 

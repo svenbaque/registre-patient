@@ -403,3 +403,15 @@ details.section.astuces summary { color: #b7791f; }
 .scan-line { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-top: 1px solid var(--line); }
 .scan-line span { flex: 1; overflow-wrap: anywhere; color: var(--text); }
 .scan-line button { flex-shrink: 0; padding: 5px 10px; border-radius: 999px; border: 0; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 600; }
+
+/* Onglet Voies d'abord */
+.tabbar button { min-width: 0; padding: 0 2px; white-space: nowrap; }
+.voies-intro { margin: 2px 2px 4px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.voies-intro + .voies-intro, .list + .voies-intro { margin-top: 22px; font-size: 12.5px; }
+.card.voie { cursor: default; opacity: .62; }
+.card.voie.ready { cursor: pointer; opacity: 1; border-left: 5px solid var(--brand-fill); }
+.tag-3d, .tag-soon { flex-shrink: 0; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.tag-3d { background: var(--brand-fill); color: #fff; }
+.tag-soon { background: var(--line); color: var(--muted); font-weight: 600; }
+.viewer3d { position: fixed; inset: 0; z-index: 60; background: #0e1622; }
+.viewer3d iframe { width: 100%; height: 100%; border: 0; display: block; }

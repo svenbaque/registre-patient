@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Hanche 3D — voies d'abord</title>
+  <meta name="theme-color" content="#0e1622">
+  <style>
+    :root { --bg: #0e1622; --panel: rgba(20, 30, 45, .88); --text: #e8eef6; --muted: #9db0c6; --line: rgba(255, 255, 255, .12); --accent: #4aa8ff; --danger: #ffd23f; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    .top { position: fixed; top: 0; left: 0; right: 0; z-index: 2; display: flex; gap: 8px; align-items: center; padding: calc(env(safe-area-inset-top) + 10px) 12px 10px; pointer-events: none; }
+    .top > * { pointer-events: auto; }
+    .modes { display: flex; flex: 1; max-width: 520px; background: var(--panel); border-radius: 999px; padding: 4px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+    .modes button { flex: 1; border: 0; background: none; padding: 9px 6px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .modes button.on { background: var(--accent); color: #fff; }
+    .round { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--panel); font-size: 18px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+
+    .card { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 12px); z-index: 2; max-width: 560px; margin: 0 auto; background: var(--panel); border-radius: 22px; padding: 14px 16px 12px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+    .card small { color: var(--accent); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 12px; }
+    .card h2 { margin: 3px 0 6px; font-size: 18px; }
+    .card p { margin: 0 0 8px; font-size: 14.5px; line-height: 1.45; color: #d3deeb; max-height: 24vh; overflow-y: auto; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .08); font-size: 12.5px; border: 0; }
+    .chip i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+    .chip.danger { background: rgba(255, 210, 63, .16); color: var(--danger); font-weight: 600; }
+    .nav { display: flex; gap: 8px; }
+    .nav button { flex: 1; padding: 11px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, .06); font-weight: 600; font-size: 15px; }
+    .nav button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .nav button:disabled { opacity: .35; }
+    .nav[hidden] { display: none; }
+    .round[hidden] { display: none; }
+    #back { font-size: 26px; line-height: 1; }
+
+    .drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 3; width: min(320px, 86vw); background: #111b29; padding: calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px); overflow-y: auto; transform: translateX(105%); transition: transform .2s ease; box-shadow: -10px 0 30px rgba(0, 0, 0, .4); }
+    .drawer.open { transform: none; }
+    .drawer h3 { margin: 0 0 4px; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
+    .drawer h4 { margin: 16px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .drawer label { display: flex; align-items: center; gap: 10px; padding: 7px 2px; font-size: 14.5px; border-bottom: 1px solid var(--line); }
+    .drawer label i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+    .drawer input { width: 18px; height: 18px; accent-color: var(--accent); margin-left: auto; }
+    .drawer .note { font-size: 12px; color: var(--muted); line-height: 1.45; margin-top: 16px; }
+    .drawer .note a { color: var(--accent); }
+
+    .label { position: fixed; top: calc(env(safe-area-inset-top) + 66px); left: 50%; transform: translateX(-50%); z-index: 2; padding: 8px 16px; border-radius: 999px; background: rgba(0, 0, 0, .72); font-size: 15px; font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .2s; }
+    .label.show { opacity: 1; }
+    .loading { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: var(--bg); font-size: 15px; color: var(--muted); }
+    .loading b { color: var(--text); font-size: 20px; }
+    .bar { width: 200px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+  </style>
+  <script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div class="top">
+    <button class="round" id="back" aria-label="Retour" hidden>‹</button>
+    <div class="modes" id="modes">
+      <button data-mode="post" class="on">Postérieure</button>
+      <button data-mode="ant">Antérieure</button>
+      <button data-mode="libre">Libre</button>
+    </div>
+    <button class="round" id="open-drawer" aria-label="Structures">☰</button>
+  </div>
+
+  <div class="label" id="label"></div>
+
+  <div class="card" id="card">
+    <small id="step-count"></small>
+    <h2 id="step-title"></h2>
+    <p id="step-text"></p>
+    <div class="chips" id="chips"></div>
+    <div class="nav">
+      <button id="prev">‹ Précédent</button>
+      <button id="next" class="primary">Suivant ›</button>
+    </div>
+  </div>
+
+  <aside class="drawer" id="drawer">
+    <h3>Structures <button class="round" id="close-drawer" aria-label="Fermer">✕</button></h3>
+    <div id="toggles"></div>
+    <p class="note">
+      Os, muscles, ligament inguinal et vaisseaux iliaques : <b>BodyParts3D</b>, © The Database Center for Life Science, licence
+      <a href="https://creativecommons.org/licenses/by-sa/2.1/jp/deed.fr" target="_blank" rel="noopener">CC BY-SA 2.1 Japon</a> (maillages allégés).<br>
+      Nerfs, vaisseaux fémoraux, capsule et incisions : <b>tracés schématiques</b> ajoutés à la main, à titre indicatif.<br>
+      Outil de révision des rapports anatomiques, sans valeur de référence chirurgicale.
+    </p>
+  </aside>
+
+  <div class="loading" id="loading"><b>Hanche 3D</b><span id="loading-text">Chargement de l’anatomie…</span><div class="bar"><i id="loading-bar"></i></div></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
