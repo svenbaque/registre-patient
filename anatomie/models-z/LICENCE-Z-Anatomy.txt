@@ -1,0 +1,6 @@
+Capsules, ligaments, nerfs, artères et veines de ce dossier : modèles du projet Z-Anatomy (https://www.z-anatomy.com),
+repris du dépôt github.com/LluisV/Z-Anatomy-Sample, licence Creative Commons Attribution - Partage dans les mêmes conditions 4.0
+International (CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/). Z-Anatomy dérive lui-même de BodyParts3D
+(c) The Database Center for Life Science, CC BY-SA 2.1 Japon.
+Modifications : extraction des pièces utiles, changement de repère et d'échelle pour les superposer aux maillages BodyParts3D.
+Ces fichiers dérivés sont diffusés sous la même licence CC BY-SA 4.0.

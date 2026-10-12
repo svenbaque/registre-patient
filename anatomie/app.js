@@ -39,7 +39,24 @@ const controls = new OrbitControls(camera, canvas);
 controls.target.set(...R.centre);
 controls.minDistance = 40;
 controls.maxDistance = 1400;
+controls.enableDamping = true;   // le modèle continue un peu sur sa lancée : rotation plus douce
+controls.dampingFactor = 0.14;
+controls.rotateSpeed = 0.85;
+controls.zoomToCursor = true;    // on zoome vers l'endroit pincé, pas vers le centre
 controls.addEventListener('change', render);
+// L'inertie demande de redessiner pendant et juste après le geste, puis on s'arrête (pas de boucle permanente).
+let spinning = false;
+let spinUntil = 0;
+function spin() {
+  controls.update();
+  if (performance.now() < spinUntil) requestAnimationFrame(spin); else spinning = false;
+}
+function keepSpinning(ms) {
+  spinUntil = performance.now() + ms;
+  if (!spinning) { spinning = true; requestAnimationFrame(spin); }
+}
+controls.addEventListener('start', () => keepSpinning(60000));
+controls.addEventListener('end', () => keepSpinning(900));
 
 function render() { renderer.render(scene, camera); }
 function resize() {
@@ -104,12 +121,12 @@ const boneMap = canvasTexture(128, (g, n) => {
   }
 });
 
-function makeMaterial(groupe, couleur, fascia) {
+function makeMaterial(groupe, couleur, fascia, tube) {
   const base = { color: couleur, side: THREE.DoubleSide, envMapIntensity: 0.55 };
   if (groupe === 'os') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.62, clearcoat: 0.18, clearcoatRoughness: 0.5, map: boneMap });
   if (groupe === 'ecarteurs') return new THREE.MeshPhysicalMaterial({ ...base, color: '#e6e9ed', metalness: 0.82, roughness: 0.3, envMapIntensity: 1.3, emissive: '#3a3f46', emissiveIntensity: 0.55 });
   if (groupe === 'vaisseaux') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.15, envMapIntensity: 0.9 });
-  if (groupe === 'nerfs') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.42, clearcoat: 0.55, clearcoatRoughness: 0.3, map: nerveMap });
+  if (groupe === 'nerfs') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.42, clearcoat: 0.55, clearcoatRoughness: 0.3, map: tube ? nerveMap : fiberMap });
   if (groupe === 'incisions' || groupe === 'reperes') return new THREE.MeshStandardMaterial({ ...base, roughness: 0.4, emissive: couleur, emissiveIntensity: 0.35 });
   // aponévroses et fascias : nacrés ; muscles : rouges, humides, striés dans le sens des fibres
   if (fascia) return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.38, clearcoat: 0.7, clearcoatRoughness: 0.25, map: fiberMap, bumpMap: fiberMap, bumpScale: 0.5 });
@@ -121,7 +138,7 @@ function makeMaterial(groupe, couleur, fascia) {
 const parts = new Map(); // id -> { mesh, nom, groupe, couleur, coche, base (positions de repos), … }
 
 function addPart(id, nom, groupe, couleur, geometry, options = {}) {
-  const material = makeMaterial(groupe, couleur, options.fascia);
+  const material = makeMaterial(groupe, couleur, options.fascia, options.tube);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.userData.id = id;
   scene.add(mesh);
@@ -170,8 +187,9 @@ function fiberUVs(geometry) {
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
 
-async function loadMesh([file, nom, groupe, couleur]) {
-  const buffer = await (await fetch(`${R.dossier || 'models'}/${file}.bin`)).arrayBuffer();
+// [fichier, nom, groupe, couleur, { id, dossier }] — les pièces Z-Anatomy (nerfs, vaisseaux, ligaments) ont leur propre dossier et un identifiant lisible.
+async function loadMesh([file, nom, groupe, couleur, options = {}]) {
+  const buffer = await (await fetch(`${options.dossier || R.dossier || 'models'}/${file}.bin`)).arrayBuffer();
   const [nVerts, nTris] = new Uint32Array(buffer, 0, 2);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buffer.slice(8, 8 + nVerts * 12)), 3));
@@ -183,7 +201,7 @@ async function loadMesh([file, nom, groupe, couleur]) {
     for (let i = 0; i < position.count; i++) { uv[2 * i] = (position.getX(i) + position.getY(i)) / 30; uv[2 * i + 1] = position.getZ(i) / 30; }
     geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   } else fiberUVs(geometry);
-  addPart(file, nom, groupe, couleur, geometry, { fascia: (R.fascias || []).includes(file) });
+  addPart(options.id || file, nom, groupe, couleur, geometry, { fascia: (R.fascias || []).includes(file) || groupe === 'ligaments' });
 }
 
 // Tracé schématique (nerf, vaisseau, incision, repère) : tube lisse, effilé et arrondi aux extrémités.
@@ -213,7 +231,7 @@ function addTube([id, nom, groupe, couleur, rayon, points, options = {}]) {
   const uv = geometry.getAttribute('uv');
   for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * curve.getLength() / 26); // fascicules à l'échelle
   geometry.computeVertexNormals();
-  addPart(id, nom, groupe, couleur, geometry);
+  addPart(id, nom, groupe, couleur, geometry, { tube: true });
 }
 
 // Manchon schématique entre deux points (capsule articulaire).
@@ -484,23 +502,25 @@ function applyState() {
 function flyTo(name) {
   const vue = R.vues[name];
   const cible = vue.cible || R.centre;
-  camera.position.set(cible[0] + vue.de[0], cible[1] + vue.de[1], cible[2] + vue.de[2]);
+  // écran en hauteur (téléphone) : on recule pour garder le champ opératoire entier dans la largeur
+  const recul = innerHeight > innerWidth ? Math.min(1.6, (innerHeight / innerWidth) * 0.75) : 1;
+  camera.position.set(cible[0] + vue.de[0] * recul, cible[1] + vue.de[1] * recul, cible[2] + vue.de[2] * recul);
   controls.target.set(...cible);
   controls.update();
 }
 
 function renderCard(step) {
   document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
-  const nav = $('.nav');
+  const arrows = [$('#prev'), $('#next')];
   if (!step) {
     $('#step-count').textContent = 'Exploration libre';
     $('#step-title').textContent = R.nom;
-    $('#step-text').textContent = 'Tournez avec un doigt, zoomez avec deux, touchez une structure pour afficher son nom. Le bouton ☰ permet d’afficher ou de masquer chaque structure.';
+    $('#step-text').textContent = 'Un doigt pour tourner, deux doigts pour zoomer et déplacer. Touchez une structure pour afficher son nom, touchez-la deux fois pour tourner autour d’elle. ⟲ recentre la vue, ☰ affiche ou masque chaque structure.';
     $('#chips').innerHTML = '';
-    nav.hidden = true;
+    arrows.forEach(b => { b.hidden = true; });
     return;
   }
-  nav.hidden = false;
+  arrows.forEach(b => { b.hidden = false; });
   const steps = STEPS[mode];
   $('#step-count').textContent = `${R.voies[mode].titre} · étape ${stepIndex + 1} / ${steps.length}`;
   $('#step-title').textContent = step.titre;
@@ -551,6 +571,19 @@ $('#prev').addEventListener('click', () => setStep(stepIndex - 1));
 $('#next').addEventListener('click', () => setStep(stepIndex + 1));
 $('#open-drawer').addEventListener('click', () => $('#drawer').classList.add('open'));
 $('#close-drawer').addEventListener('click', () => $('#drawer').classList.remove('open'));
+// Recentrer : revient au point de vue de l'étape.
+$('#recentrer').addEventListener('click', () => { flyTo(mode === 'libre' ? 'libre' : STEPS[mode][stepIndex].vue); render(); });
+// Fiche d'étape repliable : par défaut seul le titre est visible sur téléphone ; un toucher déplie l'explication.
+const card = $('#card');
+let cardOpen = innerWidth > 700;
+try { const saved = localStorage.getItem('voies3d-fiche'); if (saved) cardOpen = saved === 'ouverte'; } catch (e) { /* stockage indisponible */ }
+const paintCard = () => { card.classList.toggle('compact', !cardOpen); $('#toggle-card').setAttribute('aria-expanded', cardOpen); };
+$('#toggle-card').addEventListener('click', () => {
+  cardOpen = !cardOpen;
+  try { localStorage.setItem('voies3d-fiche', cardOpen ? 'ouverte' : 'repliee'); } catch (e) { /* stockage indisponible */ }
+  paintCard();
+});
+paintCard();
 // Affiché dans l'appli Registre (cadre intégré) : un bouton retour demande à l'appli de refermer le visualiseur.
 if (window.parent !== window) {
   $('#back').hidden = false;
@@ -561,12 +594,17 @@ if (window.parent !== window) {
 const raycaster = new THREE.Raycaster();
 let down = null;
 let labelTimer = null;
+let lastTap = 0;
 canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; });
 canvas.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
   raycaster.setFromCamera(new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
   const hit = raycaster.intersectObjects([...parts.values()].map(p => p.mesh).filter(m => m.userData.pickable))[0];
   if (!hit) return;
+  // second toucher rapproché sur une structure : la vue tourne désormais autour de ce point
+  const now = performance.now();
+  if (now - lastTap < 350) { controls.target.copy(hit.point); controls.update(); keepSpinning(300); }
+  lastTap = now;
   const label = $('#label');
   label.textContent = parts.get(hit.object.userData.id).nom;
   label.classList.add('show');

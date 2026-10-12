@@ -32,9 +32,52 @@ const meshes = [
   ['FMA45888', 'Biceps fémoral (chef long)', 'posterieurs', '#8f5b4a'],
   ['FMA22358', 'Semi-tendineux', 'posterieurs', '#9a6652'],
   ['FMA22448', 'Semi-membraneux', 'posterieurs', '#a5705a'],
-  ['FMA21964', 'Ligament inguinal', 'divers', '#dfe6ec'],
-  ['FMA18806', 'Artère iliaque externe', 'vaisseaux', '#e0392b'],
-  ['FMA18885', 'Veine iliaque externe', 'vaisseaux', '#3b6fd1'],
+  ['FMA21964', 'Ligament inguinal', 'ligaments', '#dfe6ec'],
+  // Capsule, ligaments, nerfs, artères et veines : modèle Z-Anatomy (CC BY-SA 4.0), replacé dans le repère BodyParts3D.
+  ['hanche-capsule', 'Capsule articulaire de la hanche', 'ligaments', '#efe9da', { id: 'capsule', dossier: 'models-z' }],
+  ['hanche-iliofemoral-desc', 'Ligament ilio-fémoral — faisceau descendant', 'ligaments', '#e9e4d6', { id: 'capsule/iliofem-desc', dossier: 'models-z' }],
+  ['hanche-iliofemoral-trans', 'Ligament ilio-fémoral — faisceau transverse', 'ligaments', '#e9e4d6', { id: 'capsule/iliofem-trans', dossier: 'models-z' }],
+  ['hanche-pubofemoral', 'Ligament pubo-fémoral', 'ligaments', '#e9e4d6', { id: 'capsule/pubofem', dossier: 'models-z' }],
+  ['hanche-ischiofemoral', 'Ligament ischio-fémoral', 'ligaments', '#e9e4d6', { id: 'capsule/ischiofem', dossier: 'models-z' }],
+  ['hanche-zona', 'Zone orbiculaire', 'ligaments', '#e3dccb', { id: 'capsule/zona', dossier: 'models-z' }],
+  ['hanche-labrum', 'Labrum acétabulaire', 'ligaments', '#d9cfb6', { id: 'labrum', dossier: 'models-z' }],
+  ['hanche-lig-tete', 'Ligament de la tête fémorale', 'ligaments', '#e9e4d6', { id: 'lig-tete', dossier: 'models-z' }],
+  ['hanche-lig-transverse', 'Ligament transverse de l’acétabulum', 'ligaments', '#e9e4d6', { id: 'lig-transverse', dossier: 'models-z' }],
+  ['hanche-sacrospinal', 'Ligament sacro-épineux', 'ligaments', '#e9e4d6', { id: 'sacro-epineux', dossier: 'models-z' }],
+  ['hanche-sacrotuberal', 'Ligament sacro-tubéral', 'ligaments', '#e9e4d6', { id: 'sacro-tuberal', dossier: 'models-z' }],
+  ['hanche-membrane-obt', 'Membrane obturatrice', 'ligaments', '#d6d0c0', { id: 'membrane-obt', dossier: 'models-z' }],
+  ['n-sciatique', 'Nerf sciatique', 'nerfs', '#f3d98b', { id: 'sciatique', dossier: 'models-z' }],
+  ['n-gluteal-sup', 'Nerf glutéal supérieur', 'nerfs', '#f3d98b', { id: 'nglutealsup', dossier: 'models-z' }],
+  ['n-cutane-post', 'Nerf cutané postérieur de la cuisse', 'nerfs', '#f3d98b', { id: 'ncutpost', dossier: 'models-z' }],
+  ['n-pudendal', 'Nerf pudendal', 'nerfs', '#f3d98b', { id: 'npudendal', dossier: 'models-z' }],
+  ['n-carre-femoral', 'Nerf du carré fémoral', 'nerfs', '#f3d98b', { id: 'ncarre', dossier: 'models-z' }],
+  ['n-piriforme', 'Nerf du piriforme', 'nerfs', '#f3d98b', { id: 'npiriforme', dossier: 'models-z' }],
+  ['n-femoral', 'Nerf fémoral', 'nerfs', '#f3d98b', { id: 'nfemoral', dossier: 'models-z' }],
+  ['n-femoral-cutanes', 'Nerf fémoral — rameaux cutanés antérieurs', 'nerfs', '#f3d98b', { id: 'nfemoral/cutanes', dossier: 'models-z' }],
+  ['n-saphene', 'Nerf saphène', 'nerfs', '#f3d98b', { id: 'nfemoral/saphene', dossier: 'models-z' }],
+  ['n-cutane-lateral', 'Nerf cutané latéral de la cuisse', 'nerfs', '#f3d98b', { id: 'nclc', dossier: 'models-z' }],
+  ['n-obturateur', 'Nerf obturateur', 'nerfs', '#f3d98b', { id: 'nobturateur', dossier: 'models-z' }],
+  ['n-obturateur-ant', 'Nerf obturateur — branche antérieure', 'nerfs', '#f3d98b', { id: 'nobturateur/ant', dossier: 'models-z' }],
+  ['n-obturateur-post', 'Nerf obturateur — branche postérieure', 'nerfs', '#f3d98b', { id: 'nobturateur/post', dossier: 'models-z' }],
+  ['a-iliaque-ext', 'Artère iliaque externe', 'vaisseaux', '#c8102e', { id: 'ailiaque', dossier: 'models-z' }],
+  ['a-femorale', 'Artère fémorale', 'vaisseaux', '#c8102e', { id: 'afemorale', dossier: 'models-z' }],
+  ['a-femorale-profonde', 'Artère fémorale profonde', 'vaisseaux', '#c8102e', { id: 'afemorale/prof', dossier: 'models-z' }],
+  ['a-circonflexe-lat', 'Artère circonflexe latérale de la cuisse', 'vaisseaux', '#e0392b', { id: 'circonflexe', dossier: 'models-z' }],
+  ['a-circonflexe-lat-desc', 'Circonflexe latérale — branche descendante', 'vaisseaux', '#e0392b', { id: 'circonflexe/desc', dossier: 'models-z' }],
+  ['a-circonflexe-med', 'Artère circonflexe médiale de la cuisse', 'vaisseaux', '#e0392b', { id: 'circonflexe-med', dossier: 'models-z' }],
+  ['a-perforantes', 'Artères perforantes', 'vaisseaux', '#e0392b', { id: 'perforantes', dossier: 'models-z' }],
+  ['a-obturatrice', 'Artère obturatrice', 'vaisseaux', '#c8102e', { id: 'aobturatrice', dossier: 'models-z' }],
+  ['a-gluteale-sup', 'Artère glutéale supérieure', 'vaisseaux', '#c8102e', { id: 'aglutealsup', dossier: 'models-z' }],
+  ['a-gluteale-inf', 'Artère glutéale inférieure', 'vaisseaux', '#c8102e', { id: 'aglutealinf', dossier: 'models-z' }],
+  ['a-pudendale', 'Artère pudendale interne', 'vaisseaux', '#c8102e', { id: 'apudendale', dossier: 'models-z' }],
+  ['v-iliaque-ext', 'Veine iliaque externe', 'vaisseaux', '#2f4f9e', { id: 'viliaque', dossier: 'models-z' }],
+  ['v-femorale', 'Veine fémorale', 'vaisseaux', '#2f4f9e', { id: 'vfemorale', dossier: 'models-z' }],
+  ['v-femorale-profonde', 'Veine fémorale profonde', 'vaisseaux', '#2f4f9e', { id: 'vfemorale/prof', dossier: 'models-z' }],
+  ['v-grande-saphene', 'Grande veine saphène', 'vaisseaux', '#2f4f9e', { id: 'vsaphene', dossier: 'models-z' }],
+  ['v-circonflexe-lat', 'Veines circonflexes latérales', 'vaisseaux', '#2f4f9e', { id: 'vcirconflexe', dossier: 'models-z' }],
+  ['v-circonflexe-med', 'Veines circonflexes médiales', 'vaisseaux', '#2f4f9e', { id: 'vcirconflexe-med', dossier: 'models-z' }],
+  ['v-gluteale-sup', 'Veines glutéales supérieures', 'vaisseaux', '#2f4f9e', { id: 'vglutealsup', dossier: 'models-z' }],
+  ['v-gluteale-inf', 'Veines glutéales inférieures', 'vaisseaux', '#2f4f9e', { id: 'vglutealinf', dossier: 'models-z' }],
 ];
 
 // Pièces fendues le long des lignes d'incision, pour que leurs berges puissent s'écarter : [pièce, point du plan, normale, nom côté normale (/A), nom autre côté (/B)].
@@ -49,35 +92,8 @@ const fendre = [
 ];
 
 // Structures absentes du modèle libre, tracées à la main d'après les repères osseux : [id, nom, groupe, couleur, rayon, points]
+// Tracés à la main : incisions et repères d'ostéosynthèse (nerfs, vaisseaux et capsule viennent maintenant de Z-Anatomy).
 const tubes = [
-  ['sciatique', 'Nerf sciatique (schématique)', 'nerfs', '#f3d98b', 6, { fin: 0.85 },
-    [[-44, -36, 866], [-56, -36, 836], [-70, -37, 810], [-77, -46, 780], [-82, -54, 730], [-86, -60, 640], [-84, -62, 500]]],
-  ['nclc', 'Nerf cutané latéral de la cuisse (schématique)', 'nerfs', '#f3d98b', 2, { fin: 0.55 },
-    [[-98, -118, 930], [-106, -148, 899], [-108, -156, 872], [-116, -156, 835], [-127, -152, 790], [-134, -148, 700]]],
-  ['nclc/b1', 'Nerf cutané latéral de la cuisse — rameau postérieur (schématique)', 'nerfs', '#f3d98b', 1.3, { fin: 0.4 },
-    [[-124, -153, 800], [-136, -147, 772], [-146, -138, 742], [-151, -128, 705]]],
-  ['nfemoral', 'Nerf fémoral (schématique)', 'nerfs', '#f3d98b', 3.6, { fin: 0.6 },
-    [[-62, -128, 905], [-63, -152, 850], [-65, -158, 822], [-66, -156, 800]]],
-  ['nfemoral/b1', 'Nerf fémoral — branches musculaires (schématique)', 'nerfs', '#f3d98b', 1.7, { fin: 0.4 },
-    [[-66, -157, 806], [-74, -154, 780], [-84, -148, 752], [-92, -142, 722]]],
-  ['nfemoral/b2', 'Nerf fémoral — branches musculaires (schématique)', 'nerfs', '#f3d98b', 1.7, { fin: 0.4 },
-    [[-66, -157, 806], [-69, -155, 776], [-72, -150, 744], [-74, -146, 712]]],
-  ['nfemoral/b3', 'Nerf saphène (schématique)', 'nerfs', '#f3d98b', 1.5, { fin: 0.5 },
-    [[-65, -157, 806], [-62, -156, 776], [-60, -148, 740], [-59, -140, 700], [-57, -128, 640]]],
-  ['nglutealsup', 'Nerf glutéal supérieur (schématique)', 'nerfs', '#f3d98b', 2, { fin: 0.5 },
-    [[-62, -46, 872], [-90, -58, 874], [-115, -78, 870], [-134, -104, 864]]],
-  ['afemorale', 'Artère fémorale (schématique)', 'vaisseaux', '#c8102e', 4.4, { fin: 0.85 },
-    [[-49, -158, 830], [-52, -159, 805], [-56, -152, 765], [-58, -141, 700], [-55, -126, 620]]],
-  ['afemorale/prof', 'Artère fémorale profonde (schématique)', 'vaisseaux', '#c8102e', 3, { fin: 0.6 },
-    [[-53, -157, 790], [-60, -148, 770], [-66, -134, 740], [-72, -118, 700], [-76, -104, 650]]],
-  ['vfemorale', 'Veine fémorale (schématique)', 'vaisseaux', '#2f4f9e', 5.2, { fin: 0.9 },
-    [[-42, -149, 830], [-43, -151, 805], [-47, -146, 765], [-50, -136, 700], [-48, -122, 620]]],
-  ['circonflexe', 'Branche ascendante de la circonflexe latérale (schématique)', 'vaisseaux', '#e0392b', 2.1, { fin: 0.5 },
-    [[-60, -148, 770], [-70, -128, 782], [-86, -108, 792], [-108, -104, 806], [-124, -108, 826]]],
-  ['perforante1', 'Artère perforante (schématique)', 'vaisseaux', '#e0392b', 1.8, { fin: 0.5 },
-    [[-78, -74, 712], [-98, -64, 708], [-118, -66, 706], [-134, -80, 704]]],
-  ['perforante2', 'Artère perforante (schématique)', 'vaisseaux', '#e0392b', 1.8, { fin: 0.5 },
-    [[-76, -76, 652], [-94, -66, 648], [-112, -68, 646], [-128, -82, 644]]],
   ['incision-post', 'Incision — voie postérieure', 'incisions', '#35e0c8', 1.4, {},
     [[-151, -74, 712], [-153, -76, 760], [-152, -74, 800], [-143, -52, 838], [-125, -24, 872], [-104, -4, 898]]],
   ['incision-ant', 'Incision — voie antérieure', 'incisions', '#35e0c8', 1.4, {},
@@ -92,12 +108,9 @@ const tubes = [
     [[-150, -86, 765], [-128, -88, 780], [-98, -90, 800], [-70, -92, 819]]],
 ].map(([id, nom, groupe, couleur, rayon, options, points]) => [id, nom, groupe, couleur, rayon, points, options]);
 
-// Capsule articulaire schématique : manchon entre le pourtour du cotyle et la base du col. [id, nom, de, à, rayon côté « à », rayon côté « de »]
-const manchons = [['capsule', 'Capsule articulaire (schématique)', [-62, -93, 823], [-106, -86, 806], 25, 31]];
-
 const groupes = [
   ['os', 'Os'], ['fessiers', 'Fessiers et fascia lata'], ['rotateurs', 'Pelvi-trochantériens'], ['anterieurs', 'Loge antérieure et ilio-psoas'],
-  ['mediaux', 'Adducteurs'], ['posterieurs', 'Ischio-jambiers'], ['divers', 'Ligament et capsule'], ['vaisseaux', 'Vaisseaux'], ['nerfs', 'Nerfs'],
+  ['mediaux', 'Adducteurs'], ['posterieurs', 'Ischio-jambiers'], ['ligaments', 'Capsule et ligaments'], ['vaisseaux', 'Artères et veines'], ['nerfs', 'Nerfs'],
   ['incisions', 'Incisions'], ['reperes', 'Repères d’ostéosynthèse'],
 ];
 
@@ -184,7 +197,7 @@ const voies = {
       accent: ['capsule', ...ROTATEURS], danger: ['sciatique'], masquer: REPERES, ecarter: MOORE_OUVERT, sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS } },
     { titre: 'Capsulotomie et luxation', vue: 'postProche',
       texte: 'Capsulotomie postérieure, puis luxation de la tête par flexion, adduction et rotation interne. Le col est exposé pour la coupe ; le cotyle sera abordé après l’exérèse de la tête.',
-      accent: ['FMA24474'], danger: ['sciatique'], estomper: ['capsule'], masquer: REPERES, ecarter: MOORE_OUVERT, sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS } },
+      accent: ['FMA24474', 'capsule'], danger: ['sciatique'], masquer: REPERES, ecarter: MOORE_OUVERT, sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS, capsule: { autour: [[-104, -66, 800], [-92, -64, 832]], rayon: 17 } } },
   ] },
   ant: { court: 'Hueter', titre: 'Voie antérieure (Hueter)', steps: [
     { titre: 'Repères et incision', vue: 'ant',
@@ -198,10 +211,10 @@ const voies = {
       accent: ['FMA38928', 'FMA22330', 'FMA22332'], danger: ['circonflexe'], masquer: REPERES, ecarter: HUETER_PROFOND },
     { titre: 'Capsule antérieure', vue: 'antProche',
       texte: 'Des écarteurs sont passés de part et d’autre du col, au contact de l’os : droit fémoral et ilio-psoas en dedans, fessiers en dehors. La capsule antérieure est exposée au fond. Le paquet fémoral (nerf, artère, veine, de dehors en dedans) est juste en dedans.',
-      accent: ['capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], masquer: [...REPERES, 'circonflexe'], ecarter: HUETER_CAPSULE },
+      accent: ['capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], masquer: REPERES, ecarter: HUETER_CAPSULE },
     { titre: 'Capsulotomie et exposition du col', vue: 'antProche',
       texte: 'Capsulotomie antérieure : le col et la tête sont exposés. La coupe du col se fait en place, puis la tête est extraite avant la préparation du cotyle.',
-      accent: ['FMA24474'], danger: ['nfemoral', 'afemorale', 'vfemorale'], estomper: ['capsule'], masquer: [...REPERES, 'circonflexe'], ecarter: HUETER_CAPSULE },
+      accent: ['FMA24474', 'capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], masquer: REPERES, ecarter: HUETER_CAPSULE, sectionner: { capsule: { autour: [[-84, -116, 834], [-104, -112, 792]], rayon: 15 } } },
   ] },
   dhs: { court: 'DHS', titre: 'Voie latérale du fémur proximal (DHS)', steps: [
     { titre: 'Repères et incision', vue: 'lat',
@@ -212,10 +225,10 @@ const voies = {
       accent: ['FMA58776', 'FMA38930'], masquer: REPERES, ecarter: lateral(1) },
     { titre: 'Vaste latéral', vue: 'latProche',
       texte: 'Le vaste latéral est désinséré de la cloison intermusculaire latérale et relevé en avant, avec une contre-incision en L sous le tubercule du vaste : sa portion en regard de la plaque est ici retirée, le reste du muscle garde ses attaches. Les artères perforantes traversent la cloison : elles sont repérées et liées ou coagulées.',
-      accent: ['FMA24474'], danger: ['perforante1', 'perforante2'], masquer: REPERES, ecarter: lateral(1.15), sectionner: SECTION_VASTE },
+      accent: ['FMA24474'], danger: ['perforantes'], masquer: REPERES, ecarter: lateral(1.15), sectionner: SECTION_VASTE },
     { titre: 'Face latérale du fémur', vue: 'latProche',
       texte: 'La corticale latérale sous-trochantérienne est exposée. Le viseur d’angle se pose sous le grand trochanter : la broche-guide vise le centre de la tête, de face comme de profil. Le fémur est ici translucide pour montrer l’axe de la vis.',
-      accent: ['axe-vis'], voiler: ['FMA24474'], danger: ['perforante1', 'perforante2'], montrer: ['axe-vis'], masquer: ['axe-clou'], ecarter: lateral(1.15), sectionner: SECTION_VASTE },
+      accent: ['axe-vis'], voiler: ['FMA24474'], danger: ['perforantes'], montrer: ['axe-vis'], masquer: ['axe-clou'], ecarter: lateral(1.15), sectionner: SECTION_VASTE },
   ] },
   clou: { court: 'Clou gamma', titre: 'Abord du grand trochanter (clou gamma)', steps: [
     { titre: 'Repères et incision', vue: 'trochanter',
@@ -230,4 +243,4 @@ const voies = {
   ] },
 };
 
-export default { nom: 'Hanche droite', dossier: 'models-hd', fascias: ['FMA58776', 'FMA21964'], centre, vues, meshes, fendre, tubes, manchons, groupes, voies };
+export default { nom: 'Hanche droite', dossier: 'models-hd', fascias: ['FMA58776', 'FMA21964'], centre, vues, meshes, fendre, tubes, groupes, voies };
