@@ -323,24 +323,66 @@ function deformed(part, spec) {
     for (let i = 0; i < base.length; i += 3) { out[i] = base[i] + spec[0]; out[i + 1] = base[i + 1] + spec[1]; out[i + 2] = base[i + 2] + spec[2]; }
     return out;
   }
-  const [dx, dy, dz] = spec.dep;
+  // « autour » : un point, ou une ligne brisée (la ligne d'incision). « dep » : un déplacement, ou un par tronçon de la ligne —
+  // la berge s'écarte alors perpendiculairement à l'incision tout du long, même si celle-ci change de direction.
+  const line = Array.isArray(spec.autour[0]) ? spec.autour : [spec.autour, spec.autour];
+  const deps = Array.isArray(spec.dep[0]) ? spec.dep : line.slice(1).map(() => spec.dep);
   const socle = spec.socle ?? 0;
   const r2 = spec.rayon * spec.rayon;
-  const segment = Array.isArray(spec.autour[0]);
-  const a = segment ? spec.autour[0] : spec.autour;
-  const b = segment ? spec.autour[1] : null;
-  const ab = b ? [b[0] - a[0], b[1] - a[1], b[2] - a[2]] : null;
-  const abLen2 = ab ? ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2] : 0;
+  const segments = line.slice(1).map((b, i) => {
+    const a = line[i];
+    const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    return { a, ab, len2: ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2], dep: deps[Math.min(i, deps.length - 1)] };
+  });
   for (let i = 0; i < base.length; i += 3) {
-    let px = base[i] - a[0], py = base[i + 1] - a[1], pz = base[i + 2] - a[2];
-    if (ab) {
-      const t = Math.max(0, Math.min(1, (px * ab[0] + py * ab[1] + pz * ab[2]) / abLen2));
-      px -= ab[0] * t; py -= ab[1] * t; pz -= ab[2] * t;
+    let sum = 0, best = 0, dx = 0, dy = 0, dz = 0;
+    for (const { a, ab, len2, dep } of segments) {
+      let px = base[i] - a[0], py = base[i + 1] - a[1], pz = base[i + 2] - a[2];
+      if (len2 > 0) {
+        const t = Math.max(0, Math.min(1, (px * ab[0] + py * ab[1] + pz * ab[2]) / len2));
+        px -= ab[0] * t; py -= ab[1] * t; pz -= ab[2] * t;
+      }
+      const w = Math.exp(-(px * px + py * py + pz * pz) / r2);
+      sum += w; dx += dep[0] * w; dy += dep[1] * w; dz += dep[2] * w;
+      if (w > best) best = w;
     }
-    const w = socle + (1 - socle) * Math.exp(-(px * px + py * py + pz * pz) / r2);
-    out[i] = base[i] + dx * w; out[i + 1] = base[i + 1] + dy * w; out[i + 2] = base[i + 2] + dz * w;
+    // direction : moyenne des tronçons proches ; ampleur : celle du tronçon le plus proche
+    const k = sum > 0 ? (socle + (1 - socle) * best) / sum : 0;
+    out[i] = base[i] + dx * k; out[i + 1] = base[i + 1] + dy * k; out[i + 2] = base[i + 2] + dz * k;
   }
   return out;
+}
+
+// Section d'un muscle : on retire de l'affichage la portion située à moins de « rayon » d'un point ou d'une ligne ;
+// les moignons restent attachés à leur origine et à leur insertion. Sans consigne, le muscle redevient entier.
+function applyCut(part, cut) {
+  const geometry = part.mesh.geometry;
+  part.fullIndex ||= Uint32Array.from(geometry.getIndex().array);
+  if (!cut) { geometry.setIndex(new THREE.BufferAttribute(part.fullIndex, 1)); return; }
+  const base = part.base;
+  const line = Array.isArray(cut.autour[0]) ? cut.autour : [cut.autour, cut.autour];
+  const r2 = cut.rayon * cut.rayon;
+  const near = (x, y, z) => {
+    for (let s = 0; s < line.length - 1; s++) {
+      const a = line[s], b = line[s + 1];
+      const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+      const len2 = ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2];
+      let px = x - a[0], py = y - a[1], pz = z - a[2];
+      if (len2 > 0) {
+        const t = Math.max(0, Math.min(1, (px * ab[0] + py * ab[1] + pz * ab[2]) / len2));
+        px -= ab[0] * t; py -= ab[1] * t; pz -= ab[2] * t;
+      }
+      if (px * px + py * py + pz * pz < r2) return true;
+    }
+    return false;
+  };
+  const full = part.fullIndex;
+  const kept = [];
+  for (let i = 0; i < full.length; i += 3) {
+    const a = full[i] * 3, b = full[i + 1] * 3, c = full[i + 2] * 3;
+    if (!near((base[a] + base[b] + base[c]) / 3, (base[a + 1] + base[b + 1] + base[c + 1]) / 3, (base[a + 2] + base[b + 2] + base[c + 2]) / 3)) kept.push(full[i], full[i + 1], full[i + 2]);
+  }
+  geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(kept), 1));
 }
 
 let glideFrame = null;
@@ -392,8 +434,11 @@ const DIM = new THREE.Color('#5a6470');
 function applyState() {
   const step = mode === 'libre' ? null : STEPS[mode][stepIndex];
   // une étape peut désigner une pièce fendue par son nom d'origine : les deux berges sont alors concernées
-  const has = (list, id) => !!step && ((step[list] || []).includes(id) || (step[list] || []).includes(id.split('/')[0]));
+  // (« FMA1/A/B » hérite des consignes données à « FMA1/A » puis à « FMA1 »)
+  const lineage = id => id.split('/').map((_, i, all) => all.slice(0, all.length - i).join('/'));
+  const has = (list, id) => !!step && lineage(id).some(key => (step[list] || []).includes(key));
   const offsets = (step && step.ecarter) || {};
+  const cuts = (step && step.sectionner) || {};
   for (const [id, part] of parts) {
     const { mesh, groupe, couleur } = part;
     const material = mesh.material;
@@ -417,8 +462,13 @@ function applyState() {
     }
     mesh.userData.pickable = !hidden && !faded;
 
+    // section demandée par l'étape
+    const cut = lineage(id).map(key => cuts[key]).find(Boolean) || null;
+    const cutKey = cut ? JSON.stringify(cut) : '';
+    if (cutKey !== (part.cutKey || '')) { part.cutKey = cutKey; applyCut(part, cut); }
+
     // écartement demandé par l'étape
-    const spec = offsets[id] || offsets[id.split('/')[0]] || null;
+    const spec = lineage(id).map(key => offsets[key]).find(Boolean) || null;
     const specKey = spec ? JSON.stringify(spec) : '';
     if (specKey !== part.specKey) {
       part.specKey = specKey;
@@ -457,7 +507,7 @@ function renderCard(step) {
   $('#step-text').textContent = step.texte;
   // une pièce fendue est citée par son nom d'origine : on prend une berge et on retire la précision
   const chip = (id, danger) => {
-    const part = parts.get(id) || parts.get(`${id}/A`);
+    const part = parts.get(id) || [...parts].find(([key]) => key.startsWith(`${id}/`))?.[1];
     if (!part) return '';
     const nom = (parts.has(id) ? part.nom : part.nom.split(' — ')[0]).replace(' (schématique)', '');
     return `<span class="chip${danger ? ' danger' : ''}" style="--c:${part.couleur}"><i></i>${danger ? '⚠ ' : ''}${nom}</span>`;
