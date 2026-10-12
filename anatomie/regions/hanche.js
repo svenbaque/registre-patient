@@ -161,7 +161,7 @@ const voies = {
       ecarter: { ...FASCIA_OUVERT, FMA38930: [-6, -36, 0] } },
     { titre: 'Face latérale du fémur', vue: 'latProche',
       texte: 'La corticale latérale sous-trochantérienne est exposée, tenue par des écarteurs de Hohmann. Le viseur d’angle se pose sous le grand trochanter : la broche-guide vise le centre de la tête, de face comme de profil.',
-      accent: ['FMA24474', 'axe-vis'], danger: ['perforante1', 'perforante2'], montrer: ['axe-vis'], masquer: ['axe-clou'],
+      accent: ['axe-vis'], voiler: ['FMA24474'], danger: ['perforante1', 'perforante2'], montrer: ['axe-vis'], masquer: ['axe-clou'],
       ecarter: { ...FASCIA_OUVERT, FMA38930: [-6, -36, 0], FMA38934: [0, -14, 0] } },
   ] },
   clou: { court: 'Clou gamma', titre: 'Abord du grand trochanter (clou gamma)', steps: [
@@ -174,7 +174,7 @@ const voies = {
       ecarter: { 'FMA58776/A': [0, 26, 0], 'FMA58776/B': [0, -26, 0], 'FMA22328/A': [8, 22, 14], 'FMA22330/A': [0, 20, 0], 'FMA22330/B': [0, -20, 0] } },
     { titre: 'Point d’entrée et axe du clou', vue: 'trochanter',
       texte: 'Le point d’entrée est au sommet du grand trochanter de face, dans l’axe du canal médullaire de profil. La broche-guide puis le clou suivent l’axe du canal ; la vis cervicale vise le centre de la tête.',
-      accent: ['FMA24474', 'axe-clou', 'axe-vis'], danger: ['nglutealsup'], montrer: REPERES, estomper: ['FMA38930', 'FMA38934'],
+      accent: ['axe-clou', 'axe-vis'], voiler: ['FMA24474'], danger: ['nglutealsup'], montrer: REPERES, estomper: ['FMA38930', 'FMA38934'],
       ecarter: { 'FMA58776/A': [0, 30, 0], 'FMA58776/B': [0, -30, 0], 'FMA22328/A': [8, 26, 14], 'FMA22330/A': [0, 24, 0], 'FMA22330/B': [0, -24, 0] } },
   ] },
 };

@@ -9,7 +9,7 @@ const VOIES_ABORD = [
     ['Trochantérotomie, luxation de Ganz', 'reprises, tête fémorale'],
     ['Médiale de Ludloff', 'hanche de l’enfant']]],
   ['Épaule et clavicule', [
-    ['Delto-pectorale', 'humérus proximal, prothèse d’épaule'],
+    ['Delto-pectorale', 'humérus proximal, prothèse d’épaule', 'epaule:dp'],
     ['Supéro-latérale transdeltoïdienne', 'coiffe, clou huméral, trochiter'],
     ['Postérieure de l’épaule (Judet)', 'scapula, glène'],
     ['Abord direct de la clavicule', 'ostéosynthèse de la clavicule'],
@@ -66,15 +66,15 @@ const VOIES_ABORD = [
     ['Postérieure du creux poplité', 'fractures postérieures, LCP'],
     ['Abords arthroscopiques', 'ménisques, ligaments croisés']]],
   ['Jambe', [
-    ['Abord pour clou tibial', 'trans-tendineux, para-patellaire, supra-patellaire'],
+    ['Abord pour clou tibial', 'trans-tendineux, para-patellaire, supra-patellaire', 'genou:clou'],
     ['Antéro-latérale du tibia', 'plaque de tibia, pilon'],
     ['Médiale mini-invasive (MIPO)', 'tibia distal'],
     ['Postéro-latérale du tibia', 'pseudarthroses, greffes'],
     ['Latérale de la fibula', 'fractures de la fibula'],
     ['Aponévrotomies des quatre loges', 'syndrome des loges']]],
   ['Cheville et pilon tibial', [
-    ['Latérale de la malléole latérale', 'fibula distale'],
-    ['Médiale de la malléole médiale', 'vissage, haubanage'],
+    ['Latérale de la malléole latérale', 'fibula distale', 'cheville:lat'],
+    ['Médiale de la malléole médiale', 'vissage, haubanage', 'cheville:med'],
     ['Postéro-latérale de cheville', 'fragment de Volkmann'],
     ['Postéro-médiale de cheville', 'fragment postéro-médial'],
     ['Antérieure de cheville', 'arthrodèse, prothèse'],

@@ -8,7 +8,7 @@ const $ = sel => document.querySelector(sel);
 /* ---------- Région affichée ---------- */
 
 const params = new URLSearchParams(location.search);
-const REGIONS = ['hanche', 'poignet'];
+const REGIONS = ['hanche', 'poignet', 'genou', 'cheville', 'epaule'];
 const regionName = REGIONS.includes(params.get('region')) ? params.get('region') : 'hanche';
 const R = (await import(`./regions/${regionName}.js`)).default;
 const STEPS = Object.fromEntries(Object.entries(R.voies).map(([id, voie]) => [id, voie.steps]));
@@ -127,10 +127,12 @@ function applyState() {
     const faded = has('estomper', id);
     const strong = has('accent', id) || has('danger', id) || has('montrer', id);
     mesh.visible = !hidden;
-    material.transparent = faded || !!part.voile;
-    material.opacity = faded ? 0.06 : (part.voile ? 0.78 : 1);
-    material.depthWrite = !faded;
-    mesh.renderOrder = faded ? 2 : 0;
+    // « voiler » : os rendu translucide pour laisser voir un clou ou une vis à l'intérieur
+    const veiled = has('voiler', id);
+    material.transparent = faded || veiled || !!part.voile;
+    material.opacity = faded ? 0.06 : (veiled ? 0.38 : (part.voile ? 0.78 : 1));
+    material.depthWrite = !faded && !veiled;
+    mesh.renderOrder = faded ? 2 : (veiled ? 1 : 0);
     material.color.set(couleur);
     // sur une étape, ce qui n'est pas mis en avant est légèrement éteint pour faire ressortir le reste
     if (step && !strong && !faded && groupe !== 'os') material.color.lerp(new THREE.Color('#5a6470'), 0.45);
