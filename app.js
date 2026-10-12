@@ -611,7 +611,7 @@ function renderStats() {
 function renderVoies() {
   const ready = VOIES_ABORD.reduce((n, [, voies]) => n + voies.filter(v => v[2]).length, 0);
   view.innerHTML = `
-    <p class="voies-intro"><b>${plural(ready, 'voie')} en 3D</b> pour l’instant. Touchez une voie marquée <span class="tag-3d">3D</span> pour l’ouvrir : anatomie plan par plan, étapes et structures à risque.</p>
+    <p class="voies-intro"><b>${plural(ready, 'voie')} en 3D</b> pour l’instant. Touchez une voie marquée <span class="tag-3d">3D</span> pour l’ouvrir : étapes, muscles écartés comme au bloc et structures à risque.</p>
     ${VOIES_ABORD.map(([region, voies]) => `
       <h2 class="section">${esc(region)}</h2>
       <ul class="list">${voies.map(([nom, usage, voie3d]) => `
@@ -628,7 +628,8 @@ function openVoie3D(voie) {
   if (document.querySelector('.viewer3d')) return;
   const frame = document.createElement('div');
   frame.className = 'viewer3d';
-  frame.innerHTML = `<iframe src="anatomie/index.html?voie=${encodeURIComponent(voie)}" title="Voie d’abord en 3D" allowfullscreen></iframe>`;
+  const [region, id] = voie.split(':');
+  frame.innerHTML = `<iframe src="anatomie/index.html?region=${encodeURIComponent(region)}&voie=${encodeURIComponent(id)}" title="Voie d’abord en 3D" allowfullscreen></iframe>`;
   document.body.append(frame);
   document.body.classList.add('no-scroll');
 }

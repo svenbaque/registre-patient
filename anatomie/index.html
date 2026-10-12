@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <title>Hanche 3D — voies d'abord</title>
+  <title>Voies d'abord en 3D</title>
   <meta name="theme-color" content="#0e1622">
   <style>
     :root { --bg: #0e1622; --panel: rgba(20, 30, 45, .88); --text: #e8eef6; --muted: #9db0c6; --line: rgba(255, 255, 255, .12); --accent: #4aa8ff; --danger: #ffd23f; }
@@ -14,8 +14,8 @@
 
     .top { position: fixed; top: 0; left: 0; right: 0; z-index: 2; display: flex; gap: 8px; align-items: center; padding: calc(env(safe-area-inset-top) + 10px) 12px 10px; pointer-events: none; }
     .top > * { pointer-events: auto; }
-    .modes { display: flex; flex: 1; max-width: 520px; background: var(--panel); border-radius: 999px; padding: 4px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-    .modes button { flex: 1; border: 0; background: none; padding: 9px 6px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .modes { display: flex; flex: 1; min-width: 0; max-width: 620px; overflow-x: auto; scrollbar-width: none; background: var(--panel); border-radius: 999px; padding: 4px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+    .modes button { flex: 1 0 auto; border: 0; background: none; padding: 9px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; }
     .modes button.on { background: var(--accent); color: #fff; }
     .round { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--panel); font-size: 18px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 
@@ -60,9 +60,6 @@
   <div class="top">
     <button class="round" id="back" aria-label="Retour" hidden>‹</button>
     <div class="modes" id="modes">
-      <button data-mode="post" class="on">Postérieure</button>
-      <button data-mode="ant">Antérieure</button>
-      <button data-mode="libre">Libre</button>
     </div>
     <button class="round" id="open-drawer" aria-label="Structures">☰</button>
   </div>
@@ -91,7 +88,7 @@
     </p>
   </aside>
 
-  <div class="loading" id="loading"><b>Hanche 3D</b><span id="loading-text">Chargement de l’anatomie…</span><div class="bar"><i id="loading-bar"></i></div></div>
+  <div class="loading" id="loading"><b>Voies d’abord en 3D</b><span id="loading-text">Chargement de l’anatomie…</span><div class="bar"><i id="loading-bar"></i></div></div>
 
   <script type="module" src="app.js"></script>
 </body>

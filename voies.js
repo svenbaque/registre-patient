@@ -1,8 +1,8 @@
-// Voies d'abord de traumatologie et d'orthopédie, par région : [nom, utilisations, voie 3D disponible (paramètre du visualiseur)].
+// Voies d'abord de traumatologie et d'orthopédie, par région : [nom, utilisations, voie 3D disponible (« région:voie » du visualiseur)].
 const VOIES_ABORD = [
   ['Hanche', [
-    ['Postérieure de Moore', 'PTH, prothèse intermédiaire', 'post'],
-    ['Antérieure de Hueter', 'PTH, prothèse intermédiaire', 'ant'],
+    ['Postérieure de Moore', 'PTH, prothèse intermédiaire', 'hanche:post'],
+    ['Antérieure de Hueter', 'PTH, prothèse intermédiaire', 'hanche:ant'],
     ['Antéro-latérale de Watson-Jones / Röttinger', 'PTH, col fémoral'],
     ['Latérale transglutéale de Hardinge', 'PTH, prothèse intermédiaire'],
     ['Smith-Petersen', 'abord antérieur étendu'],
@@ -49,8 +49,8 @@ const VOIES_ABORD = [
     ['Pfannenstiel', 'symphyse pubienne'],
     ['Abords de la sacro-iliaque', 'anneau pelvien postérieur']]],
   ['Fémur', [
-    ['Latérale du fémur proximal', 'DHS, vis-plaque'],
-    ['Abord du grand trochanter pour clou', 'clou gamma, clou fémoral'],
+    ['Latérale du fémur proximal', 'DHS, vis-plaque', 'hanche:dhs'],
+    ['Abord du grand trochanter pour clou', 'clou gamma, clou fémoral', 'hanche:clou'],
     ['Latérale / postéro-latérale de la diaphyse', 'plaque de fémur'],
     ['Latérale du fémur distal, sub-vastus', 'plaque condylienne'],
     ['Para-patellaire / swashbuckler', 'fémur distal articulaire'],
