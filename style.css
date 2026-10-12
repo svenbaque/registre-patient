@@ -380,3 +380,18 @@ details.section .fiche-content { box-shadow: none; border-top-color: var(--line)
 /* Visionneuse : fermeture en glissant vers le haut */
 .viewer-track { touch-action: pan-x; }
 .viewer.leaving { transition: transform .2s ease, opacity .2s ease; transform: translateY(-100%) !important; opacity: 0 !important; }
+
+/* Plusieurs opérations par patient */
+.op-block { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 12px 12px 2px; margin-bottom: 10px; }
+.op-block .btn.danger { margin: 0 0 10px; padding: 4px 2px; font-size: 14px; }
+.sheet .btn.add-op { display: block; width: 100%; margin-bottom: 14px; border-style: dashed; border-color: var(--brand); color: var(--brand); background: var(--brand-soft); border-radius: 16px; }
+.card-op + .card-op { margin-top: 0; }
+
+/* Astuces d'une fiche : commentaires des patients regroupés */
+details.section.astuces { margin-bottom: 12px; }
+details.section.astuces summary { color: #b7791f; }
+.tip-count { flex-shrink: 0; min-width: 26px; padding: 3px 9px; border-radius: 999px; background: #fff3cd; color: #7a5a00; font-size: 13px; text-align: center; }
+.tip { display: block; width: 100%; margin: 0 0 8px; padding: 10px 12px; border: 0; border-radius: 14px; background: var(--bg); color: var(--text); text-align: left; font-size: 15px; }
+.tip-who { display: block; font-size: 13px; color: var(--muted); margin-bottom: 3px; }
+.tip-who strong { color: var(--brand); }
+.tip-text { display: block; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }

@@ -211,15 +211,19 @@ const allFiches = () => [
 // Rôle au bloc : opérateur (par défaut, y compris pour les patients saisis avant ce choix) ou aide.
 const isAide = p => p.role === 'aide';
 
+// Opérations d'un patient : la première (operation / commentaire, format d'origine) puis les suivantes (autres).
+const opsOf = p => [{ operation: p.operation || '', commentaire: p.commentaire || '' }, ...(p.autres || [])].filter(o => key(o.operation));
+
 function operationsStats(patients = store.data.patients) {
   const map = new Map();
   for (const p of patients) {
-    const k = key(p.operation);
-    if (!k) continue;
-    if (!map.has(k)) map.set(k, { label: p.operation.trim(), count: 0, noteSum: 0, noted: 0 });
-    const op = map.get(k);
-    op.count++;
-    if (p.note) { op.noteSum += p.note; op.noted++; }
+    for (const o of opsOf(p)) {
+      const k = key(o.operation);
+      if (!map.has(k)) map.set(k, { label: o.operation.trim(), count: 0, noteSum: 0, noted: 0 });
+      const op = map.get(k);
+      op.count++;
+      if (p.note) { op.noteSum += p.note; op.noted++; }
+    }
   }
   return [...map.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'fr'));
 }
@@ -257,7 +261,7 @@ function renderPatientList() {
   const list = $('#patient-list');
   const q = key(search);
   const patients = store.data.patients
-    .filter(p => !q || key(`${p.nom} ${p.prenom} ${p.operation} ${p.commentaire}`).includes(q))
+    .filter(p => !q || key(`${p.nom} ${p.prenom} ${opsOf(p).map(o => `${o.operation} ${o.commentaire}`).join(' ')}`).includes(q))
     .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id));
   if (!patients.length) {
     list.innerHTML = `<li class="empty">${store.data.patients.length
@@ -272,9 +276,9 @@ function renderPatientList() {
         <strong>${esc((p.nom || '').toUpperCase())} ${esc(p.prenom)}${p.age ? `<span class="age"> · ${esc(p.age)} ans</span>` : ''}</strong>
         ${p.note ? stars(p.note) : ''}
       </div>
-      <div class="card-op">${esc(p.operation)}</div>
+      ${opsOf(p).map(o => `<div class="card-op">${esc(o.operation)}</div>`).join('')}
       <div class="card-date">${esc(frDate(p.date))}</div>
-      ${p.commentaire ? `<p class="card-comment">${esc(p.commentaire)}</p>` : ''}
+      ${opsOf(p).some(o => o.commentaire) ? `<p class="card-comment">${esc(opsOf(p).map(o => o.commentaire).filter(Boolean).join(' · '))}</p>` : ''}
       ${p.radios?.length ? `<button type="button" class="open-radios" data-radios="${esc(p.id)}">🩻 Voir ${p.radios.length > 1 ? `les ${p.radios.length} radios` : 'la radio'}</button>` : ''}
     </li>`).join('');
   list.querySelectorAll('.card').forEach(li => li.addEventListener('click', () => openPatientForm(li.dataset.id)));
@@ -309,13 +313,12 @@ function openPatientForm(id) {
       <label>Nom<input name="nom" value="${esc(p.nom)}" autocomplete="off" autocapitalize="characters" required></label>
       <label>Prénom<input name="prenom" value="${esc(p.prenom)}" autocomplete="off" autocapitalize="words"></label>
       <label>Âge (ans)<input type="number" name="age" value="${esc(p.age)}" min="0" max="120" step="1" inputmode="numeric" autocomplete="off"></label>
-      <label>Opération réalisée<input name="operation" id="op-input" value="${esc(p.operation)}" autocomplete="off" placeholder="Choisir ou écrire une opération" required></label>
-      <div class="suggest" id="op-suggest" hidden></div>
       <label>Date<input type="date" name="date" value="${esc(p.date)}"></label>
+      <div id="ops-list"></div>
+      <button type="button" class="btn ghost add-op" id="add-op">+ Ajouter une autre opération</button>
       <div class="field">Comment je m’en suis sorti
         <div class="star-input" id="star-input">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-n="${i}" aria-label="${i} étoile${i > 1 ? 's' : ''}">★</button>`).join('')}</div>
       </div>
-      <label>Commentaire<textarea name="commentaire" rows="4" placeholder="Difficultés, points à retenir…">${esc(p.commentaire)}</textarea></label>
       <div class="field">Radios post-op
         <div class="radio-grid" id="radio-grid"></div>
         <label class="btn ghost file">📷 Ajouter une radio<input type="file" id="radio-input" accept="image/*" multiple hidden></label>
@@ -334,26 +337,45 @@ function openPatientForm(id) {
   }));
   paintStars();
 
-  // Menu déroulant des opérations : tout s'affiche au toucher du champ, puis se filtre à la frappe.
-  const opInput = $('#op-input');
-  const opSuggest = $('#op-suggest');
-  const paintSuggest = () => {
-    const q = key(opInput.value);
-    const matches = suggestions.filter(s => key(s).includes(q) && key(s) !== q);
-    opSuggest.hidden = !matches.length;
-    opSuggest.innerHTML = matches.map(s => `<button type="button">${esc(s)}</button>`).join('');
+  // Opérations du patient : un bloc par opération (nom + commentaire). Le commentaire rejoint les « Astuces » de la fiche du même nom.
+  const opsList = $('#ops-list');
+  const addOpBlock = (op = { operation: '', commentaire: '' }) => {
+    const first = !opsList.children.length;
+    const block = document.createElement('div');
+    block.className = 'op-block';
+    block.innerHTML = `
+      <label>${first ? 'Opération réalisée' : 'Autre opération'}<input class="op-input" value="${esc(op.operation)}" autocomplete="off" placeholder="Choisir ou écrire une opération"${first ? ' required' : ''}></label>
+      <div class="suggest" hidden></div>
+      <label>Commentaire<textarea class="op-comment" rows="3" placeholder="Difficultés, astuces, points à retenir…">${esc(op.commentaire)}</textarea></label>
+      ${first ? '' : '<button type="button" class="btn danger op-remove">Retirer cette opération</button>'}`;
+    opsList.append(block);
+
+    // Menu déroulant des opérations : tout s'affiche au toucher du champ, puis se filtre à la frappe.
+    const opInput = $('.op-input', block);
+    const opSuggest = $('.suggest', block);
+    const paintSuggest = () => {
+      const q = key(opInput.value);
+      const matches = suggestions.filter(x => key(x).includes(q) && key(x) !== q);
+      opSuggest.hidden = !matches.length;
+      opSuggest.innerHTML = matches.map(x => `<button type="button">${esc(x)}</button>`).join('');
+    };
+    opInput.addEventListener('focus', paintSuggest);
+    opInput.addEventListener('input', paintSuggest);
+    opInput.addEventListener('blur', () => setTimeout(() => { opSuggest.hidden = true; }, 300));
+    // Empêche le champ de perdre le focus (et le menu de se fermer) avant que le choix soit pris en compte.
+    ['pointerdown', 'mousedown'].forEach(type => opSuggest.addEventListener(type, e => e.preventDefault()));
+    opSuggest.addEventListener('click', e => {
+      const choice = e.target.closest('button');
+      if (!choice) return;
+      opInput.value = choice.textContent;
+      opSuggest.hidden = true;
+    });
+    $('.op-remove', block)?.addEventListener('click', () => block.remove());
+    return block;
   };
-  opInput.addEventListener('focus', paintSuggest);
-  opInput.addEventListener('input', paintSuggest);
-  opInput.addEventListener('blur', () => setTimeout(() => { opSuggest.hidden = true; }, 300));
-  // Empêche le champ de perdre le focus (et le menu de se fermer) avant que le choix soit pris en compte.
-  ['pointerdown', 'mousedown'].forEach(type => opSuggest.addEventListener(type, e => e.preventDefault()));
-  opSuggest.addEventListener('click', e => {
-    const choice = e.target.closest('button');
-    if (!choice) return;
-    opInput.value = choice.textContent;
-    opSuggest.hidden = true;
-  });
+  const initialOps = opsOf(p);
+  (initialOps.length ? initialOps : [undefined]).forEach(op => addOpBlock(op));
+  $('#add-op').addEventListener('click', () => $('.op-input', addOpBlock()).focus());
 
   // Radios : vignettes, ajout (photo ou photothèque), retrait, affichage en grand.
   const grid = $('#radio-grid');
@@ -399,13 +421,16 @@ function openPatientForm(id) {
   $('#patient-form').addEventListener('submit', e => {
     e.preventDefault();
     const f = new FormData(e.target);
+    const ops = [...opsList.querySelectorAll('.op-block')]
+      .map(block => ({ operation: $('.op-input', block).value.trim(), commentaire: $('.op-comment', block).value.trim() }))
+      .filter(o => o.operation);
     const values = {
-      nom: f.get('nom').trim(), prenom: f.get('prenom').trim(), age: f.get('age') ? Number(f.get('age')) : '', operation: f.get('operation').trim(), role: f.get('role') === 'aide' ? 'aide' : 'operateur',
-      date: f.get('date') || today(), note, commentaire: f.get('commentaire').trim(), radios: radioIds,
+      nom: f.get('nom').trim(), prenom: f.get('prenom').trim(), age: f.get('age') ? Number(f.get('age')) : '', operation: ops[0].operation, role: f.get('role') === 'aide' ? 'aide' : 'operateur',
+      date: f.get('date') || today(), note, commentaire: ops[0].commentaire, autres: ops.slice(1), radios: radioIds,
     };
     [...(p.radios || []), ...addedIds].filter(rid => !radioIds.includes(rid)).forEach(rid => radios.remove(rid));
-    const created = ficheForNewOperation(values.operation, existing?.id);
-    if (created) toast(`Fiche « ${created.titre} » créée dans l’onglet Fiches`);
+    const created = ops.map(o => ficheForNewOperation(o.operation, existing?.id)).filter(Boolean);
+    if (created.length) toast(`${created.length > 1 ? 'Fiches' : 'Fiche'} ${created.map(c => `« ${c.titre} »`).join(', ')} ${created.length > 1 ? 'créées' : 'créée'} dans l’onglet Fiches`);
     if (existing) Object.assign(existing, values);
     else {
       backup.patientAdded(); // avant l'ajout : sans sauvegarde antérieure, le compte part du nombre de patients existants
@@ -657,7 +682,7 @@ function createBlankFiche(titre) {
 function ficheForNewOperation(operation, patientId) {
   const k = key(operation);
   if (!k) return null;
-  if (store.data.patients.some(p => p.id !== patientId && key(p.operation) === k)) return null;
+  if (store.data.patients.some(p => p.id !== patientId && opsOf(p).some(o => key(o.operation) === k))) return null;
   if (allFiches().some(f => key(f.titre) === k)) return null;
   return createBlankFiche(operation.trim());
 }
@@ -745,12 +770,25 @@ function renderFiche() {
   $('#title').textContent = f.titre;
   const sections = ficheSections(f);
   const hidden = (f.integree && store.data.ficheEdits?.[f.id]?.hidden) || [];
+  // Astuces : commentaires de tous les patients ayant eu cette opération, les plus récents d'abord.
+  const tips = store.data.patients
+    .flatMap(p => opsOf(p).filter(o => key(o.operation) === key(f.titre) && o.commentaire).map(o => ({ p, texte: o.commentaire })))
+    .sort((a, b) => (b.p.date || '').localeCompare(a.p.date || ''));
   view.innerHTML = `
     <button class="back" id="back">‹ Toutes les fiches</button>
     <section class="fiche-images">
       <h2>🖼 Mes images</h2>
       ${imageBlock(f.id, 'Ajouter une image')}
     </section>
+    <details class="section astuces" data-id="__astuces"${openSections.has(`${f.id}/__astuces`) ? ' open' : ''}>
+      <summary><span>💡 Astuces</span><span class="tip-count">${tips.length}</span></summary>
+      <div class="fiche-content">${tips.length ? tips.map(({ p, texte }) => `
+        <button type="button" class="tip" data-patient="${esc(p.id)}">
+          <span class="tip-who"><strong>${esc((p.nom || '').toUpperCase())} ${esc(p.prenom)}</strong> · ${esc(frDate(p.date))}${isAide(p) ? ' · aide' : ''}</span>
+          <span class="tip-text">${esc(texte)}</span>
+        </button>`).join('') : `<p><i>Les commentaires que vous écrivez sur les patients opérés de « ${esc(f.titre)} » se regroupent ici.</i></p>`}
+      </div>
+    </details>
     ${f.entete ? `<p class="fiche-entete">${esc(f.entete)}</p>` : ''}
     <div class="sections">${sections.map(sec => {
       const imgKey = `${f.id}/${sec.id}`;
@@ -779,6 +817,8 @@ function renderFiche() {
     openSectionForm(f, sections.find(sec => sec.id === b.dataset.edit));
   }));
   $('#add-section').addEventListener('click', () => openSectionForm(f));
+  // Une astuce touchée ouvre la fiche du patient d'où elle vient.
+  view.querySelectorAll('.tip').forEach(b => b.addEventListener('click', () => openPatientForm(b.dataset.patient)));
 
   // Glisser un titre vers la gauche découvre la croix rouge de suppression ; vers la droite, ou toucher ailleurs, la referme.
   view.querySelectorAll('.section-row').forEach(row => {
