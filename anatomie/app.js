@@ -8,7 +8,7 @@ const $ = sel => document.querySelector(sel);
 /* ---------- Région affichée ---------- */
 
 const params = new URLSearchParams(location.search);
-const REGIONS = ['hanche'];
+const REGIONS = ['hanche', 'poignet'];
 const regionName = REGIONS.includes(params.get('region')) ? params.get('region') : 'hanche';
 const R = (await import(`./regions/${regionName}.js`)).default;
 const STEPS = Object.fromEntries(Object.entries(R.voies).map(([id, voie]) => [id, voie.steps]));
@@ -31,7 +31,7 @@ scene.add(camera);
 
 const controls = new OrbitControls(camera, canvas);
 controls.target.set(...HANCHE);
-controls.minDistance = 90;
+controls.minDistance = 40;
 controls.maxDistance = 1400;
 controls.addEventListener('change', render);
 
