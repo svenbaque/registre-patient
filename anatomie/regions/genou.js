@@ -45,7 +45,9 @@ const vues = {
   jambe: { de: [330, -560, 20], cible: [-78, -72, 235] }, libre: { de: [-260, -330, 90] },
 };
 const REPERES = ['axe-clou', 'vis-prox', 'vis-dist'];
-const TENDON_FENDU = { 'tendon-lat': [-10, 0, 0], 'tendon-med': [10, 0, 0] };
+// Tendon fendu dans ses fibres : les deux moitiés s'écartent en leur milieu, leurs attaches (patella, tubérosité) ne bougent pas.
+const MILIEU_TENDON = [-87, -107, 381];
+const TENDON_FENDU = { 'tendon-lat': { dep: [-8, 0, 0], autour: MILIEU_TENDON, rayon: 15 }, 'tendon-med': { dep: [8, 0, 0], autour: MILIEU_TENDON, rayon: 15 } };
 
 const voies = {
   clou: { court: 'Clou tibial', titre: 'Abord pour clou tibial (trans-tendineux)', steps: [
@@ -53,7 +55,7 @@ const voies = {
       texte: 'Genou fléchi à 90° ou plus, jambe pendante ou sur cale. Incision longitudinale médiane sous-rotulienne, de la pointe de la patella à la tubérosité tibiale. Le rameau infra-patellaire du nerf saphène croise la partie basse de l’incision.',
       montrer: ['incision-clou'], accent: ['tendon-lat', 'tendon-med'], danger: ['infrapatellaire'], masquer: REPERES },
     { titre: 'Tendon rotulien', vue: 'proche',
-      texte: 'Le péritendon est décollé au bistouri pour faciliter la fermeture, puis le tendon rotulien est fendu dans l’axe de ses fibres, en son milieu, et ses deux moitiés sont écartées. Variante : abord para-patellaire médial, en réclinant le tendon en dehors.',
+      texte: 'Le péritendon est décollé au bistouri pour faciliter la fermeture, puis le tendon rotulien est fendu dans l’axe de ses fibres, en son milieu, et ses deux moitiés s’entrouvrent. Variante : abord para-patellaire médial, en réclinant le tendon en dehors.',
       accent: ['tendon-lat', 'tendon-med'], danger: ['infrapatellaire'], masquer: REPERES, ecarter: TENDON_FENDU },
     { titre: 'Point d’entrée', vue: 'entree',
       texte: 'De face, le point d’entrée est dans l’axe du canal médullaire, au bord médial de l’épine tibiale latérale. De profil, il est au bord antérieur du plateau tibial, dans le prolongement du canal. La réduction se joue ici : la tige-guide doit être centrée de face et de profil.',

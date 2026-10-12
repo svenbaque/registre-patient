@@ -52,8 +52,6 @@ const vues = {
 };
 const REPERES = ['plaque-fibula', 'vis-syndesmose', 'vis-mm1', 'vis-mm2'];
 const AUTRE_COTE_LAT = ['incision-med', ...REPERES];
-const FIBULAIRES_EN_ARRIERE = { FMA22552: [4, 11, 0], FMA22554: [4, 11, 0] };
-const MEDIAL_OUVERT = { vsaphene: [0, -9, 0], FMA65018: [2, 9, 0], FMA65016: [2, 9, 0] };
 
 const voies = {
   lat: { court: 'Malléole latérale', titre: 'Abord latéral de la malléole latérale', steps: [
@@ -61,24 +59,24 @@ const voies = {
       texte: 'Décubitus dorsal, coussin sous la fesse du même côté. Incision longitudinale centrée sur la fibula distale, légèrement en arrière de sa crête. Le nerf fibulaire superficiel croise en avant, environ quatre travers de doigt au-dessus de la pointe ; le nerf sural passe en arrière et en dessous.',
       montrer: ['incision-lat'], accent: ['FMA24480'], danger: ['nfibsup', 'sural'], masquer: AUTRE_COTE_LAT },
     { titre: 'Exposition du foyer', vue: 'latProche',
-      texte: 'Le plan est direct, sous-cutané. Les tendons fibulaires, en arrière de la fibula, sont réclinés en arrière si besoin. Le foyer est exposé en sous-périosté, sur la stricte étendue nécessaire à la réduction.',
-      accent: ['FMA24480', 'FMA22552', 'FMA22554'], danger: ['nfibsup', 'sural'], masquer: ['incision-lat', ...AUTRE_COTE_LAT], ecarter: FIBULAIRES_EN_ARRIERE },
+      texte: 'Le plan est direct, sous-cutané. Les tendons fibulaires restent en arrière de la fibula, protégés. Le foyer est exposé en sous-périosté, sur la stricte étendue nécessaire à la réduction.',
+      accent: ['FMA24480', 'FMA22552', 'FMA22554'], danger: ['nfibsup', 'sural'], masquer: ['incision-lat', ...AUTRE_COTE_LAT] },
     { titre: 'Plaque et syndesmose', vue: 'latProche',
       texte: 'Après réduction (longueur, rotation, axe), la plaque est posée sur la face latérale ou postéro-latérale de la fibula. Le test de la syndesmose se fait sous scopie après la fixation : si elle est instable, une vis de syndesmose est posée, cheville en position neutre, dirigée de 30° vers l’avant.',
       accent: ['plaque-fibula', 'vis-syndesmose'], voiler: ['FMA24480', 'FMA24477'], danger: ['nfibsup', 'sural'], montrer: ['plaque-fibula', 'vis-syndesmose'],
-      masquer: ['incision-lat', 'incision-med', 'vis-mm1', 'vis-mm2'], ecarter: FIBULAIRES_EN_ARRIERE },
+      masquer: ['incision-lat', 'incision-med', 'vis-mm1', 'vis-mm2'] },
   ] },
   med: { court: 'Malléole médiale', titre: 'Abord médial de la malléole médiale', steps: [
     { titre: 'Repères et incision', vue: 'med',
       texte: 'Incision arciforme antéro-médiale, centrée sur la malléole médiale. La grande veine saphène et le nerf saphène passent juste en avant de la malléole : ils sont repérés et protégés.',
       montrer: ['incision-med'], accent: ['FMA24477'], danger: ['vsaphene'], masquer: ['incision-lat', ...REPERES] },
     { titre: 'Exposition du foyer', vue: 'medProche',
-      texte: 'La veine saphène est écartée en avant. Le foyer est exposé et nettoyé : le périoste ou le ligament deltoïde s’y interposent souvent. En arrière de la malléole, le tendon tibial postérieur puis le paquet tibial postérieur sont protégés.',
-      accent: ['FMA24477', 'FMA65018'], danger: ['vsaphene', 'tibialpost'], masquer: ['incision-lat', 'incision-med', ...REPERES], ecarter: MEDIAL_OUVERT },
+      texte: 'La veine saphène reste en avant, protégée par un écarteur. Le foyer est exposé et nettoyé : le périoste ou le ligament deltoïde s’y interposent souvent. En arrière de la malléole, le tendon tibial postérieur puis le paquet tibial postérieur sont protégés.',
+      accent: ['FMA24477', 'FMA65018'], danger: ['vsaphene', 'tibialpost'], masquer: ['incision-lat', 'incision-med', ...REPERES] },
     { titre: 'Vissage', vue: 'medProche',
       texte: 'Réduction anatomique sous contrôle de la vue et de la scopie, puis fixation par deux vis parallèles, perpendiculaires au trait, ou par embrochage-haubanage si le fragment est petit ou ostéoporotique.',
       accent: ['vis-mm1', 'vis-mm2'], voiler: ['FMA24477'], danger: ['vsaphene', 'tibialpost'], montrer: ['vis-mm1', 'vis-mm2'],
-      masquer: ['incision-lat', 'incision-med', 'plaque-fibula', 'vis-syndesmose'], ecarter: MEDIAL_OUVERT },
+      masquer: ['incision-lat', 'incision-med', 'plaque-fibula', 'vis-syndesmose'] },
   ] },
 };
 

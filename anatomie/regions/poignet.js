@@ -57,10 +57,8 @@ const vues = {
 };
 
 const REPERES = ['watershed', 'axe-plaque'];
-// Écartements (dx vers le côté ulnaire si positif, vers le côté radial si négatif).
-const FCR_ULNAIRE = { FMA38460: [9, -2, 0] };
-const TENDONS_ULNAIRES = { FMA38460: [13, -2, 0], FMA38482: [15, -3, 0], FMA38463: [13, -2, 0], FMA38640: [13, -2, 0], FMA38638: [13, -2, 0], FMA38479: [13, -2, 0], nmedian: [13, -2, 0], 'rameau-palmaire': [13, -2, 0] };
-const BORD_RADIAL = { FMA38486: [-7, 0, 0], aradiale: [-7, 0, 0] };
+// Les tendons restent sur leur trajet : pour montrer le plan profond, les fléchisseurs réclinés deviennent translucides.
+const FLECHISSEURS = ['FMA38460', 'FMA38482', 'FMA38463', 'FMA38640', 'FMA38638', 'FMA38479'];
 
 const voies = {
   henry: { court: 'Henry modifiée', titre: 'Voie de Henry modifiée (trans-gaine du FCR)', steps: [
@@ -69,18 +67,16 @@ const voies = {
       montrer: ['incision-henry'], accent: ['FMA38460'], danger: ['aradiale'], masquer: REPERES },
     { titre: 'Gaine du FCR', vue: 'proche',
       texte: 'La gaine du FCR est ouverte sur toute la longueur de l’incision, sur son versant radial. Le tendon est écarté du côté ulnaire : il protège le nerf médian et son rameau cutané palmaire, qui longe son bord ulnaire. L’artère radiale reste en dehors, sans être disséquée.',
-      accent: ['FMA38460'], danger: ['aradiale', 'rameau-palmaire', 'nmedian'], masquer: REPERES, ecarter: FCR_ULNAIRE },
+      accent: ['FMA38460'], danger: ['aradiale', 'rameau-palmaire', 'nmedian'], masquer: REPERES },
     { titre: 'Plancher de la gaine et long fléchisseur du pouce', vue: 'proche',
-      texte: 'Le plancher de la gaine est incisé. Le long fléchisseur du pouce est récliné du côté ulnaire, au doigt, avec les autres fléchisseurs et le nerf médian. Le brachio-radial et l’artère radiale sont écartés du côté radial. Le carré pronateur apparaît.',
-      accent: ['FMA38482', 'FMA38454'], danger: ['aradiale', 'nmedian'], masquer: REPERES, ecarter: { ...TENDONS_ULNAIRES, ...BORD_RADIAL } },
+      texte: 'Le plancher de la gaine est incisé. Le long fléchisseur du pouce est récliné du côté ulnaire, au doigt, avec les autres fléchisseurs et le nerf médian ; le brachio-radial et l’artère radiale restent du côté radial. Les fléchisseurs sont ici translucides : le carré pronateur apparaît.',
+      accent: ['FMA38454'], danger: ['aradiale', 'nmedian'], voiler: FLECHISSEURS, masquer: REPERES },
     { titre: 'Carré pronateur', vue: 'proche',
-      texte: 'Le carré pronateur est incisé en L, le long de son insertion radiale et de son bord distal, puis relevé en sous-périosté du côté ulnaire. La face palmaire du radius distal est exposée, jusqu’à la watershed line.',
-      accent: ['FMA23464', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: ['watershed'], masquer: ['axe-plaque'],
-      ecarter: { ...TENDONS_ULNAIRES, ...BORD_RADIAL, FMA38454: [24, -8, 0] } },
+      texte: 'Le carré pronateur est incisé en L, le long de son insertion radiale et de son bord distal, puis relevé en sous-périosté du côté ulnaire ; il est ici translucide. La face palmaire du radius distal est exposée, jusqu’à la watershed line.',
+      accent: ['FMA23464', 'watershed'], danger: ['aradiale', 'nmedian'], voiler: [...FLECHISSEURS, 'FMA38454'], montrer: ['watershed'], masquer: ['axe-plaque'] },
     { titre: 'Réduction et plaque', vue: 'proche',
       texte: 'Après réduction, la plaque est posée sur la face palmaire du radius, en proximal de la watershed line : plus distale, elle entre en conflit avec les tendons fléchisseurs. En fin d’intervention, le carré pronateur est rabattu sur la plaque et suturé si possible.',
-      accent: ['axe-plaque', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: REPERES,
-      ecarter: { ...TENDONS_ULNAIRES, ...BORD_RADIAL, FMA38454: [24, -8, 0] } },
+      accent: ['axe-plaque', 'watershed'], danger: ['aradiale', 'nmedian'], voiler: [...FLECHISSEURS, 'FMA38454'], montrer: REPERES },
   ] },
 };
 

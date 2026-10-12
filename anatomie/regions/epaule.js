@@ -43,11 +43,14 @@ const groupes = [
 const centre = [-165, -88, 1295];
 const vues = { ant: { de: [-110, -430, 70] }, proche: { de: [-95, -310, 35] }, humerus: { de: [-150, -290, 10], cible: [-178, -84, 1285] }, libre: { de: [-330, -330, 120] } };
 
-// Deltoïde (avec la veine céphalique) en dehors, grand pectoral en dedans.
-const SILLON_OUVERT = { FMA34680: [-26, -5, 0], cephalique: [-26, -5, 0], FMA34682: [-12, 0, 0], FMA34690: [26, -5, 0], FMA79979: [26, -5, 0], FMA45874: [26, -5, 0] };
-// Pour exposer l'humérus, le deltoïde est récliné plus loin en dehors.
-const DELTOIDE_RECLINE = { FMA34680: [-44, -6, 0], cephalique: [-44, -6, 0], FMA34682: [-22, 2, 0] };
-const CONJOINT_EN_DEDANS = { FMA37665: [15, -2, 0], FMA37684: [15, -2, 0], musculocutane: [15, -2, 0] };
+// Aucun muscle n'est incisé : le sillon delto-pectoral s'entrouvre seulement en regard de l'incision.
+const LIGNE_SILLON = [[-140, -116, 1325], [-186, -106, 1260]];
+const SILLON_OUVERT = {
+  FMA34680: { dep: [-8, -1, 0], autour: LIGNE_SILLON, rayon: 26 }, cephalique: { dep: [-8, -1, 0], autour: LIGNE_SILLON, rayon: 26 },
+  FMA34690: { dep: [8, -1, 0], autour: LIGNE_SILLON, rayon: 26 },
+};
+// Pour montrer le plan profond, deltoïde et grand pectoral restent en place et deviennent translucides.
+const PLAN_SUPERFICIEL = ['FMA34680', 'FMA34690', 'FMA79979', 'FMA45874'];
 
 const voies = {
   dp: { court: 'Delto-pectorale', titre: 'Voie delto-pectorale', steps: [
@@ -55,14 +58,14 @@ const voies = {
       texte: 'Position demi-assise, bras libre. Repère : le processus coracoïde. L’incision part de la coracoïde et descend obliquement en bas et en dehors, le long du sillon delto-pectoral, vers l’insertion du deltoïde.',
       montrer: ['incision-dp'], accent: ['FMA34680', 'FMA34690'], danger: ['cephalique'], masquer: ['axe-plaque'] },
     { titre: 'Sillon delto-pectoral', vue: 'proche',
-      texte: 'La veine céphalique repère le sillon. Elle est le plus souvent laissée en dehors, avec le deltoïde, après ligature de ses branches médiales. Le deltoïde est écarté en dehors, le grand pectoral en dedans.',
+      texte: 'La veine céphalique repère le sillon. Elle est le plus souvent laissée en dehors, avec le deltoïde, après ligature de ses branches médiales. Le sillon s’entrouvre en regard de l’incision : deltoïde en dehors, grand pectoral en dedans.',
       accent: ['FMA34680', 'FMA34690'], danger: ['cephalique'], masquer: ['axe-plaque'], ecarter: SILLON_OUVERT },
     { titre: 'Fascia clavi-pectoral et tendon conjoint', vue: 'proche',
-      texte: 'Le fascia clavi-pectoral est incisé en dehors du tendon conjoint (coraco-brachial et chef court du biceps), qui est écarté en dedans, avec douceur : le nerf musculo-cutané pénètre le coraco-brachial quelques centimètres sous la coracoïde.',
-      accent: ['FMA37665', 'FMA37684'], danger: ['musculocutane'], masquer: ['axe-plaque'], ecarter: { ...SILLON_OUVERT, ...CONJOINT_EN_DEDANS } },
+      texte: 'Le fascia clavi-pectoral est incisé en dehors du tendon conjoint (coraco-brachial et chef court du biceps), qui est récliné en dedans, avec douceur (deltoïde et grand pectoral sont ici translucides) : le nerf musculo-cutané pénètre le coraco-brachial quelques centimètres sous la coracoïde.',
+      accent: ['FMA37665', 'FMA37684'], danger: ['musculocutane'], voiler: PLAN_SUPERFICIEL, masquer: ['axe-plaque'], ecarter: SILLON_OUVERT },
     { titre: 'Humérus proximal', vue: 'humerus',
       texte: 'La tête humérale, les tubercules et le tendon du long biceps, dans sa gouttière, sont exposés ; le sous-scapulaire est en avant. Le nerf axillaire passe au bord inférieur du sous-scapulaire puis contourne le col chirurgical : pas d’écarteur aveugle sous le deltoïde, pas de dissection en dessous du sous-scapulaire. La plaque se pose en dehors de la gouttière bicipitale.',
-      accent: ['FMA23130', 'FMA37686', 'axe-plaque'], danger: ['axillaire'], montrer: ['axe-plaque'], ecarter: { ...SILLON_OUVERT, ...CONJOINT_EN_DEDANS, ...DELTOIDE_RECLINE } },
+      accent: ['FMA23130', 'FMA37686', 'axe-plaque'], danger: ['axillaire'], voiler: [...PLAN_SUPERFICIEL, 'FMA34682'], montrer: ['axe-plaque'], ecarter: SILLON_OUVERT },
   ] },
 };
 
