@@ -117,20 +117,26 @@ const vues = {
 };
 
 const REPERES = ['watershed', 'axe-plaque'];
-// Ouverture le long de l'incision, sur le versant médial (ulnaire) du FCR, comme dans la fiche :
-// le FCR et le long palmaire partent en dehors (côté radial) avec l'artère radiale ; le long fléchisseur du pouce, les autres
-// fléchisseurs et le nerf médian partent en dedans (côté ulnaire). Nerfs et vaisseaux suivent le muscle avec lequel ils sont écartés.
-const LIGNE_HENRY = [[-256, -130, 826], [-250, -126, 858], [-244, -122, 894]];
+// Ouverture limitée au site opéré, sur le versant médial (ulnaire) du FCR, comme dans la fiche. Les tendons ne s'écartent
+// qu'en regard de l'incision, quelques centimètres au-dessus du pli du poignet : ils restent fixes au canal carpien et à leurs
+// insertions, et leurs corps musculaires ne bougent pas. FCR et long palmaire en dehors (côté radial) avec l'artère radiale ;
+// long fléchisseur du pouce, autres fléchisseurs et nerf médian en dedans. Nerfs et vaisseaux suivent le muscle écarté.
+const LIGNE_HENRY = [[-251, -127, 848], [-245, -123, 888]];
 const henry = k => {
-  const dehors = { dep: [-13 * k, 0, 0], autour: LIGNE_HENRY, rayon: 36 };
-  const dedans = { dep: [13 * k, 0, 0], autour: LIGNE_HENRY, rayon: 36 };
+  const dehors = { dep: [-12 * k, 0, 0], autour: LIGNE_HENRY, rayon: 20 };
+  const dedans = { dep: [12 * k, 0, 0], autour: LIGNE_HENRY, rayon: 20 };
   return {
     FMA38460: dehors, FMA38463: dehors, aradiale: dehors, vradiales: dehors, FMA38486: dehors,
     FMA38482: dedans, FMA38640: dedans, FMA38638: dedans, FMA38479: dedans, nmedian: dedans, 'rameau-palmaire': dedans,
   };
 };
-// Carré pronateur incisé en L le long de son insertion radiale et relevé vers l'ulna : sa moitié radiale est retirée, le moignon ulnaire reste.
-const SECTION_CARRE = { FMA38454: { autour: [[-266, -116, 832], [-262, -110, 880]], rayon: 19 } };
+// Carré pronateur incisé en L le long de son insertion radiale : la berge radiale (« /B ») reste sur le radius,
+// le corps du muscle (« /A ») est relevé vers l'ulna, où il garde son attache.
+const INCISION_CARRE = [[-265, -117, 834], [-262, -111, 878]];
+const CARRE_RECLINE = { 'FMA38454/A': { dep: [20, -5, 0], autour: INCISION_CARRE, rayon: 21 } };
+const fendre = [
+  ['FMA38454', [-265, -114, 855], [1, 0, 0], 'Carré pronateur — corps relevé', 'Carré pronateur — berge radiale'],
+];
 
 const voies = {
   henry: { court: 'Henry modifiée', titre: 'Voie de Henry modifiée (trans-gaine du FCR)', steps: [
@@ -144,12 +150,12 @@ const voies = {
       texte: 'Le plancher de la gaine est incisé. Le long fléchisseur du pouce est récliné en dedans, au doigt, avec les autres fléchisseurs et le nerf médian. Le carré pronateur apparaît au fond.',
       accent: ['FMA38482', 'FMA38454'], danger: ['aradiale', 'nmedian'], masquer: [...REPERES, 'gaine-fcr'], ecarter: henry(1) },
     { titre: 'Carré pronateur', vue: 'proche',
-      texte: 'Le carré pronateur est incisé en L, le long de son insertion radiale et de son bord distal, puis relevé en sous-périosté vers l’ulna : sa moitié radiale est ici retirée, son attache ulnaire reste. La face palmaire du radius distal est exposée, jusqu’à la watershed line.',
-      accent: ['FMA23464', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: ['watershed'], masquer: ['axe-plaque', 'gaine-fcr'], ecarter: henry(1.15), sectionner: SECTION_CARRE },
+      texte: 'Le carré pronateur est incisé en L, le long de son insertion radiale et de son bord distal, puis relevé en sous-périosté vers l’ulna : sa berge radiale reste sur le radius, son corps bascule en dedans en gardant son attache ulnaire. La face palmaire du radius distal est exposée, jusqu’à la watershed line.',
+      accent: ['FMA23464', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: ['watershed'], masquer: ['axe-plaque', 'gaine-fcr'], ecarter: { ...henry(1.15), ...CARRE_RECLINE } },
     { titre: 'Réduction et plaque', vue: 'proche',
       texte: 'Après réduction, la plaque est posée sur la face palmaire du radius, en proximal de la watershed line : plus distale, elle entre en conflit avec les tendons fléchisseurs. En fin d’intervention, le carré pronateur est rabattu sur la plaque et suturé si possible.',
-      accent: ['axe-plaque', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: REPERES, masquer: ['gaine-fcr'], ecarter: henry(1.15), sectionner: SECTION_CARRE },
+      accent: ['axe-plaque', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: REPERES, masquer: ['gaine-fcr'], ecarter: { ...henry(1.15), ...CARRE_RECLINE } },
   ] },
 };
 
-export default { nom: 'Poignet droit', dossier: 'models-hd', centre, vues, meshes, tubes, groupes, voies };
+export default { nom: 'Poignet droit', dossier: 'models-hd', centre, vues, meshes, fendre, tubes, groupes, voies };

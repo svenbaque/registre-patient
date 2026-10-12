@@ -142,7 +142,17 @@ const moore = k => {
 };
 const MOORE_OUVERT = moore(1);
 // Pelvi-trochantériens sectionnés au ras du trochanter : la portion proche de l'insertion est retirée, le corps musculaire et le moignon restent.
-const SECTION_ROTATEURS = Object.fromEntries(ROTATEURS.map(id => [id, { autour: [[-122, -74, 800], [-118, -72, 832]], rayon: 15 }]));
+const LIGNE_TROCHANTER = [[-122, -74, 798], [-118, -72, 834]]; // insertion trochantérienne des pelvi-trochantériens
+const SECTION_ROTATEURS = Object.fromEntries(ROTATEURS.map(id => [id, { autour: LIGNE_TROCHANTER, rayon: 9 }]));
+// Lambeau postérieur : pelvi-trochantériens et capsule postérieure, sectionnés ensemble au ras du trochanter et du col,
+// sont rabattus d'un seul tenant en arrière et en dedans. Seule leur extrémité libre se déplace ; leur origine pelvienne ne bouge pas.
+const RABAT = { dep: [34, 30, 0], autour: LIGNE_TROCHANTER, rayon: 34 };
+const LAMBEAU_POSTERIEUR = {
+  ...Object.fromEntries(ROTATEURS.map(id => [id, RABAT])),
+  capsule: { dep: [30, 26, 0], autour: [[-110, -68, 796], [-104, -66, 832]], rayon: 24 },
+};
+// La capsule est incisée le long du col, en arrière, pour être rabattue avec les rotateurs.
+const SECTION_CAPSULE_POST = { capsule: { autour: [[-112, -70, 796], [-108, -68, 832]], rayon: 8 } };
 // Pour montrer le fond de la plaie sans transparence : le grand fessier et le fascia sont sectionnés autour de la partie haute de l'incision ;
 // leurs attaches (sacrum, crête iliaque, fémur, tractus) restent en place.
 const FENETRE_MOORE = [[-152, -74, 792], [-143, -52, 838], [-128, -30, 866]];
@@ -192,12 +202,15 @@ const voies = {
     { titre: 'Pelvi-trochantériens et nerf sciatique', vue: 'postProche',
       texte: 'Les lèvres de l’incision sont tenues écartées ; pour montrer le fond, le grand fessier est ici sectionné autour de l’incision, ses attaches restant en place. Membre en rotation interne pour tendre les rotateurs. De haut en bas, au fond de la plaie : piriforme, jumeau supérieur, obturateur interne, jumeau inférieur, carré fémoral. Le nerf sciatique sort sous le piriforme et descend en arrière d’eux : le repérer et le protéger.',
       accent: [...ROTATEURS, 'FMA22338'], danger: ['sciatique'], masquer: REPERES, ecarter: MOORE_OUVERT, sectionner: SECTION_FESSIER },
-    { titre: 'Section des pelvi-trochantériens', vue: 'postProche',
-      texte: 'Piriforme, jumeaux et obturateur interne sont sectionnés au ras de leur insertion trochantérienne : on voit leur moignon sur le trochanter et leur corps, mis sur fils et rabattu en arrière, où il protège le nerf sciatique. Le carré fémoral est respecté ou partiellement désinséré. La capsule postérieure apparaît dans la brèche.',
-      accent: ['capsule', ...ROTATEURS], danger: ['sciatique'], masquer: REPERES, ecarter: MOORE_OUVERT, sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS } },
-    { titre: 'Capsulotomie et luxation', vue: 'postProche',
-      texte: 'Capsulotomie postérieure, puis luxation de la tête par flexion, adduction et rotation interne. Le col est exposé pour la coupe ; le cotyle sera abordé après l’exérèse de la tête.',
-      accent: ['FMA24474', 'capsule'], danger: ['sciatique'], masquer: REPERES, ecarter: MOORE_OUVERT, sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS, capsule: { autour: [[-104, -66, 800], [-92, -64, 832]], rayon: 17 } } },
+    { titre: 'Section des pelvi-trochantériens et de la capsule', vue: 'postProche',
+      texte: 'Piriforme, jumeaux et obturateur interne sont sectionnés au ras de leur insertion trochantérienne, puis la capsule postérieure est incisée le long du col. Rotateurs et capsule sont rabattus d’un seul tenant, en arrière et en dedans, sur fils : ce lambeau recouvre et protège le nerf sciatique, et découvre la tête et le col du fémur. Le carré fémoral est respecté ou partiellement désinséré.',
+      accent: ['FMA24474', 'capsule', ...ROTATEURS], danger: ['sciatique'], masquer: REPERES,
+      ecarter: { ...MOORE_OUVERT, ...LAMBEAU_POSTERIEUR }, sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS, ...SECTION_CAPSULE_POST } },
+    { titre: 'Tête fémorale et luxation', vue: 'postProche',
+      texte: 'Le lambeau capsulo-musculaire récliné, la tête fémorale est exposée. Elle est luxée par flexion, adduction et rotation interne. Le col est alors dégagé pour la coupe ; le cotyle sera abordé après l’exérèse de la tête.',
+      accent: ['FMA24474'], danger: ['sciatique'], masquer: REPERES,
+      ecarter: { ...MOORE_OUVERT, ...LAMBEAU_POSTERIEUR, FMA22330: { dep: [-4, -10, 12], autour: [-124, -80, 834], rayon: 30 }, FMA22332: { dep: [-4, -10, 12], autour: [-124, -80, 834], rayon: 30 } },
+      sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS, ...SECTION_CAPSULE_POST } },
   ] },
   ant: { court: 'Hueter', titre: 'Voie antérieure (Hueter)', steps: [
     { titre: 'Repères et incision', vue: 'ant',
