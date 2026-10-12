@@ -92,14 +92,14 @@ const tubes = [
 const N = [-0.564, -0.423, 0.709]; // perpendiculaire à la ligne de dissociation du grand fessier
 const DEDANS = [0.6, -0.8, 0];     // de la fesse vers la profondeur
 const ecarteurs = [
-  ['ec-post-sup', 'Écarteur — berge supérieure', { en: [-152, -66, 862], fond: DEDANS, vers: N, profondeur: 40, manche: 62, largeur: 15 }],
-  ['ec-post-inf', 'Écarteur — berge inférieure', { en: [-106, -27, 806], fond: DEDANS, vers: [0.564, 0.423, -0.709], profondeur: 40, manche: 62, largeur: 15 }],
-  ['ec-ant-lat', 'Écarteur — tenseur du fascia lata', { en: [-142, -137, 842], fond: [0, 1, 0], vers: [-1, -0.15, 0], profondeur: 32, manche: 58, largeur: 14 }],
-  ['ec-ant-med', 'Écarteur — sartorius et droit fémoral', { en: [-86, -142, 842], fond: [0, 1, 0], vers: [1, -0.15, 0], profondeur: 32, manche: 58, largeur: 14 }],
+  ['ec-post-sup', 'Écarteur — berge supérieure', { en: [-147, -63, 834], fond: DEDANS, vers: N, profondeur: 40, manche: 62, largeur: 15 }],
+  ['ec-post-inf', 'Écarteur — berge inférieure', { en: [-129, -49, 810], fond: DEDANS, vers: [0.564, 0.423, -0.709], profondeur: 40, manche: 62, largeur: 15 }],
+  ['ec-ant-lat', 'Écarteur — tenseur du fascia lata', { en: [-127, -141, 842], fond: [0, 1, 0], vers: [-1, -0.15, 0], profondeur: 32, manche: 58, largeur: 14 }],
+  ['ec-ant-med', 'Écarteur — sartorius et droit fémoral', { en: [-103, -146, 842], fond: [0, 1, 0], vers: [1, -0.15, 0], profondeur: 32, manche: 58, largeur: 14 }],
   ['ec-col-med', 'Écarteur de Hohmann — bord médial du col', { en: [-74, -112, 818], fond: [0.15, 1, 0], vers: [1, -0.35, -0.1], profondeur: 24, manche: 75, largeur: 9 }],
   ['ec-col-lat', 'Écarteur de Hohmann — bord latéral du col', { en: [-122, -104, 834], fond: [-0.1, 1, 0], vers: [-1, -0.35, 0.2], profondeur: 24, manche: 75, largeur: 9 }],
-  ['ec-dhs-ant', 'Écarteur de Hohmann — antérieur', { en: [-136, -112, 735], fond: [1, 0.25, 0], vers: [-0.2, -1, 0], profondeur: 28, manche: 72, largeur: 10 }],
-  ['ec-dhs-post', 'Écarteur de Hohmann — postérieur', { en: [-136, -66, 735], fond: [1, -0.25, 0], vers: [-0.2, 1, 0], profondeur: 28, manche: 72, largeur: 10 }],
+  ['ec-dhs-ant', 'Écarteur de Hohmann — antérieur', { en: [-144, -106, 735], fond: [1, 0.25, 0], vers: [-0.2, -1, 0], profondeur: 28, manche: 72, largeur: 10 }],
+  ['ec-dhs-post', 'Écarteur de Hohmann — postérieur', { en: [-144, -72, 735], fond: [1, -0.25, 0], vers: [-0.2, 1, 0], profondeur: 28, manche: 72, largeur: 10 }],
 ];
 
 // Capsule articulaire schématique : manchon entre le pourtour du cotyle et la base du col. [id, nom, de, à, rayon côté « à », rayon côté « de »]
@@ -125,45 +125,37 @@ const vues = {
   libre: { de: [-380, -260, 120] },
 };
 
-// Écartements : traction locale autour de l'écarteur. Les sommets proches du point (ou du segment) « autour » suivent la lame,
-// l'effet s'éteint avec la distance (rayon) : le muscle garde ses attaches et se courbe.
-const LIGNE_FESSIER = [[-150, -72, 795], [-112, -22, 880]];   // ligne de dissociation des fibres du grand fessier
-const LIGNE_FASCIA = [[-153, -78, 690], [-150, -72, 812]];    // incision du fascia lata, en regard du trochanter
+// Principe : les muscles restent sur leur trajet anatomique. Seules les berges d'une incision s'écartent, localement
+// (traction limitée à quelques centimètres autour de la ligne d'incision). Ce qui masque le plan profond devient translucide (« voiler »).
+const LIGNE_FESSIER = [[-150, -72, 795], [-126, -40, 850]];   // dissociation des fibres du grand fessier, en regard du trochanter
+const LIGNE_FASCIA = [[-153, -78, 705], [-150, -72, 812]];    // incision du fascia lata
 const fessier = k => ({
-  'FMA22328/A': { dep: [-26 * k, -19 * k, 33 * k], autour: LIGNE_FESSIER, rayon: 72 },
-  'FMA22328/B': { dep: [29 * k, 22 * k, -37 * k], autour: LIGNE_FESSIER, rayon: 80 },
-  'FMA58776/A': { dep: [29 * k, 22 * k, -37 * k], autour: LIGNE_FESSIER, rayon: 80 }, // la berge postérieure du fascia suit les fibres inférieures
-  'FMA58776/B': { dep: [-10 * k, -34 * k, 0], autour: LIGNE_FASCIA, rayon: 70 },
+  'FMA22328/A': { dep: [-11 * k, -8 * k, 14 * k], autour: LIGNE_FESSIER, rayon: 30 },
+  'FMA22328/B': { dep: [11 * k, 8 * k, -14 * k], autour: LIGNE_FESSIER, rayon: 30 },
+  'FMA58776/A': { dep: [3 * k, 15 * k, 0], autour: LIGNE_FASCIA, rayon: 26 },
+  'FMA58776/B': { dep: [-3 * k, -15 * k, 0], autour: LIGNE_FASCIA, rayon: 26 },
 });
 const FESSIER_OUVERT = fessier(1);
-// pelvi-trochantériens sectionnés au trochanter : leur extrémité latérale se rabat en arrière et en dedans, l'origine pelvienne ne bouge pas
-const ROTATEURS_RABATTUS = Object.fromEntries(ROTATEURS.map(id => [id, { dep: [40, 30, 0], autour: [-128, -76, 815], rayon: 44 }]));
-const FESSIERS_RELEVES = { FMA22330: { dep: [-6, -14, 18], autour: [-125, -80, 832], rayon: 52 }, FMA22332: { dep: [-6, -14, 18], autour: [-125, -80, 832], rayon: 52 } };
 const EC_POST = ['ec-post-sup', 'ec-post-inf'];
+const PLAN_FESSIER = ['FMA22328', 'FMA58776']; // plan superficiel, rendu translucide une fois ouvert
 
-const TFL_DEHORS = { dep: [-28, 2, 0], autour: [[-128, -140, 880], [-135, -128, 790]], rayon: 55 };
-const HUETER_SUPERFICIEL = {
-  FMA22425: TFL_DEHORS, FMA58776: { dep: [-24, 2, 0], autour: [[-135, -125, 880], [-140, -118, 790]], rayon: 60 },
-  FMA22354: { dep: [26, -2, 0], autour: [[-112, -150, 880], [-100, -145, 800]], rayon: 55 },
-  nclc: { dep: [24, -2, 0], autour: [[-112, -152, 880], [-112, -152, 800]], rayon: 60 },
+// Voie antérieure : aucun muscle n'est incisé. L'intervalle s'entrouvre seulement en regard de l'incision.
+const HUETER_INTERVALLE = {
+  FMA22425: { dep: [-9, 0, 0], autour: [[-124, -146, 872], [-134, -140, 795]], rayon: 28 },
+  FMA58776: { dep: [-9, 0, 0], autour: [[-128, -140, 872], [-138, -134, 795]], rayon: 28 },
+  FMA22354: { dep: [9, 0, 0], autour: [[-113, -150, 872], [-105, -146, 800]], rayon: 28 },
 };
-const HUETER_PROFOND = {
-  ...HUETER_SUPERFICIEL,
-  FMA38928: { dep: [24, -2, 0], autour: [[-105, -112, 860], [-110, -120, 790]], rayon: 50 },
-  FMA22330: { dep: [-18, 8, 4], autour: [-125, -105, 845], rayon: 50 }, FMA22332: { dep: [-18, 8, 4], autour: [-125, -105, 845], rayon: 50 },
-};
-const PSOAS_DEDANS = { FMA22322: { dep: [18, -2, 0], autour: [-85, -112, 812], rayon: 46 }, FMA22342: { dep: [18, -2, 0], autour: [-85, -112, 812], rayon: 46 } };
 const EC_ANT = ['ec-ant-lat', 'ec-ant-med'];
 const EC_COL = ['ec-col-med', 'ec-col-lat'];
+const PLAN_ANT_SUPERFICIEL = ['FMA22425', 'FMA22354', 'FMA58776'];
+const PLAN_ANT_PROFOND = [...PLAN_ANT_SUPERFICIEL, 'FMA38928', 'FMA22330', 'FMA22332'];
 
-const LIGNE_LATERALE = [[-158, -88, 805], [-158, -94, 655]];
-const FASCIA_OUVERT = { 'FMA58776/A': { dep: [-4, 32, 0], autour: LIGNE_LATERALE, rayon: 62 }, 'FMA58776/B': { dep: [-4, -32, 0], autour: LIGNE_LATERALE, rayon: 62 } };
-const VASTE_EN_AVANT = { FMA38930: { dep: [-6, -40, 0], autour: [[-150, -78, 790], [-140, -84, 650]], rayon: 56 } };
+const LIGNE_LATERALE = [[-158, -88, 800], [-158, -94, 665]];
+const FASCIA_OUVERT = { 'FMA58776/A': { dep: [-2, 17, 0], autour: LIGNE_LATERALE, rayon: 28 }, 'FMA58776/B': { dep: [-2, -17, 0], autour: LIGNE_LATERALE, rayon: 28 } };
 const EC_DHS = ['ec-dhs-ant', 'ec-dhs-post'];
 const TROCHANTER_OUVERT = k => ({
-  'FMA58776/A': { dep: [0, 28 * k, 0], autour: [-150, -80, 862], rayon: 55 }, 'FMA58776/B': { dep: [0, -28 * k, 0], autour: [-150, -80, 862], rayon: 55 },
-  'FMA22328/A': { dep: [8 * k, 24 * k, 12 * k], autour: [-145, -72, 872], rayon: 55 },
-  'FMA22330/A': { dep: [0, 22 * k, 0], autour: [-128, -77, 852], rayon: 40 }, 'FMA22330/B': { dep: [0, -22 * k, 0], autour: [-128, -77, 852], rayon: 40 },
+  'FMA58776/A': { dep: [0, 13 * k, 0], autour: [-150, -80, 866], rayon: 26 }, 'FMA58776/B': { dep: [0, -13 * k, 0], autour: [-150, -80, 866], rayon: 26 },
+  'FMA22330/A': { dep: [0, 9 * k, 0], autour: [-128, -77, 850], rayon: 22 }, 'FMA22330/B': { dep: [0, -9 * k, 0], autour: [-128, -77, 850], rayon: 22 },
 });
 
 const voies = {
@@ -172,66 +164,59 @@ const voies = {
       texte: 'Patient en décubitus latéral strict. L’incision est centrée sur le bord postérieur du grand trochanter : elle descend dans l’axe du fémur et s’incurve en haut et en arrière, en direction de l’épine iliaque postéro-supérieure.',
       montrer: ['incision-post'], accent: ['FMA22328', 'FMA58776'], masquer: REPERES },
     { titre: 'Fascia lata et grand fessier', vue: 'post',
-      texte: 'Le fascia lata est incisé dans l’axe de l’incision cutanée, puis les fibres du grand fessier sont dissociées dans leur sens. Les deux berges commencent à s’écarter.',
-      accent: ['FMA22328', 'FMA58776'], masquer: REPERES, ecarter: fessier(0.3) },
+      texte: 'Le fascia lata est incisé dans l’axe de l’incision cutanée, puis les fibres du grand fessier sont dissociées dans leur sens, en regard du trochanter. Les berges s’entrouvrent.',
+      accent: ['FMA22328', 'FMA58776'], masquer: REPERES, ecarter: fessier(0.5) },
     { titre: 'Pelvi-trochantériens et nerf sciatique', vue: 'postProche',
-      texte: 'Écarteur de Charnley en place : les berges du grand fessier et du fascia lata sont écartées. Membre en rotation interne pour tendre les rotateurs. De haut en bas : piriforme, jumeau supérieur, obturateur interne, jumeau inférieur, carré fémoral. Le nerf sciatique sort sous le piriforme et descend en arrière d’eux : le repérer et le protéger.',
-      accent: [...ROTATEURS, 'FMA22338'], danger: ['sciatique'], montrer: EC_POST, masquer: REPERES, ecarter: FESSIER_OUVERT },
+      texte: 'Écarteur en place sur les berges du grand fessier. Le plan superficiel est ici rendu translucide pour montrer le fond de la plaie. Membre en rotation interne pour tendre les rotateurs. De haut en bas : piriforme, jumeau supérieur, obturateur interne, jumeau inférieur, carré fémoral. Le nerf sciatique sort sous le piriforme et descend en arrière d’eux : le repérer et le protéger.',
+      accent: [...ROTATEURS, 'FMA22338'], danger: ['sciatique'], voiler: PLAN_FESSIER, montrer: EC_POST, masquer: REPERES, ecarter: FESSIER_OUVERT },
     { titre: 'Section des pelvi-trochantériens', vue: 'postProche',
-      texte: 'Piriforme, jumeaux et obturateur interne sont sectionnés au ras de leur insertion trochantérienne, mis sur fils et rabattus en arrière et en dedans : ils recouvrent et protègent le nerf sciatique. Le carré fémoral est respecté ou partiellement désinséré. La capsule postérieure apparaît.',
-      accent: ['capsule'], danger: ['sciatique'], montrer: EC_POST, masquer: REPERES, ecarter: { ...FESSIER_OUVERT, ...ROTATEURS_RABATTUS } },
+      texte: 'Piriforme, jumeaux et obturateur interne sont sectionnés au ras de leur insertion trochantérienne, mis sur fils et rabattus en arrière : ils protègent le nerf sciatique. Ils sont ici translucides. Le carré fémoral est respecté ou partiellement désinséré. La capsule postérieure apparaît.',
+      accent: ['capsule'], danger: ['sciatique'], voiler: [...PLAN_FESSIER, ...ROTATEURS], montrer: EC_POST, masquer: REPERES, ecarter: FESSIER_OUVERT },
     { titre: 'Capsulotomie et luxation', vue: 'postProche',
       texte: 'Capsulotomie postérieure, puis luxation de la tête par flexion, adduction et rotation interne. Le col est exposé pour la coupe ; le cotyle sera abordé après l’exérèse de la tête.',
-      accent: ['FMA24474'], danger: ['sciatique'], estomper: ['capsule'], montrer: EC_POST, masquer: REPERES,
-      ecarter: { ...FESSIER_OUVERT, ...ROTATEURS_RABATTUS, ...FESSIERS_RELEVES } },
+      accent: ['FMA24474'], danger: ['sciatique'], voiler: [...PLAN_FESSIER, ...ROTATEURS, 'FMA22330', 'FMA22332'], estomper: ['capsule'], montrer: EC_POST, masquer: REPERES, ecarter: FESSIER_OUVERT },
   ] },
   ant: { court: 'Hueter', titre: 'Voie antérieure (Hueter)', steps: [
     { titre: 'Repères et incision', vue: 'ant',
       texte: 'Patient en décubitus dorsal. Repère : l’épine iliaque antéro-supérieure. L’incision débute environ 2 cm en dehors et en dessous d’elle et descend obliquement en bas et en dehors sur le corps du tenseur du fascia lata, sur 8 à 10 cm.',
       montrer: ['incision-ant'], accent: ['FMA22425'], danger: ['nclc'], masquer: REPERES },
     { titre: 'Intervalle superficiel : tenseur du fascia lata / sartorius', vue: 'antProche',
-      texte: 'On ouvre la gaine du tenseur du fascia lata et on reste à l’intérieur : le tenseur est écarté en dehors, le sartorius en dedans. Le nerf cutané latéral de la cuisse chemine en dedans, sur le sartorius : rester dans la gaine le protège.',
-      accent: ['FMA22425', 'FMA22354'], danger: ['nclc'], montrer: EC_ANT, masquer: REPERES, ecarter: HUETER_SUPERFICIEL },
+      texte: 'On ouvre la gaine du tenseur du fascia lata et on reste à l’intérieur. L’intervalle avec le sartorius s’entrouvre en regard de l’incision : tenseur en dehors, sartorius en dedans. Le nerf cutané latéral de la cuisse chemine en dedans, sur le sartorius : rester dans la gaine le protège.',
+      accent: ['FMA22425', 'FMA22354'], danger: ['nclc'], montrer: EC_ANT, masquer: REPERES, ecarter: HUETER_INTERVALLE },
     { titre: 'Plan profond : droit fémoral / moyen fessier', vue: 'antProche',
-      texte: 'Au fond de l’intervalle : le droit fémoral, écarté en dedans, et les moyen et petit fessiers, écartés en dehors. La branche ascendante de l’artère circonflexe latérale croise le champ : elle est repérée puis liée ou coagulée.',
-      accent: ['FMA38928', 'FMA22330', 'FMA22332'], danger: ['circonflexe'], montrer: EC_ANT, masquer: REPERES, ecarter: HUETER_PROFOND },
+      texte: 'Le plan superficiel est ici rendu translucide. Au fond de l’intervalle : le droit fémoral en dedans, les moyen et petit fessiers en dehors. La branche ascendante de l’artère circonflexe latérale croise le champ : elle est repérée puis liée ou coagulée.',
+      accent: ['FMA38928', 'FMA22330', 'FMA22332'], danger: ['circonflexe'], voiler: PLAN_ANT_SUPERFICIEL, montrer: EC_ANT, masquer: REPERES, ecarter: HUETER_INTERVALLE },
     { titre: 'Capsule antérieure', vue: 'antProche',
-      texte: 'Un écarteur récline l’ilio-psoas en dedans, au contact du col : la capsule antérieure est exposée. Le paquet fémoral (nerf, artère, veine, de dehors en dedans) est juste en dedans : les écarteurs restent au contact de l’os.',
-      accent: ['capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], montrer: [...EC_ANT, ...EC_COL], masquer: [...REPERES, 'circonflexe'],
-      ecarter: { ...HUETER_PROFOND, ...PSOAS_DEDANS } },
+      texte: 'Des écarteurs de Hohmann sont passés de part et d’autre du col, au contact de l’os : droit fémoral et ilio-psoas en dedans, fessiers en dehors (ici translucides). La capsule antérieure est exposée. Le paquet fémoral (nerf, artère, veine, de dehors en dedans) est juste en dedans.',
+      accent: ['capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], voiler: PLAN_ANT_PROFOND, montrer: [...EC_ANT, ...EC_COL], masquer: [...REPERES, 'circonflexe'], ecarter: HUETER_INTERVALLE },
     { titre: 'Capsulotomie et exposition du col', vue: 'antProche',
       texte: 'Capsulotomie antérieure : le col et la tête sont exposés. La coupe du col se fait en place, puis la tête est extraite avant la préparation du cotyle.',
-      accent: ['FMA24474'], danger: ['nfemoral', 'afemorale', 'vfemorale'], estomper: ['capsule'], montrer: [...EC_ANT, ...EC_COL], masquer: [...REPERES, 'circonflexe'],
-      ecarter: { ...HUETER_PROFOND, ...PSOAS_DEDANS } },
+      accent: ['FMA24474'], danger: ['nfemoral', 'afemorale', 'vfemorale'], voiler: PLAN_ANT_PROFOND, estomper: ['capsule'], montrer: [...EC_ANT, ...EC_COL], masquer: [...REPERES, 'circonflexe'], ecarter: HUETER_INTERVALLE },
   ] },
   dhs: { court: 'DHS', titre: 'Voie latérale du fémur proximal (DHS)', steps: [
     { titre: 'Repères et incision', vue: 'lat',
       texte: 'Patient sur table orthopédique, fracture réduite. Incision longitudinale sur la face latérale de la cuisse, depuis le grand trochanter vers le bas, dans l’axe du fémur, sur 8 à 12 cm selon la longueur de plaque.',
       montrer: ['incision-lat'], accent: ['FMA58776'], masquer: REPERES },
     { titre: 'Fascia lata', vue: 'lat',
-      texte: 'Le fascia lata est incisé dans l’axe de ses fibres, dans l’axe de l’incision cutanée. Ses deux berges sont écartées : le vaste latéral apparaît.',
+      texte: 'Le fascia lata est incisé dans l’axe de ses fibres, dans l’axe de l’incision cutanée. Ses deux berges s’écartent : le vaste latéral apparaît au fond.',
       accent: ['FMA58776', 'FMA38930'], masquer: REPERES, ecarter: FASCIA_OUVERT },
     { titre: 'Vaste latéral', vue: 'latProche',
-      texte: 'Le vaste latéral est désinséré de la cloison intermusculaire latérale et récliné en avant, avec une contre-incision en L sous le tubercule du vaste. Les artères perforantes traversent la cloison : elles sont repérées et liées ou coagulées.',
-      accent: ['FMA38930'], danger: ['perforante1', 'perforante2'], montrer: EC_DHS, masquer: REPERES,
-      ecarter: { ...FASCIA_OUVERT, ...VASTE_EN_AVANT } },
+      texte: 'Le vaste latéral est désinséré de la cloison intermusculaire latérale et relevé en avant, avec une contre-incision en L sous le tubercule du vaste ; il est ici translucide. Les artères perforantes traversent la cloison : elles sont repérées et liées ou coagulées.',
+      accent: ['FMA24474'], danger: ['perforante1', 'perforante2'], voiler: ['FMA38930', 'FMA58776'], montrer: EC_DHS, masquer: REPERES, ecarter: FASCIA_OUVERT },
     { titre: 'Face latérale du fémur', vue: 'latProche',
       texte: 'La corticale latérale sous-trochantérienne est exposée, tenue par des écarteurs de Hohmann. Le viseur d’angle se pose sous le grand trochanter : la broche-guide vise le centre de la tête, de face comme de profil.',
-      accent: ['axe-vis'], voiler: ['FMA24474'], danger: ['perforante1', 'perforante2'], montrer: ['axe-vis', ...EC_DHS], masquer: ['axe-clou'],
-      ecarter: { ...FASCIA_OUVERT, ...VASTE_EN_AVANT, FMA38934: { dep: [0, -14, 0], autour: [-128, -92, 735], rayon: 50 } } },
+      accent: ['axe-vis'], voiler: ['FMA24474', 'FMA38930', 'FMA38934', 'FMA58776'], danger: ['perforante1', 'perforante2'], montrer: ['axe-vis', ...EC_DHS], masquer: ['axe-clou'], ecarter: FASCIA_OUVERT },
   ] },
   clou: { court: 'Clou gamma', titre: 'Abord du grand trochanter (clou gamma)', steps: [
     { titre: 'Repères et incision', vue: 'trochanter',
       texte: 'Patient sur table orthopédique, tronc incliné du côté opposé, fracture réduite. Incision de 3 à 5 cm, quelques centimètres au-dessus du sommet du grand trochanter, dans le prolongement de l’axe du fémur.',
       montrer: ['incision-clou'], accent: ['FMA58776', 'FMA22328'], masquer: REPERES },
     { titre: 'Fascia et moyen fessier', vue: 'trochanter',
-      texte: 'Le fascia est incisé dans l’axe de l’incision, puis les fibres du moyen fessier sont dissociées dans leur sens, au doigt, jusqu’à palper le sommet du grand trochanter. Le nerf glutéal supérieur chemine entre moyen et petit fessier, environ 5 cm au-dessus du sommet : ne pas prolonger la dissociation vers le haut.',
-      accent: ['FMA22330'], danger: ['nglutealsup'], masquer: REPERES,
-      ecarter: TROCHANTER_OUVERT(0.85) },
+      texte: 'Le fascia est incisé dans l’axe de l’incision, puis les fibres du moyen fessier sont dissociées dans leur sens, au doigt, jusqu’à palper le sommet du grand trochanter. Le plan superficiel est ici translucide. Le nerf glutéal supérieur chemine entre moyen et petit fessier, environ 5 cm au-dessus du sommet : ne pas prolonger la dissociation vers le haut.',
+      accent: ['FMA22330'], danger: ['nglutealsup'], voiler: ['FMA58776', 'FMA22328'], masquer: REPERES, ecarter: TROCHANTER_OUVERT(1) },
     { titre: 'Point d’entrée et axe du clou', vue: 'trochanter',
       texte: 'Le point d’entrée est au sommet du grand trochanter de face, dans l’axe du canal médullaire de profil. La broche-guide puis le clou suivent l’axe du canal ; la vis cervicale vise le centre de la tête.',
-      accent: ['axe-clou', 'axe-vis'], voiler: ['FMA24474'], danger: ['nglutealsup'], montrer: REPERES, estomper: ['FMA38930', 'FMA38934'],
-      ecarter: TROCHANTER_OUVERT(1) },
+      accent: ['axe-clou', 'axe-vis'], voiler: ['FMA24474', 'FMA58776', 'FMA22328', 'FMA22330', 'FMA22332', 'FMA38930', 'FMA38934'], danger: ['nglutealsup'], montrer: REPERES, ecarter: TROCHANTER_OUVERT(1) },
   ] },
 };
 

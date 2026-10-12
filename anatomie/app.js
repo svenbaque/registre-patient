@@ -405,7 +405,7 @@ function applyState() {
     const strong = has('accent', id) || has('danger', id) || (has('montrer', id) && groupe !== 'ecarteurs');
     mesh.visible = !hidden;
     material.transparent = faded || veiled || !!part.voile;
-    material.opacity = faded ? 0.06 : (veiled ? 0.38 : (part.voile ? 0.8 : 1));
+    material.opacity = faded ? 0.06 : (veiled ? (groupe === 'os' ? 0.38 : 0.26) : (part.voile ? 0.8 : 1));
     material.depthWrite = !faded && !veiled;
     mesh.renderOrder = faded ? 2 : (veiled ? 1 : 0);
     material.color.set(couleur);
