@@ -211,6 +211,76 @@ const allFiches = () => [
 // Rôle au bloc : opérateur (par défaut, y compris pour les patients saisis avant ce choix) ou aide.
 const isAide = p => p.role === 'aide';
 
+// Lecture d'étiquette (reconnaissance de texte) : moteur Tesseract hébergé avec l'appli dans ocr/, chargé au premier scan.
+// Tout se passe sur l'appareil : la photo n'est ni envoyée ni conservée.
+let ocrWorker = null;
+let ocrProgress = null;
+async function ocrLines(image) {
+  if (!window.Tesseract) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'ocr/tesseract.min.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('moteur de lecture indisponible'));
+      document.head.append(script);
+    });
+  }
+  const base = new URL('ocr/', location.href).href;
+  ocrWorker ||= Tesseract.createWorker('fra', 1, {
+    workerPath: `${base}worker.min.js`, corePath: base, langPath: base, gzip: true,
+    logger: m => { if (m.status === 'recognizing text') ocrProgress?.(m.progress); },
+  });
+  let worker;
+  try { worker = await ocrWorker; } catch (e) { ocrWorker = null; throw e; }
+  const { data } = await worker.recognize(image);
+  return data.text.split('\n').map(line => line.replace(/\s+/g, ' ').trim()).filter(line => line.length > 1);
+}
+
+// Cherche nom, prénom et âge dans les lignes lues sur une étiquette (formats courants des étiquettes d'hôpital).
+function parseLabel(lines, refDate) {
+  const text = lines.join('\n');
+  const found = { nom: '', prenom: '', age: '' };
+  const tidy = value => value.split(/\s{2,}|[0-9:;|]|\b(?:n[ée]e?|sexe|ipp|iep|nip|ddn)\b/i)[0].replace(/[^\p{L}'’ -]/gu, '').trim();
+  const capitalize = value => value.toLowerCase().replace(/(^|[ -])\p{L}/gu, c => c.toUpperCase());
+
+  // Date de naissance : celle qui suit « né(e) le » / « naissance » / « DDN », sinon la plus ancienne des dates lues.
+  const thisYear = new Date().getFullYear();
+  const dates = [...text.matchAll(/(\d{1,2})\s?[\/.\-]\s?(\d{1,2})\s?[\/.\-]\s?(\d{4}|\d{2})(?!\d)/g)].map(m => {
+    let year = Number(m[3]);
+    if (year < 100) year += year > thisYear % 100 ? 1900 : 2000;
+    const date = new Date(year, m[2] - 1, Number(m[1]));
+    return { index: m.index, date, valid: date.getMonth() === m[2] - 1 && year > thisYear - 121 && date <= new Date() };
+  }).filter(d => d.valid);
+  const bornAt = text.search(/n[ée]e?\s*(?:\(e\))?\s*le|naissance|\bddn\b|\bn[ée]\(e\)/i);
+  const birth = (bornAt >= 0 && dates.find(d => d.index > bornAt)) || [...dates].sort((a, b) => a.date - b.date)[0];
+  if (birth) {
+    const ref = refDate ? new Date(`${refDate}T12:00:00`) : new Date();
+    let age = ref.getFullYear() - birth.date.getFullYear();
+    if (ref < new Date(ref.getFullYear(), birth.date.getMonth(), birth.date.getDate())) age--;
+    if (age >= 0 && age <= 120) found.age = age;
+  }
+
+  // Nom et prénom : champs étiquetés (« Nom : », « Prénom : »), sinon une ligne « NOM Prénom », sinon une ligne en majuscules.
+  const nomLabel = text.match(/(?:^|\n)\s*nom(?: de naissance| d[’']usage| usuel| marital| de famille)?\s*[:.]\s*([^\n]+)/i);
+  const prenomLabel = text.match(/pr[ée]noms?\s*[:.]\s*([^\n]+)/i);
+  if (nomLabel) found.nom = tidy(nomLabel[1].split(/pr[ée]nom/i)[0]);
+  if (prenomLabel) found.prenom = capitalize(tidy(prenomLabel[1]).split(' ')[0]);
+  const civilite = /^(?:M\.?|MME\.?|MLLE\.?|MR\.?|MONSIEUR|MADAME|ENFANT)\s+/i;
+  if (!found.nom || !found.prenom) {
+    for (const raw of lines) {
+      const line = raw.replace(civilite, '');
+      const mixed = line.match(/^([A-ZÀ-Ý][A-ZÀ-Ý' -]*[A-ZÀ-Ý])\s+([A-ZÀ-Ý][a-zà-ÿ]+(?:-[A-ZÀ-Ý][a-zà-ÿ]+)?)(?![a-zà-ÿ])/);
+      if (mixed) { found.nom ||= tidy(mixed[1]); found.prenom ||= mixed[2]; break; }
+    }
+  }
+  if (!found.nom) {
+    const caps = lines.map(l => tidy(l.replace(civilite, ''))).find(l => /^[A-ZÀ-Ý'’ -]{3,}$/.test(l) && l.includes(' ') && !/^(?:CENTRE|HOPITAL|HÔPITAL|CLINIQUE|SERVICE|CHU|CHR|CH)\b/.test(l));
+    if (caps) { const words = caps.split(' '); found.nom = words[0]; found.prenom ||= capitalize(words.slice(1).join(' ')); }
+  }
+  found.nom = found.nom.toUpperCase();
+  return found;
+}
+
 // Opérations d'un patient : la première (operation / commentaire, format d'origine) puis les suivantes (autres).
 const opsOf = p => [{ operation: p.operation || '', commentaire: p.commentaire || '' }, ...(p.autres || [])].filter(o => key(o.operation));
 
@@ -310,6 +380,8 @@ function openPatientForm(id) {
           <label class="aide"><input type="radio" name="role" value="aide"${isAide(p) ? ' checked' : ''}><span>Aide</span></label>
         </div>
       </div>
+      <label class="btn ghost file scan-btn"><span id="scan-label">📷 Scanner une étiquette</span><input type="file" id="scan-input" accept="image/*" capture="environment" hidden></label>
+      <div class="scan-result" id="scan-result" hidden></div>
       <label>Nom<input name="nom" value="${esc(p.nom)}" autocomplete="off" autocapitalize="characters" required></label>
       <label>Prénom<input name="prenom" value="${esc(p.prenom)}" autocomplete="off" autocapitalize="words"></label>
       <label>Âge (ans)<input type="number" name="age" value="${esc(p.age)}" min="0" max="120" step="1" inputmode="numeric" autocomplete="off"></label>
@@ -336,6 +408,45 @@ function openPatientForm(id) {
     paintStars();
   }));
   paintStars();
+
+  // Scan d'étiquette : photo -> texte lu sur l'appareil -> nom, prénom et âge proposés, à vérifier.
+  const scanLabel = $('#scan-label');
+  const scanResult = $('#scan-result');
+  $('#scan-input').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const form = $('#patient-form');
+    scanResult.hidden = true;
+    scanLabel.textContent = '⏳ Lecture de l’étiquette…';
+    ocrProgress = ratio => { scanLabel.textContent = `⏳ Lecture de l’étiquette… ${Math.round(ratio * 100)} %`; };
+    try {
+      const lines = await ocrLines(await shrinkImage(file));
+      if (!form.isConnected) return;
+      const found = parseLabel(lines, form.date.value);
+      if (found.nom) form.nom.value = found.nom;
+      if (found.prenom) form.prenom.value = found.prenom;
+      if (found.age !== '') form.age.value = found.age;
+      const got = [found.nom && 'nom', found.prenom && 'prénom', found.age !== '' && 'âge'].filter(Boolean);
+      scanResult.hidden = false;
+      scanResult.innerHTML = `
+        <p>${got.length ? `<b>Rempli : ${got.join(', ')}.</b> Vérifiez avant d’enregistrer.` : '<b>Rien de reconnu automatiquement.</b>'} ${lines.length ? 'Si besoin, touchez « Nom » ou « Prénom » à côté de la bonne ligne :' : 'Aucun texte lisible : reprenez la photo de plus près, bien à plat et sans reflet.'}</p>
+        ${lines.slice(0, 12).map((line, i) => `<div class="scan-line"><span>${esc(line)}</span><button type="button" data-line="${i}" data-to="nom">Nom</button><button type="button" data-line="${i}" data-to="prenom">Prénom</button></div>`).join('')}`;
+      scanResult.onclick = ev => {
+        const to = ev.target.dataset.to;
+        if (!to) return;
+        const value = lines[ev.target.dataset.line].replace(/[^\p{L}' -]/gu, ' ').replace(/\s+/g, ' ').trim();
+        form[to].value = to === 'nom' ? value.toUpperCase() : value;
+      };
+    } catch (err) {
+      if (!form.isConnected) return;
+      scanResult.hidden = false;
+      scanResult.innerHTML = '<p><b>La lecture n’a pas pu se faire.</b> Le premier scan a besoin du réseau pour charger le moteur de lecture ; réessayez avec une connexion.</p>';
+    } finally {
+      ocrProgress = null;
+      scanLabel.textContent = '📷 Scanner une étiquette';
+    }
+  });
 
   // Opérations du patient : un bloc par opération (nom + commentaire). Le commentaire rejoint les « Astuces » de la fiche du même nom.
   const opsList = $('#ops-list');

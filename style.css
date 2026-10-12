@@ -395,3 +395,11 @@ details.section.astuces summary { color: #b7791f; }
 .tip-who { display: block; font-size: 13px; color: var(--muted); margin-bottom: 3px; }
 .tip-who strong { color: var(--brand); }
 .tip-text { display: block; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
+
+/* Scan d'étiquette */
+.sheet label.btn.file.scan-btn { display: block; margin-bottom: 12px; text-align: center; }
+.scan-result { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 12px; margin-bottom: 12px; font-size: 14px; }
+.scan-result p { margin: 0 0 8px; line-height: 1.45; color: var(--text); }
+.scan-line { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-top: 1px solid var(--line); }
+.scan-line span { flex: 1; overflow-wrap: anywhere; color: var(--text); }
+.scan-line button { flex-shrink: 0; padding: 5px 10px; border-radius: 999px; border: 0; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 600; }
