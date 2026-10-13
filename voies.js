@@ -22,11 +22,11 @@ const VOIES_ABORD = [
   ['Coude', [
     ['Postérieure avec ostéotomie de l’olécrâne', 'palette humérale articulaire'],
     ['Postérieure para-tricipitale / Bryan-Morrey', 'palette, prothèse de coude'],
-    ['Latérale de Kocher', 'tête radiale, ligament latéral'],
+    ['Latérale de Kocher', 'tête radiale, ligament latéral', 'coude:kocher'],
     ['Latérale de Kaplan', 'tête radiale'],
     ['Médiale (Hotchkiss)', 'coronoïde, ligament médial, nerf ulnaire'],
     ['Antérieure du coude', 'biceps distal, pédicule'],
-    ['Abord direct de l’olécrâne', 'haubanage, plaque']]],
+    ['Abord direct de l’olécrâne', 'haubanage, plaque', 'coude:olecrane']]],
   ['Avant-bras', [
     ['Antérieure de Henry', 'diaphyse du radius'],
     ['Postéro-latérale de Thompson', 'radius proximal et moyen'],

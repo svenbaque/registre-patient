@@ -10,7 +10,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 /* ---------- Région affichée ---------- */
 
 const params = new URLSearchParams(location.search);
-const REGIONS = ['hanche', 'poignet', 'genou', 'cheville', 'epaule'];
+const REGIONS = ['hanche', 'poignet', 'genou', 'cheville', 'epaule', 'coude', 'avant-bras', 'bras', 'femur', 'jambe', 'pied', 'bassin', 'main', 'rachis'];
 const regionName = REGIONS.includes(params.get('region')) ? params.get('region') : 'hanche';
 const R = (await import(`./regions/${regionName}.js`)).default;
 const STEPS = Object.fromEntries(Object.entries(R.voies).map(([id, voie]) => [id, voie.steps]));
