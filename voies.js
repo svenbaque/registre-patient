@@ -80,8 +80,8 @@ const VOIES_ABORD = [
     ['Antérieure de cheville', 'arthrodèse, prothèse'],
     ['Antéro-médiale / antéro-latérale du pilon', 'pilon tibial']]],
   ['Pied', [
-    ['Latérale étendue du calcanéus', 'fractures du calcanéus'],
-    ['Sinus du tarse', 'calcanéus mini-invasif'],
+    ['Latérale étendue du calcanéus', 'fractures du calcanéus', 'pied:etendue'],
+    ['Sinus du tarse', 'calcanéus mini-invasif', 'pied:st'],
     ['Abords du talus', 'col et corps du talus'],
     ['Dorsales du médio-pied', 'Lisfranc'],
     ['Médiale du premier rayon', 'hallux valgus'],
