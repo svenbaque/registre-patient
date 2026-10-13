@@ -1,6 +1,8 @@
 // Hanche droite — données de la région pour le visualiseur.
 // Repère BodyParts3D, en millimètres : x = droite (-) / gauche (+), y = avant (-) / arrière (+), z = vers le haut.
 
+import { lame, deuxBerges } from './outils.js';
+
 // Pièces du modèle libre : [fichier, nom, groupe, couleur]
 const meshes = [
   ['peau-hanche', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
@@ -100,6 +102,8 @@ const tubes = [
     [[-132, -164, 882], [-135, -159, 851], [-142, -154, 816], [-149, -153, 782]]],
   ['incision-lat', 'Incision — voie latérale du fémur proximal', 'incisions', '#35e0c8', 1.4, {},
     [[-168, -92, 808], [-175, -90, 758], [-176, -90, 707], [-176, -92, 660]]],
+  ['incision-hardinge', 'Incision — voie latérale de Hardinge', 'incisions', '#35e0c8', 1.4, {},
+    [[-153, -78, 905], [-155, -77, 880], [-160, -77, 855], [-163, -78, 831], [-167, -77, 806], [-172, -77, 780], [-174, -77, 756], [-177, -78, 733]]],
   ['incision-clou', 'Incision — abord du grand trochanter', 'incisions', '#35e0c8', 1.4, {},
     [[-164, -74, 845], [-157, -77, 873], [-153, -74, 899]]],
   ['axe-clou', 'Axe du clou (schématique)', 'reperes', '#7df9ff', 2.2, {},
@@ -132,6 +136,7 @@ const groupes = [
 const PEAU_MOORE = [[-172, -71, 714], [-171, -73, 758], [-166, -70, 800], [-152, -47, 838], [-127, -19, 871], [-105, 8, 899]];
 const PEAU_HUETER = [[-131, -162, 882], [-134, -157, 851], [-141, -152, 816], [-148, -151, 782]];
 const PEAU_LATERALE = [[-166, -92, 808], [-173, -90, 758], [-174, -90, 707], [-174, -92, 660]];
+const PEAU_HARDINGE = [[-151, -78, 905], [-153, -77, 880], [-158, -77, 855], [-161, -78, 831], [-165, -77, 806], [-170, -77, 780], [-172, -77, 756], [-175, -78, 733]];
 const PEAU_CLOU = [[-162, -74, 845], [-155, -77, 873], [-151, -74, 899]];
 const peauFendue = (ligne, fond, nomA, nomB) => [
   ['peau', { ligne, fond, rayon: 16 }, `Peau — berge ${nomA}`, `Peau — berge ${nomB}`],
@@ -161,6 +166,7 @@ const vues = {
   opAnt: { de: [-90, -420, 0], haut: [1, 0, 0], cible: [-125, -135, 830] }, opAntProche: { de: [-60, -270, 0], haut: [1, 0, 0], cible: [-120, -128, 828] },
   // table orthopédique, opérateur en dehors de la cuisse : tête du patient à gauche, face antérieure de la cuisse en haut
   opLat: { de: [-440, -70, 0], haut: [0, -1, 0], cible: [-125, -90, 735] }, opLatProche: { de: [-300, -45, 0], haut: [0, -1, 0], cible: [-125, -90, 735] },
+  opHardinge: { de: [-440, -90, 30], haut: [0, -1, 0], cible: [-130, -92, 820] }, opHardingeProche: { de: [-300, -95, 20], haut: [0, -1, 0], cible: [-125, -98, 818] },
   opTroch: { de: [-400, -40, 130], haut: [0, -1, 0], cible: [-135, -78, 850] }, opTrochProche: { de: [-275, -25, 90], haut: [0, -1, 0], cible: [-135, -78, 850] },
   lat: { de: [-520, -60, 40], cible: DIAPHYSE }, latProche: { de: [-400, -90, 20], cible: DIAPHYSE },
   trochanter: { de: [-380, 60, 190], cible: [-120, -80, 835] },
@@ -243,6 +249,28 @@ const TROCHANTER_OUVERT = {
   'FMA22330/A': { dep: [0, 15, 0], autour: LIGNE_CLOU_PROFONDE, rayon: 26 }, 'FMA22330/B': { dep: [0, -15, 0], autour: LIGNE_CLOU_PROFONDE, rayon: 26 },
 };
 
+// ----- Voie latérale transglutéale de Hardinge -----
+// Peau puis fascia lata s'ouvrent sur la même ligne, à mi-largeur du grand trochanter (plan y = -76 du fascia).
+const LIGNE_HARDINGE = [[-150, -76, 902], [-160, -76, 732]];
+// L'exposition se gagne en avant : la berge antérieure est réclinée loin, la berge postérieure à peine.
+const PEAU_HARDINGE_DROITE = [PEAU_HARDINGE[0], PEAU_HARDINGE[PEAU_HARDINGE.length - 1]];
+const optsH = { rayon: 34, profondeur: 40 };
+const hardinge = (avant, arriere = 12) => ({
+  ...deuxBerges(PEAU_HARDINGE, [1, 0, 0],
+    { vers: [0, -1, 0], lame: lame(PEAU_HARDINGE_DROITE, [0, -1, 0], [1, 0, 0], avant, avant * 2.4 + 10, optsH) },
+    { vers: [0, 1, 0], lame: lame(PEAU_HARDINGE_DROITE, [0, 1, 0], [1, 0, 0], arriere, arriere * 2.4 + 10, optsH) }),
+  'FMA58776/B': lame(LIGNE_HARDINGE, [0, -1, 0], [1, 0, 0], avant, avant * 2.4 + 10, optsH),
+  'FMA58776/A': lame(LIGNE_HARDINGE, [0, 1, 0], [1, 0, 0], arriere, arriere * 2.4 + 10, optsH),
+  'FMA22328/A': lame(LIGNE_HARDINGE, [0, 1, 0], [1, 0, 0], arriere, arriere * 2.4 + 10, optsH),
+  FMA22425: lame(LIGNE_HARDINGE, [0, -1, 0], [1, 0, 0], avant, avant * 2.4 + 30, { rayon: 34, profondeur: 60 }),
+});
+// Lambeau antérieur en continuité : tiers antérieur du moyen fessier, petit fessier et partie antérieure du vaste latéral,
+// détachés du trochanter et relevés en avant d'un seul tenant.
+const LAME_HARDINGE = { lame: [[-150, -118, 896], [-150, -120, 742]], pousse: [0, -1, 0], course: 64, rayon: 30, fond: [1, 0, 0], profondeur: 78 };
+const LAMBEAU_ANTERIEUR = { 'FMA22330/B': LAME_HARDINGE, FMA22332: LAME_HARDINGE, FMA38930: LAME_HARDINGE };
+const DESINSERTION_HARDINGE = { 'FMA22330/B': { autour: [[-140, -80, 824], [-143, -82, 790]], rayon: 12 }, FMA22332: { autour: [[-140, -84, 822], [-142, -86, 794]], rayon: 12 } };
+const CAPSULE_ANTERIEURE = { capsule: { autour: [[-88, -116, 834], [-108, -112, 795]], rayon: 16 } };
+
 const voies = {
   post: { court: 'Moore', titre: 'Voie postérieure (Moore)', fendre: peauFendue(PEAU_MOORE, [0.75, -0.66, 0], 'postérieure', 'antérieure'), steps: [
     { titre: 'Installation et incision', vue: 'opPost',
@@ -285,6 +313,25 @@ const voies = {
     { titre: 'Capsulotomie, col fémoral', vue: 'opAntProche',
       texte: 'Capsulotomie antérieure (en T, en H ou résection) ; les écarteurs sont replacés à l’intérieur de la capsule. Le col et la tête sont exposés. La coupe du col se fait en place, puis la tête est extraite au tire-bouchon avant la préparation du cotyle.',
       accent: ['FMA24474', 'capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], masquer: REPERES, ecarter: HUETER_CAPSULE, sectionner: { capsule: { autour: [[-84, -116, 834], [-104, -112, 792]], rayon: 15 } } },
+  ] },
+  hardinge: { court: 'Hardinge', titre: 'Voie latérale transglutéale (Hardinge)', fendre: peauFendue(PEAU_HARDINGE, [1, 0, 0], 'antérieure', 'postérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opHardinge',
+      texte: 'Vue de l’opérateur : décubitus latéral (ou dorsal, fesse au bord de la table), tête du patient à gauche. Incision longitudinale de 10 à 15 cm, dans l’axe du fémur, centrée sur le sommet du grand trochanter, à mi-distance de ses bords antérieur et postérieur.',
+      montrer: ['incision-hardinge'], masquer: [...REPERES, 'nclc'] },
+    { titre: 'Peau et fascia lata', vue: 'opHardinge',
+      texte: 'Peau et tissu sous-cutané sont incisés, puis le fascia lata sur la même ligne ; en haut l’incision se prolonge entre le tenseur du fascia lata, en avant, et le grand fessier, en arrière. La bourse trochantérienne est effondrée : le moyen fessier, son insertion trochantérienne et le vaste latéral apparaissent.',
+      accent: ['FMA22330', 'FMA38930'], danger: ['nglutealsup'], masquer: [...REPERES, 'nclc'], ecarter: hardinge(20) },
+    { titre: 'Lambeau antérieur', vue: 'opHardingeProche',
+      texte: 'Le moyen fessier est fendu dans le sens de ses fibres, à la jonction de son tiers antérieur et de ses deux tiers postérieurs, sans dépasser 3 à 5 cm au-dessus du sommet du trochanter : le nerf glutéal supérieur chemine entre moyen et petit fessier. L’incision contourne la face antérieure du trochanter, en laissant une collerette tendineuse pour la réinsertion, puis se prolonge dans la partie antérieure du vaste latéral. Ce lambeau — moyen fessier antérieur, petit fessier, vaste latéral antérieur — est relevé d’un seul tenant vers l’avant.',
+      accent: ['FMA22330', 'FMA22332', 'FMA38930', 'FMA24474'], danger: ['nglutealsup'], masquer: [...REPERES, 'nclc'],
+      ecarter: { ...hardinge(40), ...LAMBEAU_ANTERIEUR }, sectionner: DESINSERTION_HARDINGE },
+    { titre: 'Capsule antérieure', vue: 'opHardingeProche',
+      texte: 'Sous le lambeau, la capsule antérieure est exposée ; des écarteurs contre-coudés sont placés au-dessus et au-dessous du col, au contact de l’os. Capsulotomie en T ou résection : le col et la tête apparaissent. La hanche est luxée en avant par rotation latérale, adduction et flexion ; le pied tombe dans un sac stérile en avant de la table.',
+      accent: ['capsule', 'FMA24474'], danger: ['nglutealsup', 'nfemoral', 'afemorale'], masquer: [...REPERES, 'nclc'],
+      ecarter: { ...hardinge(46), ...LAMBEAU_ANTERIEUR }, sectionner: { ...DESINSERTION_HARDINGE, ...CAPSULE_ANTERIEURE } },
+    { titre: 'Fermeture : réinsertion du lambeau', vue: 'opHardinge',
+      texte: 'En fin d’intervention, le lambeau est réinséré solidement sur la collerette tendineuse et, au besoin, par des points transosseux dans le trochanter : de la qualité de cette réinsertion dépend la force des abducteurs (boiterie de Trendelenburg si elle lâche ou si le nerf glutéal supérieur a été étiré). Fermeture du fascia lata, puis des plans superficiels.',
+      accent: ['FMA22330', 'FMA22332'], danger: ['nglutealsup'], masquer: [...REPERES, 'nclc'], ecarter: hardinge(20) },
   ] },
   dhs: { court: 'DHS', titre: 'Voie latérale du fémur proximal (DHS)', fendre: peauFendue(PEAU_LATERALE, [1, 0, 0], 'antérieure', 'postérieure'), steps: [
     { titre: 'Installation et incision', vue: 'opLat',
