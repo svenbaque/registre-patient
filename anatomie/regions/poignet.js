@@ -3,6 +3,7 @@
 // x = côté radial (-) / côté ulnaire (+), y = face palmaire (-) / face dorsale (+), z = proximal (+) / distal (-).
 
 const meshes = [
+  ['peau-poignet', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
   ['FMA23464', 'Radius', 'os', '#e9e2cf'],
   ['FMA23467', 'Ulna', 'os', '#e9e2cf'],
   ['FMA24435', 'Scaphoïde', 'os', '#ded6c0'],
@@ -98,64 +99,96 @@ const meshes = [
 // Tracés à la main : incision et repères d'ostéosynthèse seulement.
 const tubes = [
   ['incision-henry', 'Incision — Henry modifiée', 'incisions', '#35e0c8', 1.1,
-    [[-256, -137, 824], [-252, -133, 846], [-248, -130, 870], [-243, -127, 896]]],
+    [[-256, -137, 830], [-252.7, -134, 852], [-249.3, -131, 874], [-246, -128, 896]]],
   ['watershed', 'Watershed line (schématique)', 'reperes', '#7df9ff', 0.9,
     [[-278, -119, 824], [-268, -122, 823], [-258, -123, 823], [-250, -122, 824]]],
-  ['axe-plaque', 'Position de la plaque (schématique)', 'reperes', '#7df9ff', 2.6,
-    [[-263, -121, 830], [-262, -116, 846], [-260, -108, 866], [-258, -102, 884]]],
 ];
 
 const groupes = [
-  ['os', 'Os'], ['flechisseurs', 'Fléchisseurs'], ['profond', 'Plan profond'], ['lateraux', 'Bord radial'], ['extenseurs', 'Extenseurs'], ['main', 'Muscles de la main'],
+  ['peau', 'Peau'], ['graisse', 'Tissu sous-cutané'], ['os', 'Os'], ['flechisseurs', 'Fléchisseurs'], ['profond', 'Plan profond'], ['lateraux', 'Bord radial'], ['extenseurs', 'Extenseurs'], ['main', 'Muscles de la main'],
   ['gaines', 'Gaines tendineuses'], ['ligaments', 'Capsule et ligaments'], ['vaisseaux', 'Artères et veines'], ['nerfs', 'Nerfs'],
-  ['incisions', 'Incisions'], ['reperes', 'Repères d’ostéosynthèse'],
+  ['incisions', 'Incisions'], ['reperes', 'Repères d’ostéosynthèse'], ['implants', 'Plaque et vis'],
 ];
 
 const centre = [-256, -112, 852]; // face palmaire du radius distal
+const SITE = [-253, -118, 862];
 const vues = {
   palmaire: { de: [-15, -330, 25] }, proche: { de: [-25, -215, -5] }, libre: { de: [-190, -250, 60] },
+  // vue de l'opérateur : avant-bras en supination sur la table à main, main à droite, bord ulnaire en haut
+  op: { de: [0, -330, 0], haut: [1, 0, 0], cible: SITE }, opProche: { de: [0, -185, 0], haut: [1, 0, 0], cible: SITE },
 };
 
-const REPERES = ['watershed', 'axe-plaque'];
-// Ouverture limitée au site opéré, sur le versant médial (ulnaire) du FCR, comme dans la fiche. Les tendons ne s'écartent
-// qu'en regard de l'incision, quelques centimètres au-dessus du pli du poignet : ils restent fixes au canal carpien et à leurs
-// insertions, et leurs corps musculaires ne bougent pas. FCR et long palmaire en dehors (côté radial) avec l'artère radiale ;
-// long fléchisseur du pouce, autres fléchisseurs et nerf médian en dedans. Nerfs et vaisseaux suivent le muscle écarté.
-const LIGNE_HENRY = [[-251, -127, 848], [-245, -123, 888]];
-const henry = k => {
-  const dehors = { dep: [-12 * k, 0, 0], autour: LIGNE_HENRY, rayon: 20 };
-  const dedans = { dep: [12 * k, 0, 0], autour: LIGNE_HENRY, rayon: 20 };
-  return {
-    FMA38460: dehors, FMA38463: dehors, aradiale: dehors, vradiales: dehors, FMA38486: dehors,
-    FMA38482: dedans, FMA38640: dedans, FMA38638: dedans, FMA38479: dedans, nmedian: dedans, 'rameau-palmaire': dedans,
-  };
-};
-// Carré pronateur incisé en L le long de son insertion radiale : la berge radiale (« /B ») reste sur le radius,
-// le corps du muscle (« /A ») est relevé vers l'ulna, où il garde son attache.
-const INCISION_CARRE = [[-265, -117, 834], [-262, -111, 878]];
-const CARRE_RECLINE = { 'FMA38454/A': { dep: [20, -5, 0], autour: INCISION_CARRE, rayon: 21 } };
+const REPERES = ['watershed'];
+const IMPLANTS = ['plaque', 'vis'];
+
+// ----- Incision : une seule ligne, sur le versant médial (ulnaire) du FCR, du pli de flexion vers le haut -----
+// Sur ce modèle (coude en extension) le FCR s'éloigne du radius en remontant : x = -259..-252 au pli du poignet, -248..-231 à 6 cm.
+// L'incision reste en regard du radius ; la lame radiale va chercher le tendon pour le ramener en dehors.
+const INCISION = [[-256, -136, 830], [-246, -127, 896]];
+const N_RADIAL = [-0.989, 0, 0.150]; // perpendiculaire à l'incision, vers le bord radial
+const N_ULNAIRE = [0.989, 0, -0.150];
+const decale = (d) => INCISION.map(q => [q[0] + N_RADIAL[0] * d, q[1], q[2] + N_RADIAL[2] * d]);
+
+// Peau, tissu sous-cutané et carré pronateur sont fendus le long de leur ligne d'incision.
 const fendre = [
+  ['peau', [-251, -131, 863], N_RADIAL, 'Peau — berge radiale', 'Peau — berge ulnaire'],
+  ['graisse', [-251, -131, 863], N_RADIAL, 'Tissu sous-cutané — berge radiale', 'Tissu sous-cutané — berge ulnaire'],
   ['FMA38454', [-265, -114, 855], [1, 0, 0], 'Carré pronateur — corps relevé', 'Carré pronateur — berge radiale'],
 ];
 
+// ----- Écarteurs : deux lames (type Farabeuf) parallèles à l'incision. Chaque lame repousse ce qu'elle charge et le tasse contre elle ;
+// l'effet s'éteint au-delà des bouts de la lame : tendons, nerfs et vaisseaux restent fixes au canal carpien et à leur origine. -----
+const FOND = [0, 1, 0]; // de la peau palmaire vers le radius
+// « course » vaut plus de deux fois l'écart : tout ce qui se trouve entre l'incision et la lame est chargé en entier.
+const lameRadiale = (ecart, course) => ({ lame: decale(ecart), pousse: N_RADIAL, course, rayon: 17, fond: FOND, profondeur: 48 });
+const lameUlnaire = (ecart, course) => ({ lame: decale(-ecart), pousse: N_ULNAIRE, course, rayon: 17, fond: FOND, profondeur: 48 });
+// ce que charge chaque lame, plan par plan (technique de la fiche : FCR et long palmaire en dehors, fléchisseurs et nerf médian en dedans)
+const PEAU_RADIALE = ['peau/A', 'graisse/A'];
+const PEAU_ULNAIRE = ['peau/B', 'graisse/B'];
+const PLAN_RADIAL = ['FMA38460', 'FMA38463', 'aradiale', 'vradiales', 'FMA38486'];
+const PLAN_ULNAIRE = ['FMA38482', 'FMA38640', 'FMA38638', 'FMA38479', 'nmedian', 'rameau-palmaire'];
+const charge = (ids, lame) => Object.fromEntries(ids.map(id => [id, lame]));
+const PEAU_OUVERTE = { ...charge(PEAU_RADIALE, lameRadiale(10, 30)), ...charge(PEAU_ULNAIRE, lameUlnaire(10, 30)) };
+const PEAU_ECARTEE = { ...charge(PEAU_RADIALE, lameRadiale(17, 42)), ...charge(PEAU_ULNAIRE, lameUlnaire(17, 42)) };
+const FCR_EN_DEHORS = charge(PLAN_RADIAL, lameRadiale(14, 62)); // la lame radiale charge aussi le long palmaire
+const FLECHISSEURS_EN_DEDANS = charge(PLAN_ULNAIRE, lameUlnaire(14, 62)); // la lame ulnaire balaie tout ce qui recouvre le radius
+
+// Carré pronateur incisé en L (bord radial et bord distal), relevé en sous-périosté vers l'ulna où il garde son attache.
+const INCISION_CARRE = [[-265, -117, 834], [-262, -111, 878]];
+const CARRE_RECLINE = { 'FMA38454/A': { dep: [20, -5, 0], autour: INCISION_CARRE, rayon: 21 } };
+
+// ----- Plaque palmaire en T (tracé schématique) : barre distale sous la watershed line, tige sur la diaphyse ; vis en regard -----
+const rubans = [
+  ['plaque', 'Plaque palmaire — tige', 'implants', '#b9c2cc', [[-262, -121, 832], [-262, -116.5, 841], [-261, -108, 860], [-259, -99.5, 884]], 9, 2, [1, 0, 0]],
+  ['plaque/tete', 'Plaque palmaire — barre distale', 'implants', '#b9c2cc', [[-276, -121.5, 831.5], [-263, -123, 831.5], [-251, -122.5, 831.5]], 8.5, 2, [0, 0, 1]],
+];
+const visDistale = x => [`vis/d${-x}`, 'Vis distale verrouillée (sous-chondrale)', 'implants', '#cfd6dd', 1.25, [[x, -123, 831.5], [x, -114, 831], [x, -104.5, 830.5]]];
+const visTige = (n, y, z, fond) => [`vis/p${n}`, 'Vis corticale de la tige', 'implants', '#cfd6dd', 1.25, [[-261.5, y - 1.5, z], [-261, (y + fond) / 2, z], [-260.5, fond, z]]];
+tubes.push(visDistale(-272), visDistale(-265), visDistale(-258), visDistale(-252), visTige(1, -112, 850, -97), visTige(2, -106, 864, -91), visTige(3, -101, 878, -86));
+
 const voies = {
   henry: { court: 'Henry modifiée', titre: 'Voie de Henry modifiée (trans-gaine du FCR)', steps: [
-    { titre: 'Repères et incision', vue: 'palmaire',
-      texte: 'Patient en décubitus dorsal, bras sur table à main, avant-bras en supination. L’incision est longitudinale, sur le versant médial du tendon fléchisseur radial du carpe (FCR), depuis le pli de flexion distal du poignet et sur 6 à 8 cm vers le haut.',
-      montrer: ['incision-henry'], accent: ['FMA38460', 'gaine-fcr'], danger: ['aradiale'], masquer: REPERES },
-    { titre: 'Gaine du FCR', vue: 'proche',
-      texte: 'La gaine du FCR est ouverte sur toute la longueur de l’incision. Le FCR et le long palmaire sont écartés en dehors : ils emmènent et protègent l’artère radiale. Le nerf médian et son rameau cutané palmaire restent en dedans.',
-      accent: ['FMA38460', 'FMA38463'], danger: ['aradiale', 'rameau-palmaire', 'nmedian'], masquer: [...REPERES, 'gaine-fcr'], ecarter: henry(0.6) },
-    { titre: 'Plancher de la gaine et long fléchisseur du pouce', vue: 'proche',
-      texte: 'Le plancher de la gaine est incisé. Le long fléchisseur du pouce est récliné en dedans, au doigt, avec les autres fléchisseurs et le nerf médian. Le carré pronateur apparaît au fond.',
-      accent: ['FMA38482', 'FMA38454'], danger: ['aradiale', 'nmedian'], masquer: [...REPERES, 'gaine-fcr'], ecarter: henry(1) },
-    { titre: 'Carré pronateur', vue: 'proche',
-      texte: 'Le carré pronateur est incisé en L, le long de son insertion radiale et de son bord distal, puis relevé en sous-périosté vers l’ulna : sa berge radiale reste sur le radius, son corps bascule en dedans en gardant son attache ulnaire. La face palmaire du radius distal est exposée, jusqu’à la watershed line.',
-      accent: ['FMA23464', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: ['watershed'], masquer: ['axe-plaque', 'gaine-fcr'], ecarter: { ...henry(1.15), ...CARRE_RECLINE } },
-    { titre: 'Réduction et plaque', vue: 'proche',
-      texte: 'Après réduction, la plaque est posée sur la face palmaire du radius, en proximal de la watershed line : plus distale, elle entre en conflit avec les tendons fléchisseurs. En fin d’intervention, le carré pronateur est rabattu sur la plaque et suturé si possible.',
-      accent: ['axe-plaque', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: REPERES, masquer: ['gaine-fcr'], ecarter: { ...henry(1.15), ...CARRE_RECLINE } },
+    { titre: 'Installation et incision', vue: 'op',
+      texte: 'Vue de l’opérateur : décubitus dorsal, bras en abduction sur table à main, avant-bras en supination, garrot à la racine du bras. L’incision est longitudinale, sur le versant médial du relief du tendon fléchisseur radial du carpe (FCR), du pli de flexion distal du poignet vers le haut, sur 6 à 8 cm.',
+      montrer: ['incision-henry'], masquer: [...REPERES, ...IMPLANTS] },
+    { titre: 'Peau et gaine du FCR', vue: 'opProche',
+      texte: 'Peau et tissu sous-cutané sont incisés ; les berges sont tenues par deux écarteurs. Au fond apparaît la gaine du FCR. L’artère radiale est en dehors : on ne la dissèque pas.',
+      accent: ['gaine-fcr', 'FMA38460'], danger: ['aradiale', 'rameau-palmaire'], masquer: [...REPERES, ...IMPLANTS], ecarter: PEAU_OUVERTE },
+    { titre: 'FCR récliné en dehors', vue: 'opProche',
+      texte: 'La gaine du FCR est ouverte sur toute la longueur de l’incision. Le FCR et le long palmaire sont réclinés en dehors par la lame radiale : ils emmènent et protègent l’artère radiale. Le plancher de la gaine apparaît ; il est incisé à son tour.',
+      accent: ['FMA38460', 'FMA38463', 'FMA38482'], danger: ['aradiale', 'nmedian'], masquer: [...REPERES, ...IMPLANTS, 'gaine-fcr'], ecarter: { ...PEAU_ECARTEE, ...FCR_EN_DEHORS } },
+    { titre: 'Long fléchisseur du pouce récliné en dedans', vue: 'opProche',
+      texte: 'Sous le plancher de la gaine, le long fléchisseur du pouce est dégagé à la compresse puis récliné en dedans, au doigt, avec les autres fléchisseurs et le nerf médian, chargés par la lame ulnaire. Le carré pronateur occupe le fond du champ.',
+      accent: ['FMA38454', 'FMA38482'], danger: ['aradiale', 'nmedian'], masquer: [...REPERES, ...IMPLANTS, 'gaine-fcr'], ecarter: { ...PEAU_ECARTEE, ...FCR_EN_DEHORS, ...FLECHISSEURS_EN_DEDANS } },
+    { titre: 'Carré pronateur', vue: 'opProche',
+      texte: 'Le carré pronateur est incisé en L : longitudinalement, le plus en dehors possible, le long de son insertion radiale, puis le long de son bord distal. Il est relevé en sous-périosté vers l’ulna, où il garde son attache. La face palmaire du radius distal et le foyer de fracture sont exposés, jusqu’à la watershed line.',
+      accent: ['FMA23464', 'watershed'], danger: ['aradiale', 'nmedian'], montrer: ['watershed'], masquer: [...IMPLANTS, 'gaine-fcr'],
+      ecarter: { ...PEAU_ECARTEE, ...FCR_EN_DEHORS, ...FLECHISSEURS_EN_DEDANS, ...CARRE_RECLINE } },
+    { titre: 'Réduction et plaque', vue: 'opProche',
+      texte: 'Réduction par traction et manœuvres directes, broches temporaires si besoin, contrôle scopique. La plaque est posée en proximal de la watershed line : plus distale, elle entre en conflit avec les fléchisseurs. Fixation provisoire par une vis corticale dans le trou oblong, réglage de la hauteur, puis vis verrouillées distales sous-chondrales, unicorticales ; l’incidence « skyline » vérifie qu’aucune ne dépasse en dorsal. Le carré pronateur est rabattu sur la plaque en fin d’intervention.',
+      accent: ['watershed'], danger: ['aradiale', 'nmedian'], montrer: ['watershed', ...IMPLANTS], masquer: ['gaine-fcr'],
+      ecarter: { ...PEAU_ECARTEE, ...FCR_EN_DEHORS, ...FLECHISSEURS_EN_DEDANS, ...CARRE_RECLINE } },
   ] },
 };
 
-export default { nom: 'Poignet droit', dossier: 'models-hd', centre, vues, meshes, fendre, tubes, groupes, voies };
+export default { nom: 'Poignet droit', dossier: 'models-hd', graisse: 3, centre, vues, meshes, fendre, tubes, rubans, groupes, voies };

@@ -130,8 +130,24 @@ const boneMap = canvasTexture(128, (g, n) => {
   }
 });
 
+// Lobules de la graisse sous-cutanée.
+const fatMap = canvasTexture(128, (g, n) => {
+  const rand = rng(5);
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, n, n);
+  for (let i = 0; i < 260; i++) {
+    g.fillStyle = `rgba(150,105,10,${0.06 + rand() * 0.16})`;
+    g.beginPath();
+    g.arc(rand() * n, rand() * n, 2 + rand() * 6, 0, Math.PI * 2);
+    g.fill();
+  }
+});
+
 function makeMaterial(groupe, couleur, fascia, tube) {
   const base = { color: couleur, side: THREE.DoubleSide, envMapIntensity: 0.55 };
+  if (groupe === 'peau') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.58, clearcoat: 0.08, sheen: 0.4, sheenRoughness: 0.6, sheenColor: '#ffd9c2', envMapIntensity: 0.35 });
+  if (groupe === 'graisse') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.45, clearcoat: 0.55, clearcoatRoughness: 0.3, map: fatMap, bumpMap: fatMap, bumpScale: 1.2 });
+  if (groupe === 'implants') return new THREE.MeshPhysicalMaterial({ ...base, metalness: 0.85, roughness: 0.32, envMapIntensity: 1.2, emissive: '#2a3038', emissiveIntensity: 0.5 });
   if (groupe === 'os') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.62, clearcoat: 0.18, clearcoatRoughness: 0.5, map: boneMap });
   if (groupe === 'ecarteurs') return new THREE.MeshPhysicalMaterial({ ...base, color: '#e6e9ed', metalness: 0.82, roughness: 0.3, envMapIntensity: 1.3, emissive: '#3a3f46', emissiveIntensity: 0.55 });
   if (groupe === 'vaisseaux') return new THREE.MeshPhysicalMaterial({ ...base, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.15, envMapIntensity: 0.9 });
@@ -151,7 +167,7 @@ function addPart(id, nom, groupe, couleur, geometry, options = {}) {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.userData.id = id;
   scene.add(mesh);
-  const part = { mesh, nom, groupe, couleur, coche: groupe !== 'ecarteurs', base: Float32Array.from(geometry.getAttribute('position').array), specKey: '', ...options };
+  const part = { mesh, nom, groupe, couleur, coche: groupe !== 'ecarteurs' && groupe !== 'implants', base: Float32Array.from(geometry.getAttribute('position').array), specKey: '', ...options };
   parts.set(id, part);
   return part;
 }
@@ -213,6 +229,55 @@ async function loadMesh([file, nom, groupe, couleur, options = {}]) {
   addPart(options.id || file, nom, groupe, couleur, geometry, { fascia: (R.fascias || []).includes(file) || groupe === 'ligaments' });
 }
 
+// Tissu sous-cutané : la surface de la peau, enfoncée de quelques millimètres vers l'intérieur du membre (visible sur la tranche de l'incision).
+// « Vers l'intérieur » = vers l'os le plus proche, ce qui ne dépend pas du sens des normales du fichier d'origine.
+function addFat(depth = 4) {
+  const skin = parts.get('peau');
+  if (!skin) return;
+  const cell = 45;
+  const grid = new Map();
+  for (const part of parts.values()) {
+    if (part.groupe !== 'os') continue;
+    const b = part.base;
+    for (let i = 0; i < b.length; i += 15) { // un sommet d'os sur cinq suffit
+      const key = `${Math.floor(b[i] / cell)},${Math.floor(b[i + 1] / cell)},${Math.floor(b[i + 2] / cell)}`;
+      let list = grid.get(key);
+      if (!list) grid.set(key, list = []);
+      list.push(b[i], b[i + 1], b[i + 2]);
+    }
+  }
+  const geometry = skin.mesh.geometry;
+  const position = geometry.getAttribute('position').array;
+  const normal = geometry.getAttribute('normal').array;
+  const inner = new Float32Array(position.length);
+  for (let i = 0; i < position.length; i += 3) {
+    const x = position[i], y = position[i + 1], z = position[i + 2];
+    const cx = Math.floor(x / cell), cy = Math.floor(y / cell), cz = Math.floor(z / cell);
+    let best = Infinity, bx = 0, by = 0, bz = 0;
+    for (let ring = 1; ring <= 3 && best === Infinity; ring++) {
+      for (let dx = -ring; dx <= ring; dx++) for (let dy = -ring; dy <= ring; dy++) for (let dz = -ring; dz <= ring; dz++) {
+        const list = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
+        if (!list) continue;
+        for (let k = 0; k < list.length; k += 3) {
+          const d = (list[k] - x) ** 2 + (list[k + 1] - y) ** 2 + (list[k + 2] - z) ** 2;
+          if (d < best) { best = d; bx = list[k] - x; by = list[k + 1] - y; bz = list[k + 2] - z; }
+        }
+      }
+    }
+    // on enfonce le long de la normale, dans le sens qui rapproche de l'os
+    const towardBone = best === Infinity ? -1 : Math.sign(normal[i] * bx + normal[i + 1] * by + normal[i + 2] * bz) || -1;
+    inner[i] = x + normal[i] * depth * towardBone;
+    inner[i + 1] = y + normal[i + 1] * depth * towardBone;
+    inner[i + 2] = z + normal[i + 2] * depth * towardBone;
+  }
+  const fat = new THREE.BufferGeometry();
+  fat.setAttribute('position', new THREE.BufferAttribute(inner, 3));
+  fat.setAttribute('uv', geometry.getAttribute('uv').clone());
+  fat.setIndex(geometry.getIndex().clone());
+  fat.computeVertexNormals();
+  addPart('graisse', 'Tissu sous-cutané', 'graisse', '#f2d47c', fat);
+}
+
 // Tracé schématique (nerf, vaisseau, incision, repère) : tube lisse, effilé et arrondi aux extrémités.
 // [id, nom, groupe, couleur, rayon, points, { fin: rapport du rayon à l'extrémité }]
 function addTube([id, nom, groupe, couleur, rayon, points, options = {}]) {
@@ -251,6 +316,44 @@ function addManchon([id, nom, de, a, rayonA, rayonDe]) {
   geometry.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize()));
   geometry.translate(...from.clone().add(to).multiplyScalar(0.5).toArray());
   addPart(id, nom, 'divers', '#f1ece0', geometry, { fascia: true, voile: true });
+}
+
+// Ruban plat le long d'une ligne (plaque d'ostéosynthèse) : [id, nom, groupe, couleur, points, largeur, épaisseur, direction de la largeur].
+function addRuban([id, nom, groupe, couleur, points, largeur, epaisseur, travers]) {
+  const curve = new THREE.CatmullRomCurve3(points.map(q => new THREE.Vector3(...q)), false, 'catmullrom', 0.3);
+  const across = new THREE.Vector3(...travers).normalize();
+  const samples = 40;
+  const positions = [];
+  const indices = [];
+  const point = new THREE.Vector3();
+  const tangent = new THREE.Vector3();
+  for (let i = 0; i <= samples; i++) {
+    const u = i / samples;
+    curve.getPointAt(u, point);
+    curve.getTangentAt(u, tangent);
+    const thick = tangent.clone().cross(across).normalize();
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sw, st]) => {
+      const v = point.clone().addScaledVector(across, sw * largeur / 2).addScaledVector(thick, st * epaisseur / 2);
+      positions.push(v.x, v.y, v.z);
+    });
+    if (i < samples) {
+      const o = i * 4;
+      for (let f = 0; f < 4; f++) {
+        const a0 = o + f, a1 = o + ((f + 1) % 4);
+        indices.push(a0, a1, a0 + 4, a1, a1 + 4, a0 + 4);
+      }
+    }
+  }
+  const last = samples * 4;
+  indices.push(0, 2, 1, 0, 3, 2, last, last + 1, last + 2, last, last + 2, last + 3);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  geometry.setIndex(indices);
+  const sharp = geometry.toNonIndexed(); // arêtes vives
+  sharp.computeVertexNormals();
+  const count = sharp.getAttribute('position').count;
+  sharp.setIndex([...Array(count).keys()]);
+  addPart(id, nom, groupe, couleur, sharp);
 }
 
 // Écarteur : lame d'acier coudée. La pointe plonge dans la plaie (« fond »), le manche part vers l'extérieur (« vers »).
@@ -306,33 +409,111 @@ function addEcarteur([id, nom, spec]) {
   addPart(id, nom, 'ecarteurs', '#dfe3e8', geometryFinal);
 }
 
-// Fend une pièce en deux le long d'un plan (incision d'un fascia, dissociation de fibres) : « id/A » du côté de la normale, « id/B » de l'autre.
-function splitPart([id, point, normal, nomA, nomB]) {
+// Fend une pièce en deux le long d'un plan (incision de la peau, d'un fascia, dissociation de fibres) : « id/A » du côté de la normale,
+// « id/B » de l'autre. Les triangles traversés par le plan sont recoupés sur le plan : la berge est nette, comme un coup de bistouri.
+// Deux façons de décrire la coupe :
+//   [id, point, normale, nomA, nomB]                      — un plan entier ;
+//   [id, { ligne, fond, rayon }, nomA, nomB]              — une incision : ligne brisée tracée sur la surface, « fond » = direction de la
+//                                                            profondeur. Seuls les triangles proches de la ligne (rayon) sont recoupés ; la coupe
+//                                                            suit donc une incision courbe et ne traverse pas le membre de part en part.
+function splitPart(spec) {
+  const id = spec[0];
+  const incision = !Array.isArray(spec[1]);
+  const [nomA, nomB] = incision ? [spec[2], spec[3]] : [spec[3], spec[4]];
   const part = parts.get(id);
   if (!part) return;
   const geometry = part.mesh.geometry;
-  const position = geometry.getAttribute('position');
+  const position = geometry.getAttribute('position').array;
+  const uv = geometry.getAttribute('uv').array;
   const index = geometry.getIndex().array;
-  const n = new THREE.Vector3(...normal).normalize();
-  const d = n.dot(new THREE.Vector3(...point));
-  const sides = [[], []];
-  for (let i = 0; i < index.length; i += 3) {
-    const [a, b, c] = [index[i], index[i + 1], index[i + 2]];
-    const cx = (position.getX(a) + position.getX(b) + position.getX(c)) / 3;
-    const cy = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
-    const cz = (position.getZ(a) + position.getZ(b) + position.getZ(c)) / 3;
-    sides[n.x * cx + n.y * cy + n.z * cz - d >= 0 ? 0 : 1].push(a, b, c);
+  const side = new Float32Array(position.length / 3);
+  const near = new Uint8Array(side.length);
+  if (!incision) {
+    const n = new THREE.Vector3(...spec[2]).normalize();
+    const d = n.dot(new THREE.Vector3(...spec[1]));
+    for (let i = 0; i < side.length; i++) side[i] = n.x * position[3 * i] + n.y * position[3 * i + 1] + n.z * position[3 * i + 2] - d;
+    near.fill(1);
+  } else {
+    const { ligne, fond, rayon = 14 } = spec[1];
+    const deep = new THREE.Vector3(...fond).normalize();
+    // chaque tronçon de l'incision définit son plan de coupe : il contient le tronçon et la direction de la profondeur
+    const segments = ligne.slice(1).map((b, k) => {
+      const a = ligne[k];
+      const ab = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+      return { a, ab, len2: ab.lengthSq(), n: ab.clone().cross(deep).normalize() };
+    });
+    for (let i = 0; i < side.length; i++) {
+      const x = position[3 * i], y = position[3 * i + 1], z = position[3 * i + 2];
+      let best = Infinity;
+      for (const seg of segments) {
+        let px = x - seg.a[0], py = y - seg.a[1], pz = z - seg.a[2];
+        const t = Math.max(0, Math.min(1, (px * seg.ab.x + py * seg.ab.y + pz * seg.ab.z) / seg.len2));
+        px -= seg.ab.x * t; py -= seg.ab.y * t; pz -= seg.ab.z * t;
+        const d2 = px * px + py * py + pz * pz;
+        if (d2 < best) { best = d2; side[i] = px * seg.n.x + py * seg.n.y + pz * seg.n.z; }
+      }
+      near[i] = best < rayon * rayon ? 1 : 0;
+    }
+  }
+
+  // une moitié en construction : ses sommets (repris de la pièce, ou créés sur le plan), leurs coordonnées de texture, ses triangles
+  const half = () => ({ pos: [], uv: [], idx: [], seen: new Map(), cut: new Map() });
+  const halves = [half(), half()];
+  const keep = (h, i) => {
+    let j = h.seen.get(i);
+    if (j === undefined) {
+      j = h.pos.length / 3;
+      h.seen.set(i, j);
+      h.pos.push(position[3 * i], position[3 * i + 1], position[3 * i + 2]);
+      h.uv.push(uv[2 * i], uv[2 * i + 1]);
+    }
+    return j;
+  };
+  const onPlane = (h, i, k) => { // sommet créé à l'intersection de l'arête i-k et du plan
+    const key = i < k ? i * 4294967296 + k : k * 4294967296 + i;
+    let j = h.cut.get(key);
+    if (j === undefined) {
+      const t = side[i] / (side[i] - side[k]);
+      j = h.pos.length / 3;
+      h.cut.set(key, j);
+      for (let c = 0; c < 3; c++) h.pos.push(position[3 * i + c] + (position[3 * k + c] - position[3 * i + c]) * t);
+      for (let c = 0; c < 2; c++) h.uv.push(uv[2 * i + c] + (uv[2 * k + c] - uv[2 * i + c]) * t);
+    }
+    return j;
+  };
+  for (let f = 0; f < index.length; f += 3) {
+    const tri = [index[f], index[f + 1], index[f + 2]];
+    let above = tri.map(i => side[i] >= 0);
+    // loin de l'incision, un triangle n'est pas recoupé : il va en entier du côté où se trouve son centre
+    if (!(near[tri[0]] || near[tri[1]] || near[tri[2]])) above = above.fill(side[tri[0]] + side[tri[1]] + side[tri[2]] >= 0);
+    if (above[0] === above[1] && above[1] === above[2]) {
+      const h = halves[above[0] ? 0 : 1];
+      h.idx.push(keep(h, tri[0]), keep(h, tri[1]), keep(h, tri[2]));
+      continue;
+    }
+    // triangle traversé : on construit, pour chaque côté, le polygone qui lui revient, puis on le découpe en triangles
+    for (const sideIndex of [0, 1]) {
+      const h = halves[sideIndex];
+      const wanted = sideIndex === 0;
+      const polygon = [];
+      for (let e = 0; e < 3; e++) {
+        const i = tri[e], k = tri[(e + 1) % 3];
+        if (above[e] === wanted) polygon.push(keep(h, i));
+        if (above[e] !== above[(e + 1) % 3]) polygon.push(onPlane(h, i, k));
+      }
+      for (let v = 1; v < polygon.length - 1; v++) h.idx.push(polygon[0], polygon[v], polygon[v + 1]);
+    }
   }
   scene.remove(part.mesh);
   parts.delete(id);
-  [[`${id}/A`, nomA, sides[0]], [`${id}/B`, nomB, sides[1]]].forEach(([halfId, nom, tris]) => {
+  [[`${id}/A`, nomA, halves[0]], [`${id}/B`, nomB, halves[1]]].forEach(([halfId, nom, h]) => {
     // chaque berge a ses propres sommets : elles se déforment indépendamment
-    const half = new THREE.BufferGeometry();
-    half.setAttribute('position', position.clone());
-    half.setAttribute('uv', geometry.getAttribute('uv').clone());
-    half.setIndex(new THREE.BufferAttribute(new Uint32Array(tris), 1));
-    half.computeVertexNormals();
-    addPart(halfId, nom, part.groupe, part.couleur, half, { fascia: part.fascia });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(h.pos), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(h.uv), 2));
+    g.setIndex(new THREE.BufferAttribute(new Uint32Array(h.idx), 1));
+    g.computeVertexNormals();
+    addPart(halfId, nom, part.groupe, part.couleur, g, { fascia: part.fascia });
   });
 }
 
@@ -361,13 +542,22 @@ function pushedByBlade(base, spec) {
   const course = spec.course;
   const r2 = (spec.rayon ?? 24) ** 2;
   const soft = spec.souplesse ?? 7; // épaisseur du bourrelet de tissu tassé contre la lame
+  const deepNorm = spec.fond ? Math.hypot(...spec.fond) : 0;
+  const deep = spec.fond ? spec.fond.map(c => c / deepNorm) : null;
+  const height = spec.profondeur ?? 30;
   for (let i = 0; i < base.length; i += 3) {
     let px = base[i] - a[0], py = base[i + 1] - a[1], pz = base[i + 2] - a[2];
     const t = Math.max(0, Math.min(1, (px * ab[0] + py * ab[1] + pz * ab[2]) / len2));
     px -= ab[0] * t; py -= ab[1] * t; pz -= ab[2] * t;
     const along = px * dir[0] + py * dir[1] + pz * dir[2];       // distance au plan de la lame, dans le sens de la poussée
     if (along > soft * 4 || along < -course) continue;            // déjà au-delà de la lame, ou trop loin côté plaie (autre berge)
-    const side2 = px * px + py * py + pz * pz - along * along;    // écart hors du plan : au-delà des bouts de la lame, ou en profondeur
+    let side2 = px * px + py * py + pz * pz - along * along;      // écart hors du plan : au-delà des bouts de la lame, ou en profondeur
+    if (deep) {
+      // la lame descend dans la plaie : tout ce qui est entre la surface et le bout de la lame est chargé de la même façon
+      const down = px * deep[0] + py * deep[1] + pz * deep[2];
+      const beyond = down < -6 ? down + 6 : (down > height ? down - height : 0);
+      side2 = Math.max(0, side2 - down * down) + beyond * beyond;
+    }
     const reach = Math.exp(-side2 / r2);
     const edge = Math.min(1, Math.max(0, (along + course) / (course * 0.45)));
     const fade = edge * edge * (3 - 2 * edge);
@@ -492,6 +682,7 @@ function glide() {
 
 let mode = 'libre';
 let stepIndex = 0;
+let skinOn = true; // peau et tissu sous-cutané affichés (bouton « Peau »)
 const DIM = new THREE.Color('#5a6470');
 
 function applyState() {
@@ -506,8 +697,9 @@ function applyState() {
     const { mesh, groupe, couleur } = part;
     const material = mesh.material;
     // incisions et écarteurs ne s'affichent qu'aux étapes qui les demandent ; en mode libre tout suit les cases cochées
-    const onDemand = groupe === 'incisions' || groupe === 'ecarteurs';
-    const hidden = step ? (has('masquer', id) || (onDemand ? !has('montrer', id) : !part.coche)) : !part.coche;
+    const onDemand = groupe === 'incisions' || groupe === 'ecarteurs' || groupe === 'implants';
+    const skin = groupe === 'peau' || groupe === 'graisse';
+    const hidden = (skin && !skinOn) || (step ? (has('masquer', id) || (onDemand ? !has('montrer', id) : !part.coche)) : !part.coche);
     const faded = has('estomper', id);
     const veiled = has('voiler', id); // os translucide pour laisser voir un clou ou une vis
     const strong = has('accent', id) || has('danger', id) || (has('montrer', id) && groupe !== 'ecarteurs');
@@ -518,7 +710,7 @@ function applyState() {
     mesh.renderOrder = faded ? 2 : (veiled ? 1 : 0);
     material.color.set(couleur);
     // sur une étape, ce qui n'est pas mis en avant est légèrement éteint pour faire ressortir le reste
-    if (step && !strong && !faded && groupe !== 'os' && groupe !== 'ecarteurs') material.color.lerp(DIM, 0.4);
+    if (step && !strong && !faded && !['os', 'ecarteurs', 'peau', 'graisse', 'implants'].includes(groupe)) material.color.lerp(DIM, 0.4);
     if (groupe !== 'incisions' && groupe !== 'reperes' && groupe !== 'ecarteurs') {
       material.emissive.set(strong ? couleur : '#000000');
       material.emissiveIntensity = has('danger', id) ? 0.5 : (strong ? 0.18 : 0);
@@ -584,9 +776,32 @@ function renderCard(step) {
   $('#next').disabled = stepIndex === steps.length - 1;
 }
 
+// Pièces fendues pour une voie donnée (peau et tissu sous-cutané : chaque voie a sa propre incision).
+// En changeant de voie, on recolle la pièce d'origine puis on la fend selon la nouvelle incision.
+const splitOriginals = new Map();
+function applyVoieSplits(voie) {
+  for (const [id, original] of splitOriginals) {
+    for (const [key, piece] of [...parts]) {
+      if (key.startsWith(`${id}/`)) { scene.remove(piece.mesh); piece.mesh.geometry.dispose(); parts.delete(key); moving.delete(piece); }
+    }
+    addPart(id, original.nom, original.groupe, original.couleur, original.geometry, { fascia: original.fascia });
+  }
+  splitOriginals.clear();
+  for (const spec of (R.voies[voie]?.fendre || [])) {
+    const part = parts.get(spec[0]);
+    if (!part) continue;
+    part.mesh.geometry.getAttribute('position').array.set(part.base); // forme de repos
+    splitOriginals.set(spec[0], { nom: part.nom, groupe: part.groupe, couleur: part.couleur, geometry: part.mesh.geometry, fascia: part.fascia });
+    splitPart(spec);
+  }
+}
+
 function setMode(next) {
   mode = next;
   stepIndex = 0;
+  applyVoieSplits(mode);
+  skinOn = mode !== 'libre'; // en exploration libre on regarde l'anatomie, sans la peau
+  paintSkinButton();
   flyTo(mode === 'libre' ? 'libre' : STEPS[mode][0].vue);
   applyState();
 }
@@ -618,6 +833,13 @@ $('#prev').addEventListener('click', () => setStep(stepIndex - 1));
 $('#next').addEventListener('click', () => setStep(stepIndex + 1));
 $('#open-drawer').addEventListener('click', () => $('#drawer').classList.add('open'));
 $('#close-drawer').addEventListener('click', () => $('#drawer').classList.remove('open'));
+// Peau : la masquer montre toute l'anatomie, l'afficher redonne la vue de l'opérateur.
+function paintSkinButton() {
+  const button = $('#toggle-skin');
+  button.hidden = !parts.has('graisse');
+  button.classList.toggle('off', !skinOn);
+}
+$('#toggle-skin').addEventListener('click', () => { skinOn = !skinOn; paintSkinButton(); applyState(); });
 // Recentrer : revient au point de vue de l'étape.
 $('#recentrer').addEventListener('click', () => { flyTo(mode === 'libre' ? 'libre' : STEPS[mode][stepIndex].vue); render(); });
 // Fiche d'étape repliable : par défaut seul le titre est visible sur téléphone ; un toucher déplie l'explication.
@@ -667,9 +889,11 @@ async function start() {
     await loadMesh(entry);
     $('#loading-bar').style.width = `${(++done / R.meshes.length) * 100}%`;
   }));
+  addFat(R.graisse);
   (R.fendre || []).forEach(splitPart);
   R.tubes.forEach(addTube);
   (R.manchons || []).forEach(addManchon);
+  (R.rubans || []).forEach(addRuban);
   (R.ecarteurs || []).forEach(addEcarteur);
   buildToggles();
   // une voie par bouton, puis l'exploration libre

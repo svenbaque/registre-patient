@@ -39,6 +39,7 @@
     .chip i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
     .chip.danger { background: rgba(255, 210, 63, .16); color: var(--danger); font-weight: 600; }
     .round[hidden] { display: none; }
+    .round.off { opacity: .45; }
     #back { font-size: 26px; line-height: 1; }
 
     .drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 3; width: min(320px, 86vw); background: #111b29; padding: calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px); overflow-y: auto; transform: translateX(105%); transition: transform .2s ease; box-shadow: -10px 0 30px rgba(0, 0, 0, .4); }
@@ -67,6 +68,7 @@
     <button class="round" id="back" aria-label="Retour" hidden>‹</button>
     <div class="modes" id="modes">
     </div>
+    <button class="round" id="toggle-skin" aria-label="Afficher ou masquer la peau" hidden>🖐</button>
     <button class="round" id="recentrer" aria-label="Recentrer la vue">⟲</button>
     <button class="round" id="open-drawer" aria-label="Structures">☰</button>
   </div>
@@ -95,7 +97,7 @@
     <p class="note">
       Os et muscles : <b>BodyParts3D</b>, © The Database Center for Life Science, licence
       <a href="https://creativecommons.org/licenses/by-sa/2.1/jp/deed.fr" target="_blank" rel="noopener">CC BY-SA 2.1 Japon</a> (maillages allégés).<br>
-      Nerfs, artères, veines, capsules et ligaments de la hanche et du poignet : <b>Z-Anatomy</b>, licence <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" target="_blank" rel="noopener">CC BY-SA 4.0</a>.<br>
+      Peau, nerfs, artères, veines, capsules et ligaments : <b>Z-Anatomy</b>, licence <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" target="_blank" rel="noopener">CC BY-SA 4.0</a>.<br>
       Incisions, repères d’ostéosynthèse et, au genou, à la cheville et à l’épaule, nerfs et vaisseaux : <b>tracés schématiques</b> ajoutés à la main, à titre indicatif. L’écartement des muscles est une déformation approchée.<br>
       Outil de révision des rapports anatomiques, sans valeur de référence chirurgicale.
     </p>
