@@ -26,7 +26,21 @@ const visPost = (n, z, y) => [`plaque-post/vis${n}`, 'Vis de la plaque postérie
 const PEAU_ANT = [[-92, -78, 150], [-89, -79, 134], [-86, -84, 116], [-83, -88, 102], [-80, -93, 90], [-77, -98, 78], [-75, -102, 69]];
 const FOND_ANT = [0, 1, 0];
 const INTERVALLE_ANT = [[-93, -72, 150], [-75, -88, 72]];
+// ----- Pilon tibial (antéro-médiale, antéro-latérale) et voie postéro-médiale -----
+const PEAU_AM = [[-68, -73, 159], [-67, -76, 141], [-68, -73, 121], [-64, -78, 100], [-61, -83, 85], [-59, -86, 72]];
+const FOND_AM = [-0.6, 0.8, 0];
+const PEAU_AL = [[-93, -83, 160], [-91, -81, 140], [-92, -80, 120], [-93, -81, 100], [-95, -86, 84], [-96, -88, 72]];
+const FOND_AL = [0.55, 0.83, 0];
+const PEAU_PM = [[-55, -33, 162], [-55, -33, 141], [-53, -31, 122], [-56, -35, 100], [-55, -34, 85], [-54, -31, 72]];
+const FOND_PM = [-0.6, -0.8, 0];
+const visVers = (id, n, de, dir, l = 22) => [`${id}/vis${n}`, 'Vis', 'implants', '#cfd6dd', 1.5, [de, de.map((c, i) => c + dir[i] * l / 2), de.map((c, i) => c + dir[i] * l)]];
 const tubes = [
+  ['incision-am', 'Incision — antéro-médiale du pilon', 'incisions', '#35e0c8', 1.2, PEAU_AM.map(([x, y, z]) => [x + 1.5, y - 2, z])],
+  ['incision-al', 'Incision — antéro-latérale du pilon', 'incisions', '#35e0c8', 1.2, PEAU_AL.map(([x, y, z]) => [x - 1.4, y - 2.1, z])],
+  ['incision-pm', 'Incision — voie postéro-médiale', 'incisions', '#35e0c8', 1.2, PEAU_PM.map(([x, y, z]) => [x + 1.5, y + 2, z])],
+  visVers('plaque-am', 1, [-70.5, -80, 140], FOND_AM), visVers('plaque-am', 2, [-69, -79.5, 124], FOND_AM), visVers('plaque-am', 3, [-56, -77.5, 86], FOND_AM, 30), visVers('plaque-am', 4, [-52, -75.5, 75], FOND_AM, 32),
+  visVers('plaque-al', 1, [-83, -80.5, 140], FOND_AL), visVers('plaque-al', 2, [-82, -79.5, 124], FOND_AL), visVers('plaque-al', 3, [-90, -76, 77], FOND_AL, 30), visVers('plaque-al', 4, [-78, -81, 77], [0, 1, 0], 32),
+  visVers('plaque-pm', 1, [-66.5, -53.5, 126], FOND_PM), visVers('plaque-pm', 2, [-64, -50, 104], FOND_PM), visVers('plaque-pm', 3, [-58, -47, 88], FOND_PM, 26),
   ['incision-ant', 'Incision — voie antérieure', 'incisions', '#35e0c8', 1.2, PEAU_ANT.map(([x, y, z]) => [x, y - 2.6, z])],
   ['incision-pl', 'Incision — voie postéro-latérale', 'incisions', '#35e0c8', 1.2, PEAU_PL.map(([x, y, z]) => [x - 1, y + 1.8, z])],
   visPost(1, 116, -50), visPost(2, 104, -47.5), visPost(3, 92, -44),
@@ -39,6 +53,10 @@ const tubes = [
   ['vis-mm2', 'Vis de la malléole médiale', 'implants', '#cfd6dd', 1.8, [[-46.5, -69, 62], [-58, -71, 85], [-70, -73, 108]]],
 ];
 const rubans = [
+  ['plaque-am', 'Plaque antéro-médiale du tibia distal', 'implants', '#b9c2cc', [[-71, -80, 146], [-69, -79.5, 120], [-64, -79.5, 100], [-55.5, -77.5, 85], [-51.5, -75.5, 73]], 11, 2, [0.8, 0.6, 0]],
+  ['plaque-al', 'Plaque antéro-latérale du tibia distal — tige', 'implants', '#b9c2cc', [[-83, -80.5, 146], [-82, -79.5, 120], [-86.5, -76, 100], [-91.5, -76.5, 84]], 10, 2, [0.83, -0.55, 0]],
+  ['plaque-al/tete', 'Plaque antéro-latérale du tibia distal — tête', 'implants', '#b9c2cc', [[-94, -73.5, 77], [-85, -80.5, 77], [-72, -82, 77]], 9, 2, [0, 0, 1]],
+  ['plaque-pm', 'Plaque postéro-médiale', 'implants', '#b9c2cc', [[-67.5, -54.5, 132], [-65.5, -52, 112], [-63.5, -48.5, 97], [-56.5, -47, 85]], 8, 1.8, [0.8, -0.6, 0]],
   ['plaque-post', 'Plaque postérieure anti-glissement', 'implants', '#b9c2cc', [[-80, -49.5, 122], [-80, -46.5, 106], [-80, -42.5, 92], [-80, -38.5, 81]], 9, 1.6, [1, 0, 0]],
   ['plaque', 'Plaque tiers-de-tube fibulaire', 'implants', '#b9c2cc', [[-108, -52, 142], [-107.5, -54.5, 114], [-107, -53, 90], [-108.5, -51, 68], [-109, -47.5, 49]], 9, 1.6, [0, 1, 0]],
 ];
@@ -60,11 +78,14 @@ const vues = {
   opPL: { de: [-150, 260, 0], cible: [-92, -38, 100] }, opPLProche: { de: [-88, 150, 0], cible: [-90, -40, 100] },
   // décubitus dorsal : l'opérateur regarde la face antérieure de la cheville, genou en haut
   opAnt: { de: [-30, -290, 40], cible: [-82, -80, 105] }, opAntProche: { de: [-15, -165, 20], cible: [-82, -80, 100] },
+  opAM: { de: [150, -250, 20], cible: [-68, -78, 110] }, opAMProche: { de: [88, -146, 10], cible: [-66, -78, 106] },
+  opAL: { de: [-150, -240, 20], cible: [-90, -80, 110] }, opALProche: { de: [-88, -140, 10], cible: [-90, -80, 106] },
+  opPM: { de: [190, 230, 0], cible: [-60, -42, 112] }, opPMProche: { de: [110, 135, 0], cible: [-60, -42, 108] },
   libre: { de: [-250, -300, 90] },
 };
 const IMPLANTS_LAT = ['plaque', 'vis-syndesmose'];
 const IMPLANTS_MED = ['vis-mm1', 'vis-mm2'];
-const IMPLANTS = [...IMPLANTS_LAT, ...IMPLANTS_MED, 'plaque-post'];
+const IMPLANTS = [...IMPLANTS_LAT, ...IMPLANTS_MED, 'plaque-post', 'plaque-am', 'plaque-al', 'plaque-pm'];
 
 const latOuverte = k => berges(PEAU_LAT, FOND_LAT, [0, -12, 0], k, 24);
 const medOuverte = k => ({
@@ -100,6 +121,42 @@ const fendreAnt = [
   ['ret-ext-sup', { ligne: PEAU_ANT, fond: FOND_ANT, rayon: 18 }, 'Rétinaculum supérieur des extenseurs — berge médiale', 'Rétinaculum supérieur des extenseurs — berge latérale'],
   ['ret-ext-inf', { ligne: PEAU_ANT, fond: FOND_ANT, rayon: 18 }, 'Rétinaculum inférieur des extenseurs — berge médiale', 'Rétinaculum inférieur des extenseurs — berge latérale'],
 ];
+
+// ----- Pilon et postéro-médiale : deux lames par plan, côté calculé -----
+const bouts = ligne => [ligne[0], ligne[ligne.length - 1]];
+const lamesDe = (peau, fond, versA, versB, eA, eB, profondeur, ids) => deuxBerges(peau, fond,
+  { vers: versA, lame: lame(bouts(peau), versA, fond, eA, eA * 2.4 + 8, { rayon: 18, profondeur }) },
+  { vers: versB, lame: lame(bouts(peau), versB, fond, eB, eB * 2.4 + 8, { rayon: 18, profondeur }) }, ids);
+const RETINACULUMS_ANT = ['ret-ext-sup', 'ret-ext-inf'];
+const fendreAvec = (peau, fond, nomA, nomB, ids) => [
+  ...peauFendue(peau, fond, nomA, nomB),
+  ...ids.map(id => [id, { ligne: peau, fond, rayon: 18 }, `Rétinaculum — berge ${nomA}`, `Rétinaculum — berge ${nomB}`]),
+];
+// antéro-médiale : toute la loge antérieure est réclinée en dehors, le tibial antérieur dans sa gaine
+const AM_DEHORS = [-0.8, -0.6, 0];
+const AM_DEDANS = [0.8, 0.6, 0];
+const amPeau = e => ({ ...lamesDe(PEAU_AM, FOND_AM, AM_DEHORS, AM_DEDANS, e, e * 0.8, 20), ...charge(['vsaphene', 'nsaphene'], lame(bouts(PEAU_AM), AM_DEDANS, FOND_AM, e * 0.8, e * 2 + 8, { rayon: 18, profondeur: 20 })) });
+const amProfond = e => ({
+  ...lamesDe(PEAU_AM, FOND_AM, AM_DEHORS, AM_DEDANS, e, 4, 24, RETINACULUMS_ANT),
+  ...charge(['tibial-ant', 'ehl', 'edl', 'edl-tendons', 'atibiale-ant', 'nfibprof', 'apedieuse'], lame([[-76, -81, 158], [-60, -80, 74]], AM_DEHORS, FOND_AM, e, e * 2.4 + 22, { rayon: 18, profondeur: 30 })),
+});
+// antéro-latérale : extenseurs et paquet tibial antérieur réclinés en dedans
+const AL_DEDANS = [0.83, -0.55, 0];
+const AL_DEHORS = [-0.83, 0.55, 0];
+const alPeau = e => lamesDe(PEAU_AL, FOND_AL, AL_DEDANS, AL_DEHORS, e, e * 0.8, 20);
+const alProfond = e => ({
+  ...lamesDe(PEAU_AL, FOND_AL, AL_DEDANS, AL_DEHORS, e, 4, 24, RETINACULUMS_ANT),
+  ...charge(['edl', 'edl-tendons', 'fibulaire-3', 'ehl', 'atibiale-ant', 'nfibprof', 'apedieuse'], lame([[-90, -76, 158], [-94, -78, 74]], AL_DEDANS, FOND_AL, e, e * 2.4 + 16, { rayon: 18, profondeur: 30 })),
+});
+// postéro-médiale : tibial postérieur en avant, long fléchisseur des orteils et paquet tibial postérieur en arrière
+const PM_AVANT = [0.8, -0.6, 0];
+const PM_ARRIERE = [-0.8, 0.6, 0];
+const pmPeau = e => lamesDe(PEAU_PM, FOND_PM, PM_AVANT, PM_ARRIERE, e, e, 18);
+const pmProfond = e => ({
+  ...lamesDe(PEAU_PM, FOND_PM, PM_AVANT, PM_ARRIERE, e, e, 22, ['ret-flechisseurs']),
+  'tibial-post': lame([[-66, -46, 160], [-60, -42, 74]], PM_AVANT, FOND_PM, e * 0.7, 26, { rayon: 18, profondeur: 30 }),
+  ...charge(['fdl', 'ntibial', 'atibiale-post', 'vtibiales-post', 'fhl'], lame([[-66, -46, 160], [-60, -42, 74]], PM_ARRIERE, FOND_PM, e, e * 2.4 + 14, { rayon: 18, profondeur: 30 })),
+});
 
 const voies = {
   lat: { court: 'Malléole latérale', titre: 'Abord latéral de la malléole latérale', fendre: peauFendue(PEAU_LAT, FOND_LAT, 'postérieure', 'antérieure'), steps: [
@@ -163,6 +220,48 @@ const voies = {
     { titre: 'Articulation talo-crurale', vue: 'opAntProche',
       texte: 'La capsule antérieure est incisée dans l’axe et décollée du tibia et du col du talus : le pilon tibial antérieur, le dôme du talus et les deux gouttières malléolaires sont exposés. C’est la voie des arthrodèses, des prothèses totales de cheville et des fractures antérieures du pilon. Fermeture soigneuse de la capsule et du rétinaculum ; la peau antérieure, mal vascularisée, est manipulée sans écarteur appuyé.',
       accent: ['tibia', 'talus'], danger: ['atibiale-ant', 'nfibprof', 'apedieuse'], masquer: IMPLANTS, ecarter: { ...antPeau(16), ...antRetinaculum(14), ...antProfond(14) } },
+  ] },
+  'pilon-am': { court: 'Pilon antéro-médial', titre: 'Voie antéro-médiale du pilon tibial', fendre: fendreAvec(PEAU_AM, FOND_AM, 'latérale', 'médiale', RETINACULUMS_ANT), steps: [
+    { titre: 'Installation et incision', vue: 'opAM',
+      texte: 'Décubitus dorsal, coussin sous la fesse, garrot ; l’intervention n’a lieu qu’après détente des parties molles (peau qui plisse), souvent sous fixateur externe en attendant. L’incision longe la crête tibiale, 1 cm en dehors d’elle, puis s’incurve en dedans au niveau de l’interligne, le long du bord médial du tibial antérieur, pour finir en avant de la malléole médiale. Si une seconde incision est nécessaire, le pont cutané fait au moins 7 cm.',
+      montrer: ['incision-am'], danger: ['vsaphene', 'nsaphene'], masquer: IMPLANTS },
+    { titre: 'Lambeau de pleine épaisseur', vue: 'opAMProche',
+      texte: 'La peau et le tissu sous-cutané sont levés d’un seul tenant, sans décollement sous-cutané. La grande veine saphène et le nerf saphène sont dans la berge médiale. Le rétinaculum des extenseurs est incisé en dedans du tibial antérieur, sans ouvrir sa gaine : un tendon à nu sous une cicatrice fragile est une complication redoutée.',
+      accent: ['tibia', 'tibial-ant'], danger: ['vsaphene', 'nsaphene'], masquer: IMPLANTS, ecarter: amPeau(10) },
+    { titre: 'Loge antérieure réclinée en dehors', vue: 'opAMProche',
+      texte: 'Le tibial antérieur, dans sa gaine, et toute la loge antérieure avec le paquet tibial antérieur sont réclinés en dehors. La capsule est ouverte dans l’axe du trait : la métaphyse antérieure, le fragment médial et la surface articulaire sont exposés. Les fragments ne sont pas dépériostés ; un distracteur ouvre l’interligne.',
+      accent: ['tibia', 'talus'], danger: ['atibiale-ant', 'nfibprof', 'vsaphene'], masquer: IMPLANTS, ecarter: { ...amPeau(12), ...amProfond(13) } },
+    { titre: 'Reconstruction et plaque', vue: 'opAMProche',
+      texte: 'Reconstruction de l’arrière vers l’avant : le fragment postéro-latéral (Volkmann) sert de repère, puis le fragment central enfoncé, le fragment médial et enfin le fragment antéro-latéral (Chaput) ; broches, greffe du vide métaphysaire, puis plaque anatomique antéro-médiale de faible épaisseur. La fibula est fixée avant ou après selon le plan. Fermeture sans tension, tendon recouvert.',
+      accent: ['tibia'], danger: ['atibiale-ant', 'nfibprof', 'vsaphene'], montrer: ['plaque-am'], masquer: IMPLANTS.filter(id => id !== 'plaque-am'), ecarter: { ...amPeau(12), ...amProfond(13) } },
+  ] },
+  'pilon-al': { court: 'Pilon antéro-latéral', titre: 'Voie antéro-latérale du pilon tibial', fendre: fendreAvec(PEAU_AL, FOND_AL, 'médiale', 'latérale', RETINACULUMS_ANT), steps: [
+    { titre: 'Installation et incision', vue: 'opAL',
+      texte: 'Décubitus dorsal, coussin sous la fesse du même côté. Incision longitudinale dans l’axe du 4ᵉ rayon, centrée sur l’interligne, entre tibia et fibula en proximal. Le nerf fibulaire superficiel est juste sous la peau et croise toujours l’incision au-dessus de la cheville.',
+      montrer: ['incision-al'], danger: ['nfibsup', 'nfibsup-med', 'nfibsup-int'], masquer: IMPLANTS },
+    { titre: 'Peau, nerf fibulaire superficiel', vue: 'opALProche',
+      texte: 'La peau est incisée seule. Le nerf fibulaire superficiel est repéré, mobilisé sur toute la longueur de l’incision et récliné ; il reste protégé jusqu’à la fermeture. Le fascia et le rétinaculum des extenseurs sont incisés dans l’axe.',
+      accent: ['edl', 'fibulaire-3'], danger: ['nfibsup', 'nfibsup-med', 'nfibsup-int'], masquer: IMPLANTS, ecarter: alPeau(10) },
+    { titre: 'Extenseurs réclinés en dedans', vue: 'opALProche',
+      texte: 'Le long extenseur des orteils et le troisième fibulaire sont réclinés en dedans, en bloc, avec le paquet tibial antérieur et le nerf fibulaire profond, qui restent sous les muscles. Le plan internerveux est entre fibulaire superficiel et fibulaire profond. La face antéro-latérale du tibia, le fragment de Chaput, la syndesmose antérieure et le dôme du talus sont exposés.',
+      accent: ['tibia', 'talus', 'ltfa'], danger: ['atibiale-ant', 'nfibprof', 'nfibsup'], masquer: IMPLANTS, ecarter: { ...alPeau(12), ...alProfond(13) } },
+    { titre: 'Reconstruction et plaque', vue: 'opALProche',
+      texte: 'Arthrotomie dans le trait, fragment de Chaput ouvert comme un livre sur le ligament tibio-fibulaire antérieur pour atteindre l’enfoncement central, reconstruction de l’arrière vers l’avant, puis plaque anatomique antéro-latérale en L. Cette voie couvre bien l’implant par les muscles, mais ne voit pas le coin médial : une courte incision médiale pour une plaque console complète parfois le montage.',
+      accent: ['tibia'], danger: ['atibiale-ant', 'nfibprof', 'nfibsup'], montrer: ['plaque-al'], masquer: IMPLANTS.filter(id => id !== 'plaque-al'), ecarter: { ...alPeau(12), ...alProfond(13) } },
+  ] },
+  pm: { court: 'Postéro-médiale', titre: 'Voie postéro-médiale de la cheville', fendre: fendreAvec(PEAU_PM, FOND_PM, 'antérieure', 'postérieure', ['ret-flechisseurs']), steps: [
+    { titre: 'Installation et incision', vue: 'opPM',
+      texte: 'Décubitus ventral, ou dorsal avec le membre en « 4 » (hanche en rotation latérale, genou fléchi). Incision longitudinale à mi-distance du bord postérieur de la malléole médiale et du tendon calcanéen, de 8 à 10 cm.',
+      montrer: ['incision-pm'], danger: ['ntibial', 'atibiale-post'], masquer: IMPLANTS },
+    { titre: 'Peau et rétinaculum des fléchisseurs', vue: 'opPMProche',
+      texte: 'Peau, tissu sous-cutané, puis fascia et rétinaculum des fléchisseurs sont incisés dans l’axe. D’avant en arrière : tendon du tibial postérieur, long fléchisseur des orteils, artère et veines tibiales postérieures, nerf tibial, long fléchisseur de l’hallux.',
+      accent: ['tibial-post', 'fdl'], danger: ['ntibial', 'atibiale-post', 'vtibiales-post'], masquer: IMPLANTS, ecarter: pmPeau(9) },
+    { titre: 'Intervalle tibial postérieur / long fléchisseur des orteils', vue: 'opPMProche',
+      texte: 'Le tibial postérieur est récliné en avant, contre la malléole ; le long fléchisseur des orteils en arrière : il emmène et protège le paquet tibial postérieur et le nerf tibial, qui ne sont pas disséqués. Variante plus postérieure, pour un fragment postéro-latéral : entre le paquet et le long fléchisseur de l’hallux.',
+      accent: ['tibial-post', 'fdl', 'tibia'], danger: ['ntibial', 'atibiale-post', 'vtibiales-post'], masquer: IMPLANTS, ecarter: { ...pmPeau(10), ...pmProfond(10) } },
+    { titre: 'Fragment postéro-médial et plaque', vue: 'opPMProche',
+      texte: 'La face postéro-médiale du tibia distal et le fragment postéro-médial, souvent solidaire de la malléole médiale (colliculus postérieur), sont exposés. Réduction sur le trait cortical, puis plaque console postéro-médiale ; par la même incision, la malléole médiale peut être vissée.',
+      accent: ['tibia'], danger: ['ntibial', 'atibiale-post'], montrer: ['plaque-pm'], masquer: IMPLANTS.filter(id => id !== 'plaque-pm'), ecarter: { ...pmPeau(10), ...pmProfond(12) } },
   ] },
 };
 

@@ -76,9 +76,9 @@ const VOIES_ABORD = [
     ['Latérale de la malléole latérale', 'fibula distale', 'cheville:lat'],
     ['Médiale de la malléole médiale', 'vissage, haubanage', 'cheville:med'],
     ['Postéro-latérale de cheville', 'fragment de Volkmann', 'cheville:pl'],
-    ['Postéro-médiale de cheville', 'fragment postéro-médial'],
+    ['Postéro-médiale de cheville', 'fragment postéro-médial', 'cheville:pm'],
     ['Antérieure de cheville', 'arthrodèse, prothèse', 'cheville:ant'],
-    ['Antéro-médiale / antéro-latérale du pilon', 'pilon tibial']]],
+    ['Antéro-médiale / antéro-latérale du pilon', 'pilon tibial', 'cheville:pilon-am']]],
   ['Pied', [
     ['Latérale étendue du calcanéus', 'fractures du calcanéus', 'pied:etendue'],
     ['Sinus du tarse', 'calcanéus mini-invasif', 'pied:st'],
