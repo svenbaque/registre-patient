@@ -418,14 +418,15 @@ function addEcarteur([id, nom, spec]) {
 // Fend une pièce en deux le long d'un plan (incision de la peau, d'un fascia, dissociation de fibres) : « id/A » du côté de la normale,
 // « id/B » de l'autre. Les triangles traversés par le plan sont recoupés sur le plan : la berge est nette, comme un coup de bistouri.
 // Deux façons de décrire la coupe :
-//   [id, point, normale, nomA, nomB]                      — un plan entier ;
+//   [id, point, normale, nomA, nomB, { couleurs }]        — un plan entier ;
 //   [id, { ligne, fond, rayon }, nomA, nomB]              — une incision : ligne brisée tracée sur la surface, « fond » = direction de la
 //                                                            profondeur. Seuls les triangles proches de la ligne (rayon) sont recoupés ; la coupe
 //                                                            suit donc une incision courbe et ne traverse pas le membre de part en part.
 function splitPart(spec) {
   const id = spec[0];
   const incision = !Array.isArray(spec[1]);
-  const [nomA, nomB] = incision ? [spec[2], spec[3]] : [spec[3], spec[4]];
+  const [nomA, nomB, options = {}] = incision ? [spec[2], spec[3], spec[4]] : [spec[3], spec[4], spec[5]];
+  const couleurs = options.couleurs || []; // une moitié peut changer de teinte (tendon au bout d'un muscle)
   const part = parts.get(id);
   if (!part) return;
   const geometry = part.mesh.geometry;
@@ -512,14 +513,14 @@ function splitPart(spec) {
   }
   scene.remove(part.mesh);
   parts.delete(id);
-  [[`${id}/A`, nomA, halves[0]], [`${id}/B`, nomB, halves[1]]].forEach(([halfId, nom, h]) => {
+  [[`${id}/A`, nomA, halves[0]], [`${id}/B`, nomB, halves[1]]].forEach(([halfId, nom, h], rang) => {
     // chaque berge a ses propres sommets : elles se déforment indépendamment
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(h.pos), 3));
     g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(h.uv), 2));
     g.setIndex(new THREE.BufferAttribute(new Uint32Array(h.idx), 1));
     g.computeVertexNormals();
-    addPart(halfId, nom, part.groupe, part.couleur, g, { fascia: part.fascia });
+    addPart(halfId, nom, part.groupe, couleurs[rang] || part.couleur, g, { fascia: part.fascia });
   });
 }
 
@@ -618,7 +619,7 @@ function deformOnce(base, spec) {
       sum += w; dx += dep[0] * w; dy += dep[1] * w; dz += dep[2] * w;
       if (w > best) { best = w; along = total > 0 ? (from + t * len) / total : 0.5; }
     }
-    if (deep) { const e = Math.min(1, Math.min(along, 1 - along) / 0.22); best *= e * (2 - e); }
+    if (deep) { const e = Math.min(1, Math.min(along, 1 - along) / 0.3); best *= e * (2 - e); }
     // direction : moyenne des tronçons proches ; ampleur : celle du tronçon le plus proche
     const k = sum > 0 ? (socle + (1 - socle) * best) / sum : 0;
     out[i] = base[i] + dx * k; out[i + 1] = base[i + 1] + dy * k; out[i + 2] = base[i + 2] + dz * k;
