@@ -57,7 +57,7 @@ const VOIES_ABORD = [
     ['Abord pour clou rétrograde', 'clou fémoral rétrograde'],
     ['Médiale du fémur distal', 'condyle médial']]],
   ['Genou', [
-    ['Para-patellaire médiale', 'prothèse totale de genou'],
+    ['Para-patellaire médiale', 'prothèse totale de genou', 'genou:ptg'],
     ['Mid-vastus, sub-vastus', 'prothèse de genou'],
     ['Para-patellaire latérale (Keblish)', 'genu valgum'],
     ['Antérieure médiane', 'rotule, appareil extenseur'],
