@@ -92,13 +92,13 @@ const voies = {
       accent: ['ancone', 'ecu'], danger: ['nip', 'ncutpost'], masquer: IMPLANTS, ecarter: kocherPeau(1) },
     { titre: 'Intervalle anconé / extenseur ulnaire du carpe', vue: 'opLatProche',
       texte: 'Le fascia est incisé sur le liseré. L’anconé (nerf radial) est récliné en arrière, l’extenseur ulnaire du carpe (nerf interosseux postérieur) en avant : c’est un plan internerveux. La capsule et le ligament annulaire apparaissent au fond. La dissection ne dépasse pas le col du radius en distal.',
-      accent: ['ancone', 'ecu', 'capsule', 'annulaire'], danger: ['nip', 'nradial-prof'], masquer: IMPLANTS, ecarter: { ...kocherPeau(1.6), ...kocherMuscles(8, 7) } },
+      accent: ['ancone', 'ecu', 'capsule', 'annulaire'], danger: ['nip', 'nradial-prof'], masquer: IMPLANTS, ecarter: { ...kocherPeau(1.2), ...kocherMuscles(8, 7) } },
     { titre: 'Capsulotomie', vue: 'opLatProche',
       texte: 'La capsule est incisée longitudinalement, en avant de l’équateur du capitulum et de la tête radiale, puis le ligament annulaire : rester en avant respecte le faisceau ulnaire du ligament collatéral latéral, dont la section expose à l’instabilité postéro-latérale. La tête radiale et le capitulum sont exposés ; on voit surtout la moitié postérieure de la tête.',
-      accent: ['radius', 'humerus'], danger: ['nip', 'nradial-prof', 'lcr'], masquer: IMPLANTS, ecarter: { ...kocherPeau(1.8), ...kocherMuscles(10, 8) }, sectionner: CAPSULOTOMIE },
+      accent: ['radius', 'humerus'], danger: ['nip', 'nradial-prof', 'lcr'], masquer: IMPLANTS, ecarter: { ...kocherPeau(1.3), ...kocherMuscles(11, 8) }, sectionner: CAPSULOTOMIE },
     { titre: 'Ostéosynthèse de la tête radiale', vue: 'opLatProche',
       texte: 'Réduction des fragments, puis vis enfouies (ou plaque) placées dans la « zone de sécurité » : l’arc de 90 à 110° de la tête qui ne s’articule pas avec l’ulna, repéré entre le tubercule de Lister et la styloïde radiale, avant-bras en rotation neutre. Fracture non reconstructible : prothèse de tête radiale. Fermeture soigneuse du ligament annulaire et de la capsule.',
-      accent: VIS, danger: ['nip', 'nradial-prof'], voiler: ['radius'], montrer: VIS, masquer: HAUBAN, ecarter: { ...kocherPeau(1.8), ...kocherMuscles(10, 8) }, sectionner: CAPSULOTOMIE },
+      accent: VIS, danger: ['nip', 'nradial-prof'], voiler: ['radius'], montrer: VIS, masquer: HAUBAN, ecarter: { ...kocherPeau(1.3), ...kocherMuscles(11, 8) }, sectionner: CAPSULOTOMIE },
   ] },
 };
 
