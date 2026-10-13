@@ -2,7 +2,7 @@
 // Repère BodyParts3D, en millimètres : x = latéral (-) / médial (+), y = avant (-) / arrière (+), z = vers le haut.
 // Le modèle est genou en extension ; au bloc le genou est fléchi à 90° ou plus.
 import pieces from './genou.pieces.js';
-import { peauFendue, berges, charge, lame } from './outils.js';
+import { peauFendue, berges, charge, lame, deuxBerges, cote } from './outils.js';
 
 const meshes = [
   ['peau-cuisse', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
@@ -19,7 +19,21 @@ const fendre = QUADRICEPS.map(id => [id, [0, 0, 440], [0, 0, 1], NOMS[id], 'Tend
 const PEAU_PLATEAU = [[-128, -91, 427], [-127, -101, 411], [-123, -110, 395], [-118, -115, 379], [-108, -112, 357], [-104, -110, 338], [-104, -110, 319]];
 const visRateau = (n, de, a) => [`plaque-plateau/rateau${n}`, 'Vis sous-chondrale « en râteau »', 'implants', '#cfd6dd', 1.6, [de, de.map((c, i) => (c + a[i]) / 2), a]];
 const visTige = (n, z, x, y) => [`plaque-plateau/vis${n}`, 'Vis corticale', 'implants', '#cfd6dd', 1.6, [[x - 1, y - 1, z], [x + 9, y + 9, z], [x + 19, y + 19, z]]];
+const PEAU_LOB = [[-49, -27, 432], [-48, -27, 411], [-47, -25, 391], [-44, -19, 370], [-44, -18, 350], [-42, -14, 331]];
+const PEAU_POP = [[-81, -32, 470], [-80, -28, 450], [-79, -17, 430], [-79, -8, 409], [-80, -5, 391], [-81, 5, 370], [-81, 10, 350]];
 const tubes = [
+  ['incision-lob', 'Incision — postéro-médiale (Lobenhoffer)', 'incisions', '#35e0c8', 1.3, PEAU_LOB.map(([x, y, z]) => [x + 1.2, y + 2.2, z])],
+  ['incision-pop', 'Incision — creux poplité', 'incisions', '#35e0c8', 1.3, PEAU_POP.map(([x, y, z]) => [x, y + 2.5, z])],
+  ['arthrotomie-lat', 'Arthrotomie para-patellaire latérale', 'incisions', '#35e0c8', 1, [[-97, -131, 520], [-98, -124, 490], [-99, -117, 460], [-100, -112, 440], [-106, -109, 422], [-103, -106, 402], [-96, -106, 382], [-94, -103, 358]]],
+  ['arthrotomie-sub', 'Arthrotomie sub-vastus', 'incisions', '#35e0c8', 1, [[-52, -100, 452], [-60, -106, 440], [-63, -109, 422], [-65, -106, 402], [-72, -106, 382], [-72, -103, 358]]],
+  ['portail-al', 'Voie d’abord arthroscopique antéro-latérale', 'incisions', '#35e0c8', 1.2, [[-101, -126, 410], [-101, -126.5, 405], [-101, -126, 400]]],
+  ['portail-am', 'Voie d’abord arthroscopique antéro-médiale', 'incisions', '#35e0c8', 1.2, [[-67, -122, 410], [-67, -122.5, 405], [-67, -122, 400]]],
+  ['arthroscope', 'Arthroscope (voie antéro-latérale)', 'implants', '#cfd6dd', 2, [[-110, -150, 412], [-101, -126, 406], [-90, -98, 408], [-82, -82, 410]]],
+  ['arthroscope/crochet', 'Crochet palpeur (voie antéro-médiale)', 'implants', '#9fd0ff', 1.2, [[-58, -146, 410], [-67, -122, 406], [-74, -98, 406], [-78, -84, 406]]],
+  ['hauban-rotule/b1', 'Broche de Kirschner', 'implants', '#cfd6dd', 0.9, [[-93, -106, 442], [-93, -106.5, 418], [-93, -104, 393]]],
+  ['hauban-rotule/b2', 'Broche de Kirschner', 'implants', '#cfd6dd', 0.9, [[-77, -106, 442], [-77, -106.5, 418], [-77, -104, 393]]],
+  ['hauban-rotule', 'Hauban pré-rotulien en 8', 'implants', '#dfe6ec', 0.7, [[-93, -106, 441], [-85, -118, 418], [-77, -105, 395], [-85, -101, 391.5], [-93, -105, 395], [-85, -118.6, 418], [-77, -106, 441], [-85, -103, 444], [-93, -106, 441]]],
+  ...[380, 362, 344].map((z, n) => [`plaque-lob/vis${n}`, 'Vis de la plaque postéro-médiale', 'implants', '#cfd6dd', 1.6, [[-52 - (394 - z) * 0.18, -40 - (394 - z) * 0.3, z], [-60 - (394 - z) * 0.18, -56 - (394 - z) * 0.3, z], [-68 - (394 - z) * 0.18, -72 - (394 - z) * 0.3, z]]]),
   ['incision-plateau', 'Incision — antéro-latérale du plateau tibial', 'incisions', '#35e0c8', 1.3, PEAU_PLATEAU.map(([x, y, z]) => [x - 1.5, y - 1.5, z])],
   visRateau(1, [-110, -73, 395], [-50, -69, 394]), visRateau(2, [-107, -84, 395], [-48, -80, 394]), visRateau(3, [-100, -92, 395], [-52, -88, 394]),
   visTige(1, 356, -92, -99), visTige(2, 336, -91, -100), visTige(3, 316, -91, -98),
@@ -42,6 +56,7 @@ const tubes = [
 ];
 
 const rubans = [
+  ['plaque-lob', 'Plaque console postéro-médiale', 'implants', '#b9c2cc', [[-49.5, -38, 395], [-53.5, -44, 375], [-56.5, -50, 355], [-60.5, -57, 337]], 10, 2.4, [0.9, -0.45, 0]],
   ['plaque-plateau', 'Plaque latérale du plateau tibial — tige', 'implants', '#b9c2cc', [[-104.5, -90.5, 392], [-97.5, -96.5, 372], [-93, -100.5, 350], [-92, -100.5, 326], [-92.5, -97.5, 304]], 12, 3, [0.7, -0.7, 0]],
   ['plaque-plateau/tete', 'Plaque latérale du plateau tibial — tête', 'implants', '#b9c2cc', [[-111.5, -71, 394], [-107.5, -84.5, 394], [-99.5, -93.5, 394]], 11, 3, [0, 0, 1]],
 ];
@@ -59,6 +74,10 @@ const vues = {
   opPtg: { de: [0, -420, 30], cible: [-84, -110, 435] }, opPtgProche: { de: [-10, -270, 20], cible: [-88, -110, 432] },
   opPlateau: { de: [-250, -250, 40], cible: [-100, -88, 372] }, opPlateauProche: { de: [-150, -150, 35], cible: [-100, -88, 375] },
   echancrure: { de: [-10, -170, -150], cible: [-76, -80, 412] }, femur: { de: [-560, -330, 0], cible: [-92, -90, 560] },
+  // décubitus ventral : face postérieure du genou, cuisse en haut
+  opLob: { de: [150, 300, 0], cible: [-56, -42, 382] }, opLobProche: { de: [88, 176, 0], cible: [-56, -44, 380] },
+  opPop: { de: [0, 340, 20], cible: [-80, -35, 410] }, opPopProche: { de: [0, 200, 10], cible: [-80, -38, 408] },
+  arthro: { de: [-10, -190, 60], cible: [-82, -92, 406] },
   op: { de: [0, -330, 45], cible: SITE }, opProche: { de: [0, -175, 30], cible: SITE },
   entree: { de: [-8, -120, 105], cible: [-80, -94, 400] },
   jambe: { de: [330, -560, 20], cible: [-78, -72, 235] }, libre: { de: [-260, -330, 90] },
@@ -120,6 +139,51 @@ const LOGE_ANTERIEURE = charge(['tibial-ant', 'edl'], lame([[-100, -97, 388], [-
 // Arthrotomie sous-méniscale : le ligament ménisco-tibial est incisé à l'horizontale, le ménisque latéral relevé sur fils.
 const SOUS_MENISCALE = { capsule: { autour: [[-111, -68, 398], [-100, -91, 398]], rayon: 9 } };
 const MENISQUE_RELEVE = { 'menisque-lat': { dep: [-2, -2, 8], autour: [-104, -80, 404], rayon: 22 } };
+
+// ----- Variantes de l'arthrotomie antérieure -----
+// Sub-vastus : le vaste médial n'est pas incisé ; il est soulevé de la cloison et part en dehors avec la patella.
+const EXTENSEUR_SUB = [...EXTENSEUR, 'vaste-med/A'];
+const luxationSub = k => ({
+  ...charge(EXTENSEUR_SUB, { dep: [-32 * k, 6 * k, 0], autour: AXE_PATELLA, rayon: 40 }),
+  ...charge(['vaste-med/B/A', 'droit-femoral/B/A', 'vaste-int/B/A', 'retinaculum-med'], { dep: [10 * k, 0, 0], autour: AXE_PATELLA, rayon: 30 }),
+});
+// Para-patellaire latérale (Keblish) : image en miroir, la patella est luxée en dedans.
+const ARTHROTOMIE_LAT = [[-100, -108, 446], [-106, -106, 422], [-103, -103, 402], [-96, -102, 382], [-94, -100, 352]];
+const COTE_MED = cote(ARTHROTOMIE_LAT, FOND, [1, 0, 0]);
+const COTE_LAT = COTE_MED === 'A' ? 'B' : 'A';
+const fendreKeblish = ['droit-femoral/B', 'vaste-int/B', 'vaste-lat/B'].map(id => [id, { ligne: ARTHROTOMIE_LAT, fond: FOND, rayon: 26 },
+  COTE_MED === 'A' ? 'Appareil extenseur' : 'Rétinaculum latéral (collerette)', COTE_MED === 'A' ? 'Rétinaculum latéral (collerette)' : 'Appareil extenseur']);
+const luxationMediale = k => ({
+  ...charge(['droit-femoral/A', 'vaste-int/A', 'vaste-med', 'patella', 'retinaculum-med', `droit-femoral/B/${COTE_MED}`, `vaste-int/B/${COTE_MED}`, `vaste-lat/B/${COTE_MED}`],
+    { dep: [34 * k, 8 * k, 0], autour: AXE_PATELLA, rayon: 36 }),
+  ...charge(['vaste-lat/A', 'retinaculum-lat', 'tractus', `droit-femoral/B/${COTE_LAT}`, `vaste-int/B/${COTE_LAT}`, `vaste-lat/B/${COTE_LAT}`], { dep: [-10 * k, 0, 0], autour: AXE_PATELLA, rayon: 30 }),
+});
+const keblishPeau = (dehors, dedans) => ptgPeau(dehors, dedans);
+
+// ----- Abords postérieurs -----
+const bouts = ligne => [ligne[0], ligne[ligne.length - 1]];
+const peauPost = (peau, fond, versA, versB, e) => deuxBerges(peau, fond,
+  { vers: versA, lame: lame(bouts(peau), versA, fond, e, e * 2.4 + 8, { rayon: 24, profondeur: 24 }) },
+  { vers: versB, lame: lame(bouts(peau), versB, fond, e, e * 2.4 + 8, { rayon: 24, profondeur: 24 }) });
+// Lobenhoffer : gastrocnémien médial en dehors (il protège le paquet poplité), semi-membraneux et patte d'oie en dedans.
+const FOND_LOB = [-0.45, -0.9, 0];
+const LOB_DEHORS = [-0.9, 0.45, 0];
+const LOB_DEDANS = [0.9, -0.45, 0];
+const INT_LOB = [[-50, -40, 432], [-50, -40, 330]];
+const lobPeau = e => peauPost(PEAU_LOB, FOND_LOB, LOB_DEHORS, LOB_DEDANS, e);
+const lobMuscles = (dehors, dedans) => ({
+  ...charge(['gastro-med', 'poplite', 'soleaire'], lame(INT_LOB, LOB_DEHORS, FOND_LOB, dehors, dehors * 2.4 + 16, { rayon: 24, profondeur: 40 })),
+  ...charge(['semi-membraneux', 'semi-tendineux', 'gracile', 'sartorius', 'nsaphene', 'vsaphene'], lame(INT_LOB, LOB_DEDANS, FOND_LOB, dedans, dedans * 2.4 + 12, { rayon: 24, profondeur: 40 })),
+});
+// Creux poplité : les deux chefs du gastrocnémien s'écartent ; le paquet poplité est mobilisé en dehors.
+const FOND_POP = [0, -1, 0];
+const INT_POP = [[-80, -40, 470], [-80, -28, 350]];
+const popPeau = e => peauPost(PEAU_POP, FOND_POP, [1, 0, 0], [-1, 0, 0], e);
+const popMuscles = e => ({
+  ...charge(['gastro-med', 'semi-membraneux', 'semi-tendineux'], lame(INT_POP, [1, 0, 0], FOND_POP, e, e * 2.4 + 16, { rayon: 26, profondeur: 44 })),
+  ...charge(['gastro-lat', 'biceps-long', 'biceps-court', 'nfibcommun'], lame(INT_POP, [-1, 0, 0], FOND_POP, e, e * 2.4 + 16, { rayon: 26, profondeur: 44 })),
+});
+const PAQUET_ECARTE = charge(['ntibial', 'apoplitee', 'vpoplitee', 'vpetite-saphene', 'sural'], { dep: [-13, 0, 0], autour: [[-80, -40, 440], [-82, -38, 370]], rayon: 40 });
 
 const voies = {
   ptg: { court: 'Para-patellaire médiale', titre: 'Voie para-patellaire médiale (prothèse totale de genou)', fendre: [...peauFendue(PEAU_PTG, FOND, 'médiale', 'latérale'), ...fendrePtg], steps: [
@@ -196,6 +260,84 @@ const voies = {
     { titre: 'Verrouillages', vue: 'jambe',
       texte: 'Verrouillage proximal par le viseur solidaire du clou. Verrouillage distal à main levée sous scopie (« ronds parfaits »), de dedans en dehors : le nerf saphène et la grande veine saphène longent la face médiale du tibia distal — incision courte, dissection à la pince jusqu’à l’os. Pour une vis antéro-postérieure, le paquet tibial antérieur et le nerf fibulaire profond sont en danger. Fermeture : péritendon, puis peau.',
       voiler: ['tibia'], estomper: ['tibial-ant', 'gastro-med', 'soleaire', 'fdl', 'edl'], danger: ['nsaphene', 'vsaphene', 'atibiale-ant', 'nfibprof'], montrer: ['clou'], masquer: [...REPERES, ...PEAU], ecarter: tendonFendu(1.2) },
+  ] },
+  subvastus: { court: 'Sub-vastus', titre: 'Voies sub-vastus et mid-vastus (prothèse de genou)', fendre: [...peauFendue(PEAU_PTG, FOND, 'médiale', 'latérale'), ...fendrePtg], steps: [
+    { titre: 'Incision et lambeau médial', vue: 'opPtg',
+      texte: 'Même installation et même incision cutanée médiane que la voie para-patellaire médiale. Le lambeau médial est levé plus loin, jusqu’à voir le bord inférieur du vaste médial oblique et la cloison intermusculaire médiale.',
+      montrer: ['incision-ptg'], masquer: REPERES, ecarter: ptgPeau(16, 26) },
+    { titre: 'Sous le vaste médial', vue: 'opPtgProche',
+      texte: 'Sub-vastus : le fascia est incisé au bord inférieur du vaste médial oblique, dont les fibres sont décollées au doigt de la cloison intermusculaire, de bas en haut, sans les couper ; l’arthrotomie part de là, contourne le bord médial de la patella et longe le ligament patellaire. Le tendon quadricipital reste intact. Mid-vastus : le vaste médial oblique est fendu dans le sens de ses fibres sur 3 à 4 cm, à partir de l’angle supéro-médial de la patella. Les vaisseaux géniculés descendants et le nerf saphène sont en arrière de la cloison.',
+      accent: ['vaste-med', 'patella'], montrer: ['arthrotomie-sub'], danger: ['nsaphene'], masquer: REPERES, ecarter: ptgPeau(18, 30) },
+    { titre: 'Patella subluxée en dehors', vue: 'opPtgProche',
+      texte: 'Le vaste médial est soulevé par un écarteur et part en dehors avec la patella, qui est subluxée sans être éversée. L’exposition est plus étroite que par la voie para-patellaire — elle se discute chez l’obèse, le genou raide ou très musclé — mais l’appareil extenseur et la vascularisation de la patella sont respectés.',
+      accent: ['patella', 'femur', 'vaste-med'], masquer: [...REPERES, 'anastomose-patellaire', 'hoffa'], ecarter: { ...ptgPeau(40, 30), ...luxationSub(1) }, sectionner: CAPSULE_OUVERTE },
+  ] },
+  keblish: { court: 'Para-patellaire latérale', titre: 'Voie para-patellaire latérale (Keblish)', fendre: [...peauFendue(PEAU_PTG, FOND, 'médiale', 'latérale'), ...fendreKeblish], steps: [
+    { titre: 'Incision', vue: 'opPtg',
+      texte: 'Indication : le genu valgum fixé, où les structures à libérer sont latérales. Incision cutanée antérieure médiane ou légèrement latérale. Le lambeau latéral est levé jusqu’au bord latéral de l’appareil extenseur.',
+      montrer: ['incision-ptg'], masquer: REPERES, ecarter: keblishPeau(22, 16) },
+    { titre: 'Arthrotomie para-patellaire latérale', vue: 'opPtgProche',
+      texte: 'L’arthrotomie longe le bord latéral du tendon quadricipital, contourne la patella et suit le bord latéral du ligament patellaire jusqu’au tubercule de Gerdy. Elle est faite en deux plans décalés (rétinaculum superficiel, puis capsule et synoviale, en gardant le corps adipeux pédiculé) : après correction du valgus, la capsule ne se referme pas bord à bord et c’est ce lambeau qui comble l’espace.',
+      accent: ['patella', 'retinaculum-lat'], montrer: ['arthrotomie-lat'], danger: ['agenic-inf-lat'], masquer: REPERES, ecarter: keblishPeau(26, 18) },
+    { titre: 'Patella luxée en dedans', vue: 'opPtgProche',
+      texte: 'La patella est luxée en dedans ; si le ligament patellaire est en tension, la tubérosité tibiale est relevée par une ostéotomie. La libération latérale est progressive : tractus ilio-tibial, capsule postéro-latérale, puis si besoin ligament collatéral fibulaire et tendon du poplité. Le nerf fibulaire commun, étiré par la correction d’un grand valgus, est surveillé au réveil.',
+      accent: ['patella', 'femur', 'tibia'], danger: ['nfibcommun'], masquer: [...REPERES, 'anastomose-patellaire', 'hoffa'], ecarter: { ...keblishPeau(26, 44), ...luxationMediale(1) }, sectionner: CAPSULE_OUVERTE },
+  ] },
+  rotule: { court: 'Antérieure médiane', titre: 'Voie antérieure médiane (patella, appareil extenseur)', fendre: peauFendue(PEAU_PTG, FOND, 'médiale', 'latérale'), steps: [
+    { titre: 'Installation et incision', vue: 'opPtg',
+      texte: 'Décubitus dorsal, genou sur un coussin, garrot. Incision longitudinale médiane centrée sur la patella (l’incision transversale, plus esthétique, compromet les abords futurs). Les rameaux infra-patellaires du nerf saphène croisent le bas de l’incision.',
+      montrer: ['incision-ptg'], danger: ['infrapatellaire'], masquer: REPERES },
+    { titre: 'Patella et ailerons', vue: 'opPtgProche',
+      texte: 'Le plan est direct : peau, tissu sous-cutané, bourse pré-patellaire, puis l’os. Les lambeaux sont levés au ras de l’appareil extenseur. La brèche des ailerons rotuliens, de part et d’autre du foyer, est explorée et permet de contrôler au doigt la surface articulaire ; l’articulation est lavée.',
+      accent: ['patella', 'retinaculum-med', 'retinaculum-lat'], danger: ['infrapatellaire'], masquer: REPERES, ecarter: ptgPeau(22, 22) },
+    { titre: 'Haubanage', vue: 'opPtgProche',
+      texte: 'Réduction au davier à pointes, genou en extension, contrôlée sur la corticale antérieure et au doigt sur le cartilage. Deux broches parallèles longitudinales, à mi-épaisseur, puis un cerclage en 8 passé au ras des pôles, sous le tendon quadricipital et le ligament patellaire, croisé sur la face antérieure : il transforme la traction du quadriceps en compression lors de la flexion. Suture des ailerons. Patella translucide.',
+      accent: ['hauban-rotule'], voiler: ['patella'], montrer: ['hauban-rotule'], masquer: REPERES, ecarter: ptgPeau(22, 22) },
+  ] },
+  lobenhoffer: { court: 'Postéro-médiale', titre: 'Voie postéro-médiale du plateau tibial (Lobenhoffer)', fendre: peauFendue(PEAU_LOB, FOND_LOB, 'latérale', 'médiale'), steps: [
+    { titre: 'Installation et incision', vue: 'opLob',
+      texte: 'Décubitus ventral, genou légèrement fléchi sur un coussin. Incision longitudinale de 6 à 8 cm le long du bord médial du chef médial du gastrocnémien, à partir du pli de flexion. La grande veine saphène et le nerf saphène sont plus en avant.',
+      montrer: ['incision-lob'], danger: ['vsaphene', 'nsaphene'], masquer: REPERES },
+    { titre: 'Peau et fascia', vue: 'opLobProche',
+      texte: 'Peau, tissu sous-cutané, puis fascia. Le bord médial du gastrocnémien médial est repéré ; en dedans de lui, le tendon du semi-membraneux et les tendons de la patte d’oie.',
+      accent: ['gastro-med', 'semi-membraneux'], danger: ['vsaphene', 'nsaphene'], masquer: REPERES, ecarter: lobPeau(10) },
+    { titre: 'Intervalle gastrocnémien médial / semi-membraneux', vue: 'opLobProche',
+      texte: 'Le gastrocnémien médial est récliné en dehors : sa masse protège le paquet poplité et le nerf tibial, qu’on ne dissèque pas. Le semi-membraneux et la patte d’oie sont réclinés en dedans. Au fond, le muscle poplité est décollé du tibia de dedans en dehors, en sous-périosté : le fragment postéro-médial et son bec cortical sont exposés.',
+      accent: ['tibia', 'gastro-med', 'semi-membraneux', 'poplite'], danger: ['apoplitee', 'vpoplitee', 'ntibial'], masquer: REPERES, ecarter: { ...lobPeau(12), ...lobMuscles(13, 9) } },
+    { titre: 'Plaque console', vue: 'opLobProche',
+      texte: 'Réduction par extension du genou et poussée directe sur le bec du fragment, puis plaque console postéro-médiale (anti-glissement) : la première vis, juste sous la pointe du fragment, le repousse vers le haut et l’avant. Pas d’arthrotomie : la réduction se lit sur la corticale et sous scopie.',
+      accent: ['tibia'], danger: ['apoplitee', 'vpoplitee', 'ntibial'], montrer: ['plaque-lob'], masquer: REPERES, ecarter: { ...lobPeau(12), ...lobMuscles(13, 9) } },
+  ] },
+  poplite: { court: 'Creux poplité', titre: 'Voie postérieure du creux poplité', fendre: peauFendue(PEAU_POP, FOND_POP, 'médiale', 'latérale'), steps: [
+    { titre: 'Installation et incision', vue: 'opPop',
+      texte: 'Décubitus ventral. Incision en S allongé pour ne pas croiser le pli de flexion à angle droit : branche proximale au bord du biceps, traversée oblique du pli, branche distale au bord médial du mollet. Elle est ici figurée sur la ligne médiane.',
+      montrer: ['incision-pop'], danger: ['vpetite-saphene', 'sural'], masquer: REPERES },
+    { titre: 'Fascia poplité, petite veine saphène', vue: 'opPopProche',
+      texte: 'Sous la peau, la petite veine saphène et le nerf cutané sural médial, sur la ligne médiane, sont le fil conducteur : le nerf, suivi vers le haut à travers le fascia, mène au nerf tibial. Le fascia poplité est incisé en dedans de la veine.',
+      accent: ['gastro-med', 'gastro-lat'], danger: ['vpetite-saphene', 'sural', 'ntibial'], masquer: REPERES, ecarter: popPeau(12) },
+    { titre: 'Losange poplité', vue: 'opPopProche',
+      texte: 'Les bords du losange sont dégagés : semi-membraneux et gastrocnémien médial en dedans, biceps et gastrocnémien latéral en dehors. Le nerf fibulaire commun longe le bord médial du biceps. Dans l’axe, de la superficie à la profondeur : nerf tibial, veine poplitée, artère poplitée, plaquée contre la capsule.',
+      accent: ['gastro-med', 'gastro-lat'], danger: ['ntibial', 'vpoplitee', 'apoplitee', 'nfibcommun'], masquer: REPERES, ecarter: { ...popPeau(15), ...popMuscles(13) } },
+    { titre: 'Capsule postérieure', vue: 'opPopProche',
+      texte: 'Le paquet poplité est mobilisé — il faut lier les vaisseaux géniculés moyens et souvent une géniculée inférieure — puis récliné sur un lacs. Le chef médial du gastrocnémien peut être désinséré pour gagner du jour. La capsule postérieure est ouverte : insertion tibiale du ligament croisé postérieur, bord postérieur des plateaux.',
+      accent: ['tibia', 'lcp', 'capsule'], danger: ['ntibial', 'vpoplitee', 'apoplitee', 'nfibcommun'], masquer: REPERES,
+      ecarter: { ...popPeau(15), ...popMuscles(16), ...PAQUET_ECARTE }, sectionner: { capsule: { autour: [[-90, -42, 420], [-70, -42, 392]], rayon: 16 } } },
+  ] },
+  arthro: { court: 'Arthroscopie', titre: 'Voies d’abord arthroscopiques du genou', steps: [
+    { titre: 'Installation et repères', vue: 'opPtg',
+      texte: 'Décubitus dorsal, garrot, genou fléchi à 90° pendant sur un étrier ou contre un appui latéral. Repères tracés genou fléchi : pointe de la patella, bords du ligament patellaire, interligne. Les deux voies de base sont de part et d’autre du ligament patellaire, juste au-dessus de l’interligne, dans le « point mou ». Le modèle est ici genou en extension.',
+      montrer: ['portail-al', 'portail-am'], masquer: REPERES },
+    { titre: 'Voie antéro-latérale : l’optique', vue: 'arthro',
+      texte: 'Incision de 6 à 8 mm au ras du bord latéral du ligament patellaire, un travers de doigt au-dessus de l’interligne, lame vers le haut pour épargner le ménisque. Trocart mousse dirigé vers l’échancrure, puis glissé dans le cul-de-sac sous-quadricipital en étendant le genou. Exploration systématique : cul-de-sac, fémoro-patellaire, rampes, compartiment médial, échancrure, compartiment latéral (position en « 4 »).',
+      accent: ['arthroscope'], montrer: ['portail-al', 'portail-am', 'arthroscope'], masquer: ['arthroscope/crochet', ...REPERES] },
+    { titre: 'Voie antéro-médiale : les instruments', vue: 'arthro',
+      texte: 'Elle est repérée à l’aiguille sous contrôle de la vue, pour que l’instrument atteigne la lésion sans buter sur le condyle : plus basse pour une corne postérieure du ménisque médial, plus haute pour l’échancrure. Le crochet palpeur teste les ménisques et les ligaments croisés. Peau retirée, patella translucide.',
+      accent: ['arthroscope', 'lca', 'menisque-med', 'menisque-lat'], voiler: ['patella'], montrer: ['arthroscope'],
+      masquer: [...REPERES, ...PEAU, 'hoffa', 'capsule', 'retinaculum-lat', 'retinaculum-med', 'anastomose-patellaire', 'tractus'], estomper: [...QUADRICEPS] },
+    { titre: 'Voies accessoires', vue: 'arthro',
+      texte: 'Supéro-latérale ou supéro-médiale (lavage, corps étranger, patella) ; trans-tendineuse centrale ; postéro-médiale et postéro-latérale, créées de dedans en dehors sous contrôle de la vue par transillumination, genou fléchi à 90° — en arrière de ces voies : la veine et le nerf saphènes en dedans, le nerf fibulaire commun en dehors, derrière le biceps.',
+      accent: ['lca', 'lcp', 'menisque-med', 'menisque-lat'], danger: ['nfibcommun', 'nsaphene', 'vsaphene', 'apoplitee'], voiler: ['patella'], montrer: ['arthroscope'],
+      masquer: [...REPERES, ...PEAU, 'hoffa', 'capsule', 'retinaculum-lat', 'retinaculum-med', 'anastomose-patellaire', 'tractus'], estomper: [...QUADRICEPS] },
   ] },
 };
 
