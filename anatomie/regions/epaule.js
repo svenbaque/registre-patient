@@ -1,7 +1,7 @@
-// Épaule droite — voie delto-pectorale.
+// Épaule droite — voie delto-pectorale, abord direct de la clavicule.
 // Repère BodyParts3D, en millimètres : x = latéral (-) / médial (+), y = avant (-) / arrière (+), z = vers le haut.
 import pieces from './epaule.pieces.js';
-import { peauFendue, charge, lame } from './outils.js';
+import { peauFendue, berges, charge, lame } from './outils.js';
 
 const meshes = [
   ['peau-epaule', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
@@ -19,13 +19,21 @@ const N_LAT = [-0.76, 0.24, 0.6];  // perpendiculaire au sillon, vers le moignon
 const TETE = [-166, -72, 1322];
 const visTete = (n, x, y, z, vers) => [`plaque/vis-t${n}`, 'Vis verrouillée céphalique', 'implants', '#cfd6dd', 1.7, [[x, y, z], [(x + vers[0]) / 2, (y + vers[1]) / 2, (z + vers[2]) / 2], vers]];
 const visDiaphyse = (n, x, y, z) => [`plaque/vis-d${n}`, 'Vis corticale diaphysaire', 'implants', '#cfd6dd', 1.7, [[x - 1, y - 1, z], [x + 9, y + 7, z], [x + 18, y + 14, z]]];
+// ----- Clavicule : incision le long de l'os, sur son bord antéro-supérieur -----
+const PEAU_CLAV = [[-53, -138, 1364], [-60, -135, 1366], [-72, -125, 1365], [-85, -113, 1369], [-100, -90, 1373], [-116, -78, 1380], [-132, -68, 1374]];
+const FOND_CLAV = [0, 0.5, -0.87];
+const CLAV_OS = [[-60, -129, 1356], [-72, -120, 1357.5], [-85, -106, 1360], [-100, -85, 1365], [-115, -70, 1366.5], [-128, -64, 1366.5]]; // face supérieure de la clavicule
+const visClav = (n, x, y, z) => [`plaque-clav/vis${n}`, 'Vis corticale', 'implants', '#cfd6dd', 1.5, [[x, y, z + 2], [x, y + 1, z - 6], [x, y + 2, z - 13]]];
 const tubes = [
+  ['incision-clav', 'Incision — abord direct de la clavicule', 'incisions', '#35e0c8', 1.3, PEAU_CLAV.map(([x, y, z]) => [x, y - 1.5, z + 2.6])],
+  visClav(1, -63, -127, 1356.5), visClav(2, -70, -121.5, 1357.5), visClav(3, -77, -115, 1358.5), visClav(4, -96, -91, 1364), visClav(5, -105, -80, 1365.5), visClav(6, -114, -71, 1366.5),
   ['incision-dp', 'Incision — voie delto-pectorale', 'incisions', '#35e0c8', 1.4, PEAU_DP.map(([x, y, z]) => [x - 1, y - 3.5, z])],
   visTete(1, -189, -85, 1330, [-160, -66, 1334]), visTete(2, -190, -85, 1320, [-152, -70, 1326]), visTete(3, -191, -84, 1310, [-158, -62, 1318]),
   visTete(4, -192, -84, 1298, [-152, -72, 1312]), visTete(5, -193, -83, 1288, [-150, -68, 1306]),
   visDiaphyse(1, -197, -81, 1262), visDiaphyse(2, -200, -80, 1244), visDiaphyse(3, -203, -79, 1226),
 ];
 const rubans = [
+  ['plaque-clav', 'Plaque supérieure de la clavicule', 'implants', '#b9c2cc', CLAV_OS.map(([x, y, z]) => [x, y, z + 1.6]), 10, 2.8, [0.72, 0.69, 0]],
   ['plaque', 'Plaque verrouillée d’humérus proximal', 'implants', '#b9c2cc', [[-188.5, -86, 1336], [-190.5, -86, 1312], [-193.5, -84, 1284], [-198, -82, 1254], [-203.5, -80, 1218]], 13, 2.6, [0.6, -0.8, 0]],
 ];
 
@@ -41,9 +49,11 @@ const vues = {
   // position demi-assise : l'opérateur est en avant et en dehors de l'épaule, tête du patient en haut
   op: { de: [-70, -400, 50], cible: SITE }, opProche: { de: [-70, -245, 25], cible: SITE },
   opLateral: { de: [-185, -200, 25], cible: [-180, -90, 1285] },
+  // position demi-assise, tête tournée du côté opposé : l'opérateur regarde la clavicule d'en haut et d'en avant, épaule à gauche
+  opClav: { de: [10, -250, 215], cible: [-92, -102, 1360] }, opClavProche: { de: [5, -150, 135], cible: [-92, -102, 1360] },
   libre: { de: [-330, -330, 120] },
 };
-const IMPLANTS = ['plaque'];
+const IMPLANTS = ['plaque', 'plaque-clav'];
 
 // Écarteurs : deux lames parallèles au sillon. Aucun muscle n'est incisé ; chacun reste attaché à ses insertions.
 const opts = { rayon: 28, profondeur: 46 };
@@ -63,7 +73,37 @@ const sillon = (dehors, dedans) => ({
 });
 const CONJOINT_EN_DEDANS = charge(CONJOINT, lame(SILLON, N_MED, FOND, 9, 50, { rayon: 26, profondeur: 62 }));
 
+// Clavicule : la peau et le platysma s'ouvrent sur la même ligne et sont levés d'un seul tenant (lambeau myo-cutané).
+const LEVRE_CLAV = [-0.69, -0.62, -0.36]; // de l'incision vers le bas et l'avant
+const clavOuverte = k => ({
+  ...berges(PEAU_CLAV, FOND_CLAV, LEVRE_CLAV.map(c => c * 11), k, 26),
+  'platysma/A': { dep: LEVRE_CLAV.map(c => c * 10 * k), autour: PEAU_CLAV, rayon: 24, fond: FOND_CLAV },
+  'platysma/B': { dep: LEVRE_CLAV.map(c => -c * 10 * k), autour: PEAU_CLAV, rayon: 24, fond: FOND_CLAV },
+});
+const fendreClav = [
+  ...peauFendue(PEAU_CLAV, FOND_CLAV, 'antéro-inférieure', 'postéro-supérieure'),
+  ['platysma', { ligne: PEAU_CLAV, fond: FOND_CLAV, rayon: 22 }, 'Platysma — berge antéro-inférieure', 'Platysma — berge postéro-supérieure'],
+];
+const SOUS_CLAVIERS = ['vsubclaviere', 'asubclaviere', 'tronc-sup', 'vaxillaire', 'aaxillaire'];
+
 const voies = {
+  clavicule: { court: 'Clavicule', titre: 'Abord direct de la clavicule', fendre: fendreClav, steps: [
+    { titre: 'Installation et incision', vue: 'opClav',
+      texte: 'Position demi-assise, coussin entre les omoplates, tête tournée du côté opposé, bras libre dans le champ. Incision le long de la clavicule, centrée sur le foyer, sur son bord antéro-supérieur ou un travers de doigt en dessous pour que la cicatrice ne repose pas sur la plaque.',
+      montrer: ['incision-clav'], danger: SOUS_CLAVIERS, masquer: IMPLANTS },
+    { titre: 'Peau et platysma', vue: 'opClavProche',
+      texte: 'Peau, tissu sous-cutané et platysma sont incisés puis levés d’un seul tenant : ce lambeau myo-cutané recouvrira la plaque à la fermeture. Les nerfs supra-claviculaires croisent la clavicule sous le platysma : ils sont repérés et préservés quand c’est possible, sinon le patient est prévenu de l’hypoesthésie sous-claviculaire.',
+      accent: ['clavicule', 'platysma'], danger: SOUS_CLAVIERS, masquer: IMPLANTS, ecarter: clavOuverte(1) },
+    { titre: 'Foyer de fracture', vue: 'opClavProche',
+      texte: 'Le fascia et le périoste sont incisés sur l’os ; les insertions du grand pectoral et du deltoïde en avant, du trapèze et du sterno-cléido-mastoïdien en haut, sont respectées, et un troisième fragment garde ses attaches. Sous la clavicule, au tiers médial et moyen : veine subclavière, artère subclavière et plexus brachial, protégés du foret par le muscle subclavier puis par un écarteur glissé sous l’os.',
+      accent: ['clavicule', 'subclavier'], danger: SOUS_CLAVIERS, masquer: IMPLANTS, ecarter: clavOuverte(1.35) },
+    { titre: 'Réduction et plaque', vue: 'opClavProche',
+      texte: 'Réduction anatomique (longueur et rotation), vis de traction si le trait est oblique, puis plaque anatomique supérieure — ou antéro-inférieure, moins saillante, dont les vis s’éloignent des vaisseaux — avec trois vis bicorticales de part et d’autre du foyer. Forage prudent, butée sur le foret. Fermeture du platysma par-dessus la plaque.',
+      accent: ['clavicule'], danger: SOUS_CLAVIERS, montrer: ['plaque-clav'], masquer: ['plaque'], ecarter: clavOuverte(1.35) },
+    { titre: 'Rapports sous-claviculaires', vue: 'opClavProche',
+      texte: 'Peau et platysma retirés, clavicule translucide : le muscle subclavier, puis la veine subclavière — la plus antérieure, parfois à quelques millimètres de la corticale au tiers médial —, l’artère subclavière et les troncs du plexus brachial. C’est la raison de la butée sur le foret et de vis de longueur mesurée.',
+      accent: ['subclavier'], danger: SOUS_CLAVIERS, voiler: ['clavicule'], montrer: ['plaque-clav'], masquer: ['plaque', 'peau', 'graisse', 'platysma'], estomper: ['pectoral-clav', 'deltoide-ant'] },
+  ] },
   dp: { court: 'Delto-pectorale', titre: 'Voie delto-pectorale', fendre: peauFendue(PEAU_DP, FOND, 'médiale', 'latérale'), steps: [
     { titre: 'Installation et incision', vue: 'op',
       texte: 'Vue de l’opérateur : position demi-assise, épaule dégagée du bord de la table, bras libre sur un appui, amplificateur de brillance du côté de la tête. Repère : le processus coracoïde. L’incision, de 10 à 12 cm, part de la coracoïde et descend obliquement en bas et en dehors, le long du sillon delto-pectoral, vers l’insertion humérale du deltoïde.',
@@ -84,7 +124,7 @@ const voies = {
       ecarter: { ...peauOuverte(38, 13), ...sillon(40, 9), ...CONJOINT_EN_DEDANS } },
     { titre: 'Réduction et plaque', vue: 'opLateral',
       texte: 'Les tendons de la coiffe sont chargés sur fils pour manœuvrer les tubercules. Réduction de la tête (relèvement du valgus ou correction du varus, appui médial restauré), broches temporaires, contrôle scopique. La plaque se pose en dehors de la gouttière bicipitale, 5 à 8 mm sous le sommet du tubercule majeur ; vis céphaliques sous-chondrales sans effraction articulaire, vis de calcar si le varus menace. Les fils de la coiffe sont noués dans la plaque. Peau retirée, deltoïde estompé.',
-      accent: ['humerus'], danger: ['axillaire', 'axillaire-rameaux'], voiler: ['humerus'], montrer: IMPLANTS, masquer: ['peau', 'graisse', 'gaine-biceps'], estomper: ['deltoide-ant', 'deltoide-moy'],
+      accent: ['humerus'], danger: ['axillaire', 'axillaire-rameaux'], voiler: ['humerus'], montrer: ['plaque'], masquer: ['peau', 'graisse', 'gaine-biceps', 'plaque-clav'], estomper: ['deltoide-ant', 'deltoide-moy'],
       ecarter: { ...sillon(40, 9), ...CONJOINT_EN_DEDANS } },
   ] },
 };

@@ -12,7 +12,7 @@ const VOIES_ABORD = [
     ['Delto-pectorale', 'humérus proximal, prothèse d’épaule', 'epaule:dp'],
     ['Supéro-latérale transdeltoïdienne', 'coiffe, clou huméral, trochiter'],
     ['Postérieure de l’épaule (Judet)', 'scapula, glène'],
-    ['Abord direct de la clavicule', 'ostéosynthèse de la clavicule'],
+    ['Abord direct de la clavicule', 'ostéosynthèse de la clavicule', 'epaule:clavicule'],
     ['Abord supérieur de l’acromio-claviculaire', 'disjonctions']]],
   ['Bras', [
     ['Antéro-latérale de l’humérus', 'diaphyse humérale'],

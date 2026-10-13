@@ -55,4 +55,12 @@ export default [
   ['posterior-circumflex-humeral-artery', "Artère circonflexe humérale postérieure", 'vaisseaux', '#c8102e', { id: 'acirc-post', dossier: 'models-z/corps' }],
   ['thoraco-acromial-artery', "Artère thoraco-acromiale", 'vaisseaux', '#c8102e', { id: 'athoraco-acromiale', dossier: 'models-z/corps' }],
   ['anterior-circumflex-humeral-vein', "Veine circonflexe humérale antérieure", 'vaisseaux', '#2f4f9e', { id: 'vcirc-ant', dossier: 'models-z/corps' }],
+  ['platysma', "Platysma", 'pectoraux', '#cf6f5d', { id: 'platysma', dossier: 'models-z/corps' }],
+  ['descending-part-of-trapezius-muscle', "Trapèze — faisceau supérieur", 'deltoide', '#a5505a', { id: 'trapeze-sup', dossier: 'models-z/corps' }],
+  ['sternocleidomastoid-muscle', "Sterno-cléido-mastoïdien", 'pectoraux', '#b0506a', { id: 'scm', dossier: 'models-z/corps' }],
+  ['right-subclavian-artery', "Artère subclavière", 'vaisseaux', '#c8102e', { id: 'asubclaviere', dossier: 'models-z/corps' }],
+  ['right-subclavian-vein', "Veine subclavière", 'vaisseaux', '#2f4f9e', { id: 'vsubclaviere', dossier: 'models-z/corps' }],
+  ['conoid-ligament', "Ligament conoïde", 'ligaments', '#e9e4d6', { id: 'conoide', dossier: 'models-z/corps' }],
+  ['trapezoid-ligament', "Ligament trapézoïde", 'ligaments', '#e9e4d6', { id: 'trapezoide', dossier: 'models-z/corps' }],
+  ['superior-trunk-of-brachial-plexus', "Plexus brachial — tronc supérieur", 'nerfs', '#f3d98b', { id: 'tronc-sup', dossier: 'models-z/corps' }],
 ];
