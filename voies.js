@@ -17,8 +17,8 @@ const VOIES_ABORD = [
   ['Bras', [
     ['Antéro-latérale de l’humérus', 'diaphyse humérale', 'bras:al'],
     ['Postérieure de l’humérus', 'tiers distal, nerf radial', 'bras:post'],
-    ['Latérale de l’humérus distal', 'tiers distal, nerf radial'],
-    ['Médiale du bras', 'abord vasculo-nerveux']]],
+    ['Latérale de l’humérus distal', 'tiers distal, nerf radial', 'bras:latd'],
+    ['Médiale du bras', 'abord vasculo-nerveux', 'bras:medb']]],
   ['Coude', [
     ['Postérieure avec ostéotomie de l’olécrâne', 'palette humérale articulaire', 'coude:palette'],
     ['Postérieure para-tricipitale / Bryan-Morrey', 'palette, prothèse de coude', 'coude:paratri'],
