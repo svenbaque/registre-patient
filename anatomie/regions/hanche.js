@@ -114,10 +114,12 @@ const tubes = [
 
 // Implants (tracés schématiques) : plaque DHS et ses vis, clou gamma et ses vis.
 const rubans = [
+  ['plaque-kl', 'Plaque de reconstruction postérieure', 'implants', '#b9c2cc', [[-60.5, -40, 782], [-70.5, -50, 808], [-81, -58.5, 832], [-77, -60.5, 856], [-66.5, -46.5, 880]], 10, 2.6, [0.89, 0.45, 0]],
   ['dhs', 'Plaque DHS', 'implants', '#b9c2cc', [[-147, -86, 776], [-135, -87, 752], [-127, -87, 722], [-122, -90, 692], [-118, -92, 664]], 17, 4, [0, 1, 0]],
 ];
 const visPlaque = (n, x, y, z) => [`dhs/vis${n}`, 'Vis corticale de la plaque', 'implants', '#cfd6dd', 2.2, {}, [[x - 4, y, z], [x + 14, y, z], [x + 32, y, z]]];
 tubes.push(...[
+  ...[[-62, -41, 786], [-68, -47, 800], [-78, -60, 850], [-70, -52, 872]].map(([x, y, z], n) => [`plaque-kl/vis${n}`, 'Vis de la plaque postérieure', 'implants', '#cfd6dd', 1.7, {}, [[x - 1, y + 2, z], [x + 7, y - 12, z], [x + 14, y - 26, z]]]),
   ['dhs/vis-cervicale', 'Vis cervicale (DHS)', 'implants', '#cfd6dd', 4.5, {}, [[-146, -86, 767], [-110, -89, 791], [-72, -92, 817]]],
   visPlaque(1, -131, -87, 742), visPlaque(2, -127, -87, 722), visPlaque(3, -123, -89, 700), visPlaque(4, -120, -91, 678),
   ['gamma', 'Clou gamma', 'implants', '#b9c2cc', 6, {}, [[-128, -77, 828], [-122, -80, 792], [-114, -85, 752], [-108, -90, 712], [-104, -93, 672], [-101, -94, 642]]],
@@ -161,6 +163,7 @@ const vues = {
   // vue de l'opérateur : patient couché sur le côté sain, opérateur dans son dos ; la tête du patient est à gauche, l'avant en haut de l'image
   opPost: { de: [-400, 275, 0], haut: [-0.565, -0.826, 0] },
   opPostProche: { de: [-250, 172, 0], haut: [-0.565, -0.826, 0], cible: [-112, -66, 822] },
+  opKL: { de: [-200, 240, 0], haut: [-0.77, -0.64, 0], cible: [-96, -60, 826] },
   ant: { de: [-150, -430, 70] }, antProche: { de: [-120, -330, 10] },
   // décubitus dorsal, opérateur du côté opéré : tête du patient à gauche, ligne médiane en haut de l'image
   opAnt: { de: [-90, -420, 0], haut: [1, 0, 0], cible: [-125, -135, 830] }, opAntProche: { de: [-60, -270, 0], haut: [1, 0, 0], cible: [-120, -128, 828] },
@@ -271,6 +274,16 @@ const LAMBEAU_ANTERIEUR = { 'FMA22330/B': LAME_HARDINGE, FMA22332: LAME_HARDINGE
 const DESINSERTION_HARDINGE = { 'FMA22330/B': { autour: [[-140, -80, 824], [-143, -82, 790]], rayon: 12 }, FMA22332: { autour: [[-140, -84, 822], [-142, -86, 794]], rayon: 12 } };
 const CAPSULE_ANTERIEURE = { capsule: { autour: [[-88, -116, 834], [-108, -112, 795]], rayon: 16 } };
 
+// Kocher-Langenbeck : pour voir la colonne postérieure, les fibres du grand fessier qui la recouvrent sont retirées de l'image.
+// Le lambeau postérieur (peau, fascia, grand fessier) est récliné loin en arrière et en dedans, sur le nerf sciatique protégé.
+const mooreKL = () => {
+  const ouvert = moore(1.3);
+  const plus = { dep: [30, 34, 0], autour: [[-153, -76, 770], [-152, -74, 800], [-143, -52, 838], [-125, -24, 872]], rayon: 70 };
+  for (const id of ['peau/A', 'graisse/A', 'FMA58776/A/B', 'FMA22328/B']) ouvert[id] = [ouvert[id], plus];
+  return ouvert;
+};
+const FENETRE_KL = { FMA22328: { autour: [[-66, -40, 770], [-82, -56, 880]], rayon: 62 }, 'FMA58776/A': { autour: [[-152, -74, 792], [-128, -30, 866]], rayon: 40 } };
+
 const voies = {
   post: { court: 'Moore', titre: 'Voie postérieure (Moore)', fendre: peauFendue(PEAU_MOORE, [0.75, -0.66, 0], 'postérieure', 'antérieure'), steps: [
     { titre: 'Installation et incision', vue: 'opPost',
@@ -313,6 +326,29 @@ const voies = {
     { titre: 'Capsulotomie, col fémoral', vue: 'opAntProche',
       texte: 'Capsulotomie antérieure (en T, en H ou résection) ; les écarteurs sont replacés à l’intérieur de la capsule. Le col et la tête sont exposés. La coupe du col se fait en place, puis la tête est extraite au tire-bouchon avant la préparation du cotyle.',
       accent: ['FMA24474', 'capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], masquer: REPERES, ecarter: HUETER_CAPSULE, sectionner: { capsule: { autour: [[-84, -116, 834], [-104, -112, 792]], rayon: 15 } } },
+  ] },
+  kl: { court: 'Kocher-Langenbeck', titre: 'Voie de Kocher-Langenbeck (paroi et colonne postérieures du cotyle)', fendre: peauFendue(PEAU_MOORE, [0.75, -0.66, 0], 'postérieure', 'antérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opPost',
+      texte: 'Vue de l’opérateur : décubitus latéral (ou ventral sur table orthopédique), genou fléchi à 90° et hanche en extension pendant toute l’intervention, pour détendre le nerf sciatique. Incision de 15 à 20 cm centrée sur le grand trochanter : sa branche proximale monte vers l’épine iliaque postéro-supérieure, sa branche distale descend dans l’axe du fémur.',
+      montrer: ['incision-post'], danger: ['sciatique'], masquer: [...REPERES, 'plaque-kl'] },
+    { titre: 'Fascia lata et grand fessier', vue: 'opPost',
+      texte: 'Le fascia lata est incisé dans l’axe du fémur, puis le grand fessier est dissocié dans le sens de ses fibres, sans dépasser la première branche du nerf glutéal inférieur qui croise le champ. La bourse trochantérienne est réséquée ; l’insertion fémorale du grand fessier peut être relâchée pour détendre le lambeau.',
+      accent: ['FMA22328', 'FMA58776'], danger: ['sciatique'], masquer: [...REPERES, 'plaque-kl'], ecarter: moore(1) },
+    { titre: 'Nerf sciatique', vue: 'opPostProche',
+      texte: 'Le nerf sciatique est repéré en premier, sur la face postérieure du carré fémoral, puis suivi vers le haut jusqu’au piriforme, sous lequel il sort de la grande échancrure. Il est contus dans une fracture-luxation sur dix : son aspect est noté. Il ne quitte plus le champ de vision ; aucun écarteur ne s’appuie sur lui.',
+      accent: [...ROTATEURS, 'FMA22338'], danger: ['sciatique'], masquer: [...REPERES, 'plaque-kl'], ecarter: moore(1.3) },
+    { titre: 'Pelvi-trochantériens sectionnés', vue: 'opPostProche',
+      texte: 'Le moyen fessier est relevé. Le piriforme, puis l’obturateur interne et les jumeaux, sont chargés sur fils et sectionnés à 1,5 cm de leur insertion trochantérienne, pour respecter l’artère circonflexe médiale, qui monte le long du bord supérieur de l’obturateur externe vers la tête fémorale ; le carré fémoral est laissé intact pour la même raison. L’obturateur interne, récliné en arrière, coiffe le nerf sciatique et conduit à la petite échancrure.',
+      accent: [...ROTATEURS], danger: ['sciatique', 'circonflexe-med'], masquer: [...REPERES, 'plaque-kl'],
+      ecarter: { ...moore(1.3), ...FESSIER_RELEVE, ...Object.fromEntries(ROTATEURS.map(id => [id, RABAT])) }, sectionner: SECTION_ROTATEURS },
+    { titre: 'Paroi et colonne postérieures', vue: 'opKL',
+      texte: 'Un écarteur est glissé dans la petite échancrure, sur le tendon de l’obturateur interne, un autre dans la grande échancrure : la surface rétro-acétabulaire est exposée, de l’ischion au toit. La capsule n’est pas décollée des fragments de paroi, qu’elle vascularise. Dans la grande échancrure, le paquet glutéal supérieur sort au ras de l’os : son hémorragie ne se pince pas à l’aveugle. Par le foyer, tête distractée, on retire les fragments incarcérés et on relève une impaction marginale. Les fibres inférieures du grand fessier sont ici retirées pour la lisibilité.',
+      accent: ['FMA16586', 'capsule'], danger: ['sciatique', 'aglutealsup', 'nglutealsup', 'circonflexe-med'], masquer: [...REPERES, 'plaque-kl'],
+      ecarter: { ...mooreKL(), ...FESSIER_RELEVE, ...Object.fromEntries(ROTATEURS.map(id => [id, RABAT])) }, sectionner: { ...SECTION_ROTATEURS, ...FENETRE_KL } },
+    { titre: 'Ostéosynthèse', vue: 'opKL',
+      texte: 'La colonne postérieure est réduite et fixée d’abord, la paroi ensuite. Les fragments de paroi sont replacés sur la tête, tenus par des vis de traction, puis soutenus par une plaque de reconstruction galbée, de l’ischion au toit, légèrement sous-cintrée pour appuyer sur la paroi. Aucune vis ne doit pénétrer l’articulation : contrôle scopique. Réinsertion des pelvi-trochantériens ; prévention des ossifications selon le protocole du service.',
+      accent: ['FMA16586'], danger: ['sciatique', 'aglutealsup'], montrer: ['plaque-kl'], masquer: REPERES,
+      ecarter: { ...mooreKL(), ...FESSIER_RELEVE, ...Object.fromEntries(ROTATEURS.map(id => [id, RABAT])) }, sectionner: { ...SECTION_ROTATEURS, ...FENETRE_KL } },
   ] },
   hardinge: { court: 'Hardinge', titre: 'Voie latérale transglutéale (Hardinge)', fendre: peauFendue(PEAU_HARDINGE, [1, 0, 0], 'antérieure', 'postérieure'), steps: [
     { titre: 'Installation et incision', vue: 'opHardinge',

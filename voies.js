@@ -41,7 +41,7 @@ const VOIES_ABORD = [
     ['Abords des métacarpiens et phalanges', 'ostéosynthèses de la main'],
     ['Bruner et médio-latérale des doigts', 'fléchisseurs, Dupuytren']]],
   ['Bassin et cotyle', [
-    ['Kocher-Langenbeck', 'paroi et colonne postérieures'],
+    ['Kocher-Langenbeck', 'paroi et colonne postérieures', 'hanche:kl'],
     ['Ilio-inguinale (Letournel)', 'colonne antérieure'],
     ['Stoppa modifiée', 'lame quadrilatère'],
     ['Ilio-fémorale (et élargie)', 'aile iliaque, fractures complexes'],
