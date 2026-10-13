@@ -30,7 +30,17 @@ const RAPHE = [[-180, -84, 1352], [-202, -96, 1302]];
 const FOND_TD = [0.82, 0.57, 0];
 const N_TD_AVANT = [0.57, -0.82, -0.06];
 const N_TD_ARRIERE = [-0.57, 0.82, 0.06];
+// ----- Voie postérieure de Judet et abord supérieur de l'acromio-claviculaire -----
+const PEAU_JUDET = [[-85, 19, 1341], [-102, 10, 1341], [-123, 5, 1343], [-142, -8, 1346], [-162, -22, 1350], [-177, -30, 1353], [-184, -18, 1328], [-187, -6, 1303], [-190, 4, 1279]];
+const FOND_JUDET = [0.3, -0.95, -0.1];
+const PEAU_AC = [[-131, -77, 1372], [-140, -71, 1372], [-149, -66, 1371], [-160, -61, 1367], [-170, -57, 1362]];
+const FOND_AC = [0, 0.2, -0.98];
 const tubes = [
+  ['incision-judet', 'Incision — voie postérieure de Judet', 'incisions', '#35e0c8', 1.3, PEAU_JUDET.map(([x, y, z]) => [x - 0.7, y + 2.4, z + 0.3])],
+  ['incision-ac', 'Incision — abord de l’acromio-claviculaire', 'incisions', '#35e0c8', 1.2, PEAU_AC.map(([x, y, z]) => [x, y - 0.5, z + 2.5])],
+  ['plaque-crochet/crochet', 'Crochet sous-acromial', 'implants', '#b9c2cc', 2, [[-147, -59, 1367], [-158, -55, 1363], [-165, -52, 1353], [-173, -50, 1350]]],
+  ...[-121, -131, -141].map((x, n) => [`plaque-crochet/vis${n}`, 'Vis corticale', 'implants', '#cfd6dd', 1.5, [[x, -64 + (x + 121) * -0.25, 1369], [x, -63 + (x + 121) * -0.25, 1361], [x, -62 + (x + 121) * -0.25, 1353]]]),
+  ...[[-141, -30, 1336], [-143, -33, 1318], [-139, -31, 1300]].map(([x, y, z], n) => [`plaque-glene/vis${n}`, 'Vis de la plaque postérieure', 'implants', '#cfd6dd', 1.5, [[x - 1, y + 2, z], [x + 4, y - 9, z], [x + 9, y - 20, z]]]),
   ['incision-td', 'Incision — voie supéro-latérale', 'incisions', '#35e0c8', 1.3, PEAU_TD.map(([x, y, z]) => [x - 2, y - 1.4, z + 0.5])],
   ['clou-humerus', 'Clou huméral proximal', 'implants', '#b9c2cc', 4.5, [[-172, -72, 1346], [-173, -73, 1310], [-180, -72, 1275], [-189, -70.5, 1245], [-195, -68, 1215], [-197, -64, 1190]]],
   ['clou-humerus/vis1', 'Vis céphalique', 'implants', '#cfd6dd', 1.8, [[-192, -80, 1328], [-170, -72, 1326], [-150, -64, 1324]]],
@@ -44,6 +54,8 @@ const tubes = [
   visDiaphyse(1, -197, -81, 1262), visDiaphyse(2, -200, -80, 1244), visDiaphyse(3, -203, -79, 1226),
 ];
 const rubans = [
+  ['plaque-crochet', 'Plaque à crochet', 'implants', '#b9c2cc', [[-116, -66.5, 1367.5], [-132, -62, 1368], [-147, -59.5, 1367]], 9, 2.4, [0.3, 0.95, 0]],
+  ['plaque-glene', 'Plaque postérieure du col de la scapula', 'implants', '#b9c2cc', [[-140.5, -27.5, 1340], [-142.5, -30.5, 1318], [-138.5, -28.5, 1296]], 8, 2, [0.9, 0.3, 0]],
   ['plaque-clav', 'Plaque supérieure de la clavicule', 'implants', '#b9c2cc', CLAV_OS.map(([x, y, z]) => [x, y, z + 1.6]), 10, 2.8, [0.72, 0.69, 0]],
   ['plaque', 'Plaque verrouillée d’humérus proximal', 'implants', '#b9c2cc', [[-188.5, -86, 1336], [-190.5, -86, 1312], [-193.5, -84, 1284], [-198, -82, 1254], [-203.5, -80, 1218]], 13, 2.6, [0.6, -0.8, 0]],
 ];
@@ -64,9 +76,12 @@ const vues = {
   opClav: { de: [10, -250, 215], cible: [-92, -102, 1360] }, opClavProche: { de: [5, -150, 135], cible: [-92, -102, 1360] },
   // position demi-assise : l'opérateur regarde le moignon de l'épaule par le dehors et l'avant
   opTD: { de: [-300, -175, 60], cible: [-190, -86, 1325] }, opTDProche: { de: [-185, -110, 45], cible: [-190, -86, 1325] },
+  // décubitus latéral ou ventral : face postérieure de l'épaule, tête en haut
+  opJudet: { de: [-90, 330, 70], cible: [-150, -22, 1318] }, opJudetProche: { de: [-55, 200, 40], cible: [-152, -26, 1316] },
+  opAC: { de: [-30, -150, 230], cible: [-150, -63, 1364] }, opACProche: { de: [-18, -90, 140], cible: [-150, -63, 1364] },
   libre: { de: [-330, -330, 120] },
 };
-const IMPLANTS = ['plaque', 'plaque-clav', 'clou-humerus'];
+const IMPLANTS = ['plaque', 'plaque-clav', 'clou-humerus', 'plaque-crochet', 'plaque-glene'];
 
 // Écarteurs : deux lames parallèles au sillon. Aucun muscle n'est incisé ; chacun reste attaché à ses insertions.
 const opts = { rayon: 28, profondeur: 46 };
@@ -109,6 +124,24 @@ const deltoideFendu = e => ({
   'deltoide-moy': lame(RAPHE, N_TD_ARRIERE, FOND_TD, e, e * 2.4 + 10, { rayon: 16, profondeur: 30 }),
 });
 const DECOR_TD = ['platysma', 'cephalique'];
+
+// Judet : deltoïde postérieur désinséré de l'épine et rabattu en dehors, puis intervalle infra-épineux / petit rond.
+const judetPeau = k => berges(PEAU_JUDET, FOND_JUDET, [-6, 2, -13], k, 34);
+const DELTOIDE_POST_RABATTU = { 'deltoide-post': { dep: [-30, 6, -34], autour: [[-110, -4, 1334], [-168, -36, 1346]], rayon: 62 } };
+const DELTOIDE_POST_DESINSERE = { 'deltoide-post': { autour: [[-108, -2, 1336], [-170, -38, 1348]], rayon: 12 } };
+const INT_JUDET = [[-128, -18, 1297], [-186, -62, 1322]];
+const intervalleJudet = e => ({
+  ...charge(['infra-epineux', 'nsuprascapulaire'], lame(INT_JUDET, [0.1, 0, 0.99], FOND_JUDET, e, e * 2.4 + 10, { rayon: 26, profondeur: 30 })),
+  ...charge(['petit-rond'], lame(INT_JUDET, [-0.1, 0, -0.99], FOND_JUDET, e, e * 2.4 + 10, { rayon: 26, profondeur: 30 })),
+});
+const CAPSULE_POSTERIEURE = { capsule: { autour: [[-150, -42, 1338], [-152, -44, 1302]], rayon: 13 } };
+// Acromio-claviculaire : chape delto-trapézienne ouverte sur la clavicule, deltoïde en avant, trapèze en arrière.
+const acPeau = k => berges(PEAU_AC, FOND_AC, [3, -10, 0], k, 20);
+const acChape = e => ({
+  'deltoide-ant': lame([[-128, -66, 1366], [-170, -54, 1358]], [-0.3, -0.95, 0], FOND_AC, e, e * 2.4 + 8, { rayon: 16, profondeur: 20 }),
+  'deltoide-moy': lame([[-128, -66, 1366], [-170, -54, 1358]], [-0.3, -0.95, 0], FOND_AC, e, e * 2.4 + 8, { rayon: 16, profondeur: 20 }),
+  'trapeze-sup': lame([[-128, -66, 1366], [-170, -54, 1358]], [0.3, 0.95, 0], FOND_AC, e, e * 2.4 + 8, { rayon: 16, profondeur: 20 }),
+});
 
 const voies = {
   clavicule: { court: 'Clavicule', titre: 'Abord direct de la clavicule', fendre: fendreClav, steps: [
@@ -167,6 +200,37 @@ const voies = {
     { titre: 'Clou huméral', vue: 'opTD',
       texte: 'Broche-guide, ouverture, clou descendu à la main ; son extrémité est enfouie sous le cartilage. Vis céphaliques par le viseur, à travers de courtes incisions : celles qui se trouvent 5 à 7 cm sous l’acromion sont à hauteur du nerf axillaire — dissection mousse jusqu’à l’os, douille de protection. Le supra-épineux est suturé, le deltoïde refermé. Variante : plaque glissée sous le nerf par deux fenêtres (MIPO). Peau retirée, humérus translucide.',
       accent: ['clou-humerus'], voiler: ['humerus'], danger: ['axillaire', 'axillaire-rameaux'], montrer: ['clou-humerus'], masquer: ['plaque', 'plaque-clav', 'peau', 'graisse', ...DECOR_TD], estomper: ['deltoide-ant', 'deltoide-moy', 'deltoide-post'] },
+  ] },
+  judet: { court: 'Judet', titre: 'Voie postérieure de l’épaule (Judet)', fendre: peauFendue(PEAU_JUDET, FOND_JUDET, 'inférieure', 'supérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opJudet',
+      texte: 'Décubitus latéral, le tronc basculé en avant, ou décubitus ventral ; bras libre dans le champ. L’incision longe l’épine de la scapula jusqu’à l’angle postérieur de l’acromion, puis descend le long du bord latéral de la scapula (ou du bord médial dans la voie de Judet complète, pour le corps).',
+      montrer: ['incision-judet'], danger: ['axillaire'], masquer: [...IMPLANTS, 'platysma'] },
+    { titre: 'Deltoïde postérieur', vue: 'opJudet',
+      texte: 'Le lambeau cutané est levé au ras du fascia. Le faisceau postérieur du deltoïde est désinséré de l’épine, en gardant une collerette pour la réinsertion, et rabattu en dehors et en bas — sans traction : le nerf axillaire, qui l’innerve par sa face profonde, sort de l’espace quadrilatère juste sous le petit rond. Variante : passer sous le bord inférieur du deltoïde, bras en abduction, sans le désinsérer.',
+      accent: ['deltoide-post', 'infra-epineux', 'petit-rond'], danger: ['axillaire', 'acirc-post'], masquer: [...IMPLANTS, 'platysma'],
+      ecarter: { ...judetPeau(1), ...DELTOIDE_POST_RABATTU }, sectionner: DELTOIDE_POST_DESINSERE },
+    { titre: 'Intervalle infra-épineux / petit rond', vue: 'opJudetProche',
+      texte: 'Plan internerveux : l’infra-épineux (nerf supra-scapulaire) est récliné en haut, le petit rond (nerf axillaire) en bas. On ne descend pas sous le petit rond : l’espace quadrilatère contient le nerf axillaire et l’artère circonflexe postérieure. En dedans, le nerf supra-scapulaire contourne la base de l’épine, à 1,5 ou 2 cm du rebord glénoïdien : l’infra-épineux n’est pas tiré en dedans.',
+      accent: ['infra-epineux', 'petit-rond', 'capsule'], danger: ['axillaire', 'acirc-post', 'nsuprascapulaire'], masquer: [...IMPLANTS, 'platysma'],
+      ecarter: { ...judetPeau(1.2), ...DELTOIDE_POST_RABATTU, ...intervalleJudet(10) }, sectionner: DELTOIDE_POST_DESINSERE },
+    { titre: 'Glène postérieure et col de la scapula', vue: 'opJudetProche',
+      texte: 'La capsule postérieure est incisée parallèlement au rebord glénoïdien : la glène postérieure, le col et le bord latéral de la scapula sont exposés. Fragment de rebord postérieur vissé ou soutenu par une petite plaque ; le pilier latéral, épais, donne la meilleure tenue aux vis.',
+      accent: ['scapula', 'humerus'], danger: ['axillaire', 'nsuprascapulaire'], montrer: ['plaque-glene'], masquer: ['plaque', 'plaque-clav', 'clou-humerus', 'plaque-crochet', 'platysma'],
+      ecarter: { ...judetPeau(1.2), ...DELTOIDE_POST_RABATTU, ...intervalleJudet(13) }, sectionner: { ...DELTOIDE_POST_DESINSERE, ...CAPSULE_POSTERIEURE } },
+  ] },
+  ac: { court: 'Acromio-claviculaire', titre: 'Abord supérieur de l’acromio-claviculaire', fendre: peauFendue(PEAU_AC, FOND_AC, 'antérieure', 'postérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opAC',
+      texte: 'Position demi-assise, tête tournée du côté opposé. Incision sur le quart latéral de la clavicule et l’articulation acromio-claviculaire, ou incision « en coup de sabre » sagittale, 2 cm en dedans de l’interligne, dans les lignes de la peau, qui expose aussi la coracoïde.',
+      montrer: ['incision-ac'], masquer: [...IMPLANTS, 'platysma'] },
+    { titre: 'Chape delto-trapézienne', vue: 'opACProche',
+      texte: 'La chape delto-trapézienne, souvent déchirée par le traumatisme, est incisée sur la clavicule et levée en deux lambeaux épais : deltoïde en avant, trapèze en arrière. Sa suture en paletot, en fin d’intervention, est un temps essentiel de la stabilisation.',
+      accent: ['clavicule', 'deltoide-ant', 'trapeze-sup'], masquer: [...IMPLANTS, 'platysma'], ecarter: acPeau(1) },
+    { titre: 'Articulation et ligaments coraco-claviculaires', vue: 'opACProche',
+      texte: 'L’interligne est exposé : ménisque et débris sont réséqués, la clavicule réduite sur l’acromion. Sous la clavicule, les ligaments conoïde et trapézoïde, rompus dans les disjonctions de stade III et plus. Sous la coracoïde, en dedans : le nerf musculo-cutané et le plexus — tout passage d’instrument sous la coracoïde se fait de dedans en dehors, au contact de l’os.',
+      accent: ['clavicule', 'acromio-clav', 'conoide', 'trapezoide'], danger: ['musculocutane', 'aaxillaire'], masquer: [...IMPLANTS, 'platysma'], ecarter: { ...acPeau(1.3), ...acChape(9) } },
+    { titre: 'Stabilisation', vue: 'opACProche',
+      texte: 'Selon l’école : plaque à crochet (le crochet passe sous l’acromion, en arrière de l’articulation ; la plaque est retirée à trois mois), suspension coraco-claviculaire par bouton et ruban, ou ligamentoplastie. Les ligaments coraco-claviculaires sont suturés quand ils s’y prêtent.',
+      accent: ['clavicule'], montrer: ['plaque-crochet'], masquer: ['plaque', 'plaque-clav', 'clou-humerus', 'plaque-glene', 'platysma'], ecarter: { ...acPeau(1.3), ...acChape(9) } },
   ] },
 };
 

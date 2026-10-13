@@ -11,9 +11,9 @@ const VOIES_ABORD = [
   ['Épaule et clavicule', [
     ['Delto-pectorale', 'humérus proximal, prothèse d’épaule', 'epaule:dp'],
     ['Supéro-latérale transdeltoïdienne', 'coiffe, clou huméral, trochiter', 'epaule:td'],
-    ['Postérieure de l’épaule (Judet)', 'scapula, glène'],
+    ['Postérieure de l’épaule (Judet)', 'scapula, glène', 'epaule:judet'],
     ['Abord direct de la clavicule', 'ostéosynthèse de la clavicule', 'epaule:clavicule'],
-    ['Abord supérieur de l’acromio-claviculaire', 'disjonctions']]],
+    ['Abord supérieur de l’acromio-claviculaire', 'disjonctions', 'epaule:ac']]],
   ['Bras', [
     ['Antéro-latérale de l’humérus', 'diaphyse humérale', 'bras:al'],
     ['Postérieure de l’humérus', 'tiers distal, nerf radial', 'bras:post'],
@@ -29,7 +29,7 @@ const VOIES_ABORD = [
     ['Abord direct de l’olécrâne', 'haubanage, plaque', 'coude:olecrane']]],
   ['Avant-bras', [
     ['Antérieure de Henry', 'diaphyse du radius', 'avant-bras:henry'],
-    ['Postéro-latérale de Thompson', 'radius proximal et moyen'],
+    ['Postéro-latérale de Thompson', 'radius proximal et moyen', 'avant-bras:thompson'],
     ['Abord direct de l’ulna', 'diaphyse ulnaire, Monteggia', 'avant-bras:ulna']]],
   ['Poignet et main', [
     ['Henry modifiée (trans-gaine du FCR)', 'plaque antérieure du radius distal', 'poignet:henry'],

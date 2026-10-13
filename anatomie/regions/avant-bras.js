@@ -1,7 +1,7 @@
 // Avant-bras droit — voie antérieure de Henry (diaphyse du radius) et abord direct de l'ulna.
 // Repère BodyParts3D, en millimètres, avant-bras en supination : x = radial (-) / ulnaire (+), y = face antérieure (-) / postérieure (+), z = vers le coude (+).
 import pieces from './avant-bras.pieces.js';
-import { peauFendue, berges, charge, lame } from './outils.js';
+import { peauFendue, berges, charge, lame, deuxBerges } from './outils.js';
 
 const meshes = [
   ['peau-coude', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
@@ -24,13 +24,19 @@ const N_PALMAIRE = [0.8, -0.6, 0]; // vers le fléchisseur ulnaire du carpe
 
 const visRadius = (n, x, y, z) => [`plaque-radius/vis${n}`, 'Vis corticale', 'implants', '#cfd6dd', 1.5, [[x, y - 1.5, z], [x + 0.5, y + 6, z], [x + 1, y + 13.5, z]]];
 const visUlna = (n, x, y, z) => [`plaque-ulna/vis${n}`, 'Vis corticale', 'implants', '#cfd6dd', 1.5, [[x + 1, y + 1.3, z], [x - 4, y - 5.4, z], [x - 9, y - 12, z]]];
+// ----- Thompson : de l'épicondyle latéral vers le tubercule de Lister -----
+const PEAU_TH = [[-253, -52, 1020], [-260, -57, 996], [-263, -60, 969], [-264, -67, 944], [-264, -74, 919], [-268, -81, 895]];
+const FOND_TH = [0.75, -0.66, 0];
 const tubes = [
+  ['incision-thompson', 'Incision — voie de Thompson', 'incisions', '#35e0c8', 1.2, PEAU_TH.map(([x, y, z]) => [x - 1.8, y + 1.6, z])],
+  ...[985, 968, 951, 925, 910].map((z, n) => [`plaque-th/vis${n}`, 'Vis corticale', 'implants', '#cfd6dd', 1.5, [[-247 - (995 - z) * 0.17, -72 - (995 - z) * 0.11, z], [-241 - (995 - z) * 0.17, -77 - (995 - z) * 0.11, z], [-235 - (995 - z) * 0.17, -82 - (995 - z) * 0.11, z]]]),
   ['incision-henry', 'Incision — voie de Henry', 'incisions', '#35e0c8', 1.2, PEAU_HENRY.map(([x, y, z]) => [x - 0.6, y - 2.4, z])],
   ['incision-ulna', 'Incision — abord direct de l’ulna', 'incisions', '#35e0c8', 1.2, PEAU_ULNA.map(([x, y, z]) => [x + 1.5, y + 2, z])],
   visRadius(1, -243, -87, 978), visRadius(2, -245, -87.5, 963), visRadius(3, -247.5, -88.5, 948), visRadius(4, -252, -93, 916), visRadius(5, -254.5, -96, 902), visRadius(6, -256.5, -99.5, 888),
   visUlna(1, -214.5, -51, 1000), visUlna(2, -216.5, -56, 984), visUlna(3, -218, -61, 968), visUlna(4, -221, -72, 934), visUlna(5, -223, -78, 918), visUlna(6, -225, -84, 900),
 ];
 const rubans = [
+  ['plaque-th', 'Plaque dorso-latérale du radius', 'implants', '#b9c2cc', [[-246, -72.5, 996], [-252, -75.5, 962], [-257, -78.5, 932], [-261.5, -85.5, 902]], 9, 2.6, [0.66, 0.75, 0]],
   ['plaque-radius', 'Plaque antérieure du radius', 'implants', '#b9c2cc', [[-242, -87.5, 988], [-246, -88.5, 958], [-250, -91.5, 930], [-254, -96, 904], [-257.5, -101.5, 880]], 10, 2.6, [1, 0, 0]],
   ['plaque-ulna', 'Plaque de l’ulna', 'implants', '#b9c2cc', [[-212.5, -48, 1010], [-217, -58, 978], [-220.5, -69, 944], [-223.5, -79, 914], [-226, -86.5, 890]], 9, 2.6, [0.76, -0.57, 0.1]],
 ];
@@ -48,6 +54,8 @@ const vues = {
   opHenry: { de: [-60, -330, 0], haut: [1, 0, 0], cible: RADIUS }, opHenryProche: { de: [-40, -205, 0], haut: [1, 0, 0], cible: RADIUS },
   // coude fléchi, avant-bras sur le thorax ou sur la table : l'opérateur regarde le bord ulnaire, main à droite
   opUlna: { de: [200, 265, 0], haut: [-0.8, 0.6, 0], cible: ULNA }, opUlnaProche: { de: [125, 165, 0], haut: [-0.8, 0.6, 0], cible: ULNA },
+  // avant-bras en pronation sur la table à main : face dorso-latérale, coude en haut
+  opTh: { de: [-215, 190, 0], cible: [-252, -68, 958] }, opThProche: { de: [-130, 115, 0], cible: [-252, -68, 958] },
   libre: { de: [-250, -250, 60] },
 };
 const IMPLANTS = ['plaque-radius', 'plaque-ulna'];
@@ -77,6 +85,21 @@ const ulnaMuscles = k => ({
   ...charge(['ecu', 'ecu-ulnaire'], lame(CRETE, N_DORSAL, FOND_ULNA, 8 * k, 30, { rayon: 24, profondeur: 22 })),
   ...charge(['fcu', 'fcu-ulnaire', 'fdp'], lame(CRETE, N_PALMAIRE, FOND_ULNA, 8 * k, 30, { rayon: 24, profondeur: 22 })),
 });
+
+// Thompson : court extenseur radial du carpe en avant, extenseur des doigts en arrière ; au fond, le supinateur et le nerf interosseux postérieur.
+const TH_AVANT = [-0.66, -0.75, 0];
+const TH_ARRIERE = [0.66, 0.75, 0];
+const INT_TH = [[-250, -56, 1020], [-258, -77, 900]];
+const thBouts = [PEAU_TH[0], PEAU_TH[PEAU_TH.length - 1]];
+const thPeau = e => deuxBerges(PEAU_TH, FOND_TH,
+  { vers: TH_AVANT, lame: lame(thBouts, TH_AVANT, FOND_TH, e, e * 2.4 + 8, { rayon: 22, profondeur: 22 }) },
+  { vers: TH_ARRIERE, lame: lame(thBouts, TH_ARRIERE, FOND_TH, e, e * 2.4 + 8, { rayon: 22, profondeur: 22 }) });
+const thMuscles = e => ({
+  ...charge(['ecrb', 'ecrl', 'brachioradial'], lame(INT_TH, TH_AVANT, FOND_TH, e, e * 2.4 + 12, { rayon: 22, profondeur: 30 })),
+  ...charge(['edc', 'edm', 'ecu', 'ecu-ulnaire'], lame(INT_TH, TH_ARRIERE, FOND_TH, e, e * 2.4 + 12, { rayon: 22, profondeur: 30 })),
+});
+const SUPINATEUR_DESINSERE = { supinateur: { autour: [[-244, -74, 1012], [-250, -78, 962]], rayon: 11 } };
+const POUCE_ECARTE = charge(['apl', 'epb'], { dep: [4, 6, -14], autour: [[-244, -76, 960], [-254, -84, 905]], rayon: 26 });
 
 const voies = {
   henry: { court: 'Henry', titre: 'Voie antérieure de Henry (diaphyse du radius)', fendre: peauFendue(PEAU_HENRY, FOND_HENRY, 'médiale', 'latérale'), steps: [
@@ -111,6 +134,23 @@ const voies = {
     { titre: 'Réduction et plaque', vue: 'opUlnaProche',
       texte: 'Réduction anatomique, puis plaque de compression de 3,5 mm avec trois vis bicorticales de part et d’autre du foyer. La plaque se pose de préférence sur la face palmaire (sous le fléchisseur ulnaire du carpe) ou dorsale, plutôt que sur la crête où elle gêne à l’appui ; elle est ici figurée près de la crête pour rester visible. Dans une fracture de Monteggia, la réduction anatomique de l’ulna réduit la tête radiale.',
       accent: ['ulna'], danger: ['nulnaire', 'aulnaire'], montrer: ['plaque-ulna'], masquer: ['plaque-radius'], ecarter: { ...ulnaPeau(1.25), ...ulnaMuscles(1.2) } },
+  ] },
+  thompson: { court: 'Thompson', titre: 'Voie postéro-latérale de Thompson (radius proximal et moyen)', fendre: peauFendue(PEAU_TH, FOND_TH, 'antérieure', 'postérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opTh',
+      texte: 'Décubitus dorsal, bras sur table à main, coude fléchi, avant-bras en pronation, garrot. L’incision suit la ligne qui joint l’épicondyle latéral au tubercule de Lister, centrée sur le foyer. Le modèle est ici en supination.',
+      montrer: ['incision-thompson'], danger: ['nip'], masquer: IMPLANTS },
+    { titre: 'Peau et fascia', vue: 'opThProche',
+      texte: 'Peau et fascia sont incisés. L’intervalle est entre le court extenseur radial du carpe (nerf radial), en avant, et l’extenseur commun des doigts (nerf interosseux postérieur), en arrière ; il se trouve plus facilement en distal, là où le long abducteur et le court extenseur du pouce émergent entre les deux muscles.',
+      accent: ['ecrb', 'edc', 'apl'], danger: ['nip'], masquer: IMPLANTS, ecarter: thPeau(9) },
+    { titre: 'Intervalle et nerf interosseux postérieur', vue: 'opThProche',
+      texte: 'L’intervalle est ouvert de bas en haut. Au tiers proximal, le supinateur enveloppe le radius et le nerf interosseux postérieur le traverse entre ses deux chefs : le nerf est repéré à sa sortie, au bord distal du muscle, ou à son entrée, puis disséqué à travers le muscle en ménageant ses rameaux. C’est le temps dangereux de cette voie.',
+      accent: ['supinateur', 'ecrb', 'edc'], danger: ['nip', 'nradial-prof', 'aip'], masquer: IMPLANTS, ecarter: { ...thPeau(11), ...thMuscles(9) } },
+    { titre: 'Radius exposé', vue: 'opThProche',
+      texte: 'Le nerf protégé, l’avant-bras est porté en supination complète : l’insertion antérieure du supinateur se présente et le muscle est désinséré du radius, en sous-périosté, avec le nerf. Au tiers moyen, le long abducteur et le court extenseur du pouce croisent l’os : ils sont mobilisés et la plaque glissée sous eux.',
+      accent: ['radius'], danger: ['nip', 'nradial-prof'], masquer: IMPLANTS, ecarter: { ...thPeau(12), ...thMuscles(11), ...POUCE_ECARTE }, sectionner: SUPINATEUR_DESINSERE },
+    { titre: 'Réduction et plaque', vue: 'opThProche',
+      texte: 'Plaque de compression sur la face dorso-latérale du radius, côté en tension, qui respecte la courbure pronatrice. Au tiers proximal, la voie antérieure de Henry lui est souvent préférée, pour ne pas disséquer le nerf.',
+      accent: ['radius'], danger: ['nip'], montrer: ['plaque-th'], masquer: ['plaque-radius', 'plaque-ulna'], ecarter: { ...thPeau(12), ...thMuscles(11), ...POUCE_ECARTE }, sectionner: SUPINATEUR_DESINSERE },
   ] },
 };
 
