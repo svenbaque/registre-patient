@@ -29,3 +29,15 @@ export const charge = (ids, consigne) => Object.fromEntries(ids.map(id => [id, c
 export const lame = (incision, pousse, fond, ecart, course, options = {}) => ({
   lame: incision.map(q => q.map((c, i) => c + pousse[i] * ecart)), pousse, course, rayon: 17, fond, profondeur: 48, ...options,
 });
+
+// De quel côté d'une incision se trouve une direction : 'A' (côté de la normale « premier tronçon × fond ») ou 'B'.
+// À utiliser pour nommer les berges à écarter (`peau/${cote(...)}`) plutôt que de deviner : deux berges poussées du mauvais côté se croisent.
+export const cote = (ligne, fond, vers) => {
+  const ab = ligne[1].map((c, i) => c - ligne[0][i]);
+  const n = [ab[1] * fond[2] - ab[2] * fond[1], ab[2] * fond[0] - ab[0] * fond[2], ab[0] * fond[1] - ab[1] * fond[0]];
+  return vers[0] * n[0] + vers[1] * n[1] + vers[2] * n[2] >= 0 ? 'A' : 'B';
+};
+// Les deux berges d'une pièce fendue (peau et tissu sous-cutané par défaut), chacune chargée par sa lame : { vers: direction, lame: consigne }.
+export const deuxBerges = (ligne, fond, un, autre, ids = ['peau', 'graisse']) => Object.fromEntries(ids.flatMap(id => [
+  [`${id}/${cote(ligne, fond, un.vers)}`, un.lame], [`${id}/${cote(ligne, fond, autre.vers)}`, autre.lame],
+]));

@@ -15,8 +15,8 @@ const VOIES_ABORD = [
     ['Abord direct de la clavicule', 'ostéosynthèse de la clavicule', 'epaule:clavicule'],
     ['Abord supérieur de l’acromio-claviculaire', 'disjonctions']]],
   ['Bras', [
-    ['Antéro-latérale de l’humérus', 'diaphyse humérale'],
-    ['Postérieure de l’humérus', 'tiers distal, nerf radial'],
+    ['Antéro-latérale de l’humérus', 'diaphyse humérale', 'bras:al'],
+    ['Postérieure de l’humérus', 'tiers distal, nerf radial', 'bras:post'],
     ['Latérale de l’humérus distal', 'tiers distal, nerf radial'],
     ['Médiale du bras', 'abord vasculo-nerveux']]],
   ['Coude', [
