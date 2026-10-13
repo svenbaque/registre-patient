@@ -67,10 +67,10 @@ const VOIES_ABORD = [
     ['Abords arthroscopiques', 'ménisques, ligaments croisés']]],
   ['Jambe', [
     ['Abord pour clou tibial', 'trans-tendineux, para-patellaire, supra-patellaire', 'genou:clou'],
-    ['Antéro-latérale du tibia', 'plaque de tibia, pilon'],
+    ['Antéro-latérale du tibia', 'plaque de tibia, pilon', 'jambe:tibia'],
     ['Médiale mini-invasive (MIPO)', 'tibia distal', 'jambe:mipo'],
-    ['Postéro-latérale du tibia', 'pseudarthroses, greffes'],
-    ['Latérale de la fibula', 'fractures de la fibula'],
+    ['Postéro-latérale du tibia', 'pseudarthroses, greffes', 'jambe:pl'],
+    ['Latérale de la fibula', 'fractures de la fibula', 'jambe:fibula'],
     ['Aponévrotomies des quatre loges', 'syndrome des loges', 'jambe:loges-al']]],
   ['Cheville et pilon tibial', [
     ['Latérale de la malléole latérale', 'fibula distale', 'cheville:lat'],
