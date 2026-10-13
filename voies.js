@@ -33,11 +33,11 @@ const VOIES_ABORD = [
     ['Abord direct de l’ulna', 'diaphyse ulnaire, Monteggia', 'avant-bras:ulna']]],
   ['Poignet et main', [
     ['Henry modifiée (trans-gaine du FCR)', 'plaque antérieure du radius distal', 'poignet:henry'],
-    ['Dorsale du poignet (3ᵉ compartiment)', 'radius dorsal, carpe, arthrodèses'],
+    ['Dorsale du poignet (3ᵉ compartiment)', 'radius dorsal, carpe, arthrodèses', 'poignet:dorsale'],
     ['Antéro-ulnaire étendue', 'fragment antéro-médial, canal carpien'],
     ['Antérieure du scaphoïde', 'vissage, greffe'],
     ['Dorsale du scaphoïde', 'pôle proximal'],
-    ['Abord du canal carpien', 'nerf médian'],
+    ['Abord du canal carpien', 'nerf médian', 'poignet:cc'],
     ['Abords des métacarpiens et phalanges', 'ostéosynthèses de la main'],
     ['Bruner et médio-latérale des doigts', 'fléchisseurs, Dupuytren']]],
   ['Bassin et cotyle', [

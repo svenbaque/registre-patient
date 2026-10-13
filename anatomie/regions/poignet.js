@@ -1,4 +1,6 @@
-// Poignet droit — données de la région pour le visualiseur.
+// Poignet droit — voie de Henry modifiée, canal carpien, voie dorsale.
+import { peauFendue, berges, charge as chargeLame, lame, deuxBerges } from './outils.js';
+
 // Repère BodyParts3D, en millimètres : membre le long du corps, paume vers l'avant.
 // x = côté radial (-) / côté ulnaire (+), y = face palmaire (-) / face dorsale (+), z = proximal (+) / distal (-).
 
@@ -97,7 +99,15 @@ const meshes = [
 ];
 
 // Tracés à la main : incision et repères d'ostéosynthèse seulement.
+// ----- Canal carpien : incision dans l'axe du bord radial de l'annulaire, du pli de flexion distal du poignet à la ligne de Kaplan -----
+const PEAU_CC = [[-250, -131, 826], [-250, -135, 818], [-249, -140, 808], [-250, -140, 798], [-249, -144, 788], [-250, -144, 780]];
+const FOND_CC = [0, 1, 0];
+// ----- Voie dorsale : incision longitudinale centrée sur le tubercule de Lister, dans l'axe du 3e métacarpien -----
+const PEAU_DORSALE = [[-258, -83, 872], [-258, -84, 855], [-258, -92, 840], [-259, -93, 825], [-258, -100, 810], [-258, -101, 797]];
+const FOND_DORSAL = [0, -1, 0];
 const tubes = [
+  ['incision-cc', 'Incision — canal carpien', 'incisions', '#35e0c8', 0.9, PEAU_CC.map(([x, y, z]) => [x, y - 1.6, z])],
+  ['incision-dorsale', 'Incision — voie dorsale du poignet', 'incisions', '#35e0c8', 1.1, PEAU_DORSALE.map(([x, y, z]) => [x, y + 2, z])],
   ['incision-henry', 'Incision — Henry modifiée', 'incisions', '#35e0c8', 1.1,
     [[-256, -137, 830], [-252.7, -134, 852], [-249.3, -131, 874], [-246, -128, 896]]],
   ['watershed', 'Watershed line (schématique)', 'reperes', '#7df9ff', 0.9,
@@ -114,6 +124,10 @@ const centre = [-256, -112, 852]; // face palmaire du radius distal
 const SITE = [-253, -118, 862];
 const vues = {
   palmaire: { de: [-15, -330, 25] }, proche: { de: [-25, -215, -5] }, libre: { de: [-190, -250, 60] },
+  // main en supination sur la table à main : doigts à droite, bord ulnaire en haut
+  opCC: { de: [0, -210, 0], haut: [1, 0, 0], cible: [-250, -132, 803] }, opCCProche: { de: [0, -105, 0], haut: [1, 0, 0], cible: [-250, -132, 803] },
+  // main en pronation : face dorsale, doigts à droite, bord radial en haut
+  opDos: { de: [0, 250, 0], haut: [-1, 0, 0], cible: [-258, -96, 835] }, opDosProche: { de: [0, 140, 0], haut: [-1, 0, 0], cible: [-258, -96, 835] },
   // vue de l'opérateur : avant-bras en supination sur la table à main, main à droite, bord ulnaire en haut
   op: { de: [0, -330, 0], haut: [1, 0, 0], cible: SITE }, opProche: { de: [0, -185, 0], haut: [1, 0, 0], cible: SITE },
 };
@@ -130,9 +144,11 @@ const N_ULNAIRE = [0.989, 0, -0.150];
 const decale = (d) => INCISION.map(q => [q[0] + N_RADIAL[0] * d, q[1], q[2] + N_RADIAL[2] * d]);
 
 // Peau, tissu sous-cutané et carré pronateur sont fendus le long de leur ligne d'incision.
-const fendre = [
+const FENDRE_HENRY = [
   ['peau', [-251, -131, 863], N_RADIAL, 'Peau — berge radiale', 'Peau — berge ulnaire'],
   ['graisse', [-251, -131, 863], N_RADIAL, 'Tissu sous-cutané — berge radiale', 'Tissu sous-cutané — berge ulnaire'],
+];
+const fendre = [
   ['FMA38454', [-265, -114, 855], [1, 0, 0], 'Carré pronateur — corps relevé', 'Carré pronateur — berge radiale'],
 ];
 
@@ -166,8 +182,38 @@ const visDistale = x => [`vis/d${-x}`, 'Vis distale verrouillée (sous-chondrale
 const visTige = (n, y, z, fond) => [`vis/p${n}`, 'Vis corticale de la tige', 'implants', '#cfd6dd', 1.25, [[-261.5, y - 1.5, z], [-261, (y + fond) / 2, z], [-260.5, fond, z]]];
 tubes.push(visDistale(-272), visDistale(-265), visDistale(-258), visDistale(-252), visTige(1, -112, 850, -97), visTige(2, -106, 864, -91), visTige(3, -101, 878, -86));
 
+// ----- Canal carpien -----
+const levres = (ligne, fond, d, rayon, ids) => deuxBerges(ligne, fond,
+  { vers: [1, 0, 0], lame: { dep: [d, 0, 0], autour: ligne, rayon, fond } }, { vers: [-1, 0, 0], lame: { dep: [-d, 0, 0], autour: ligne, rayon, fond } }, ids);
+// peau, puis aponévrose palmaire (prolongement du long palmaire), ouvertes sur la même ligne
+const ccOuvert = k => ({ ...berges(PEAU_CC, FOND_CC, [8, 0, 0], k, 15), ...levres(PEAU_CC, FOND_CC, 7 * k, 14, ['FMA38463']) });
+const retinaculumOuvert = k => levres(PEAU_CC, FOND_CC, 6 * k, 16, ['FMA40120']);
+const fendreCC = [
+  ...peauFendue(PEAU_CC, FOND_CC, 'ulnaire', 'radiale'),
+  ['FMA38463', { ligne: PEAU_CC, fond: FOND_CC, rayon: 14 }, 'Aponévrose palmaire — berge ulnaire', 'Aponévrose palmaire — berge radiale'],
+  ['FMA40120', { ligne: PEAU_CC, fond: FOND_CC, rayon: 18 }, 'Rétinaculum des fléchisseurs — berge ulnaire', 'Rétinaculum des fléchisseurs — berge radiale'],
+];
+
+// ----- Voie dorsale -----
+const DOS = [PEAU_DORSALE[0], PEAU_DORSALE[PEAU_DORSALE.length - 1]];
+const lamesDos = (e, profondeur, ids) => deuxBerges(PEAU_DORSALE, FOND_DORSAL,
+  { vers: [-1, 0, 0], lame: lame(DOS, [-1, 0, 0], FOND_DORSAL, e, e * 2.4 + 8, { rayon: 18, profondeur }) },
+  { vers: [1, 0, 0], lame: lame(DOS, [1, 0, 0], FOND_DORSAL, e, e * 2.4 + 8, { rayon: 18, profondeur }) }, ids);
+const dosOuvert = e => lamesDos(e, 20, ['peau', 'graisse']);
+const retinaculumDorsal = e => lamesDos(e, 24, ['retinaculum-ext']);
+// Le long extenseur du pouce est sorti de sa coulisse et transposé du côté radial ; les extenseurs radiaux du carpe vont en dehors, l'extenseur des doigts en dedans.
+const TENDONS_ECARTES = {
+  ...chargeLame(['FMA38522', 'FMA38498', 'FMA38495'], lame(DOS, [-1, 0, 0], FOND_DORSAL, 11, 34, { rayon: 18, profondeur: 26 })),
+  ...chargeLame(['FMA38501', 'FMA38525', 'FMA38504'], lame(DOS, [1, 0, 0], FOND_DORSAL, 11, 34, { rayon: 18, profondeur: 26 })),
+};
+const fendreDos = [
+  ...peauFendue(PEAU_DORSALE, FOND_DORSAL, 'radiale', 'ulnaire'),
+  ['retinaculum-ext', { ligne: PEAU_DORSALE, fond: FOND_DORSAL, rayon: 20 }, 'Rétinaculum des extenseurs — lambeau radial', 'Rétinaculum des extenseurs — lambeau ulnaire'],
+];
+const AUTRES = [...REPERES, ...IMPLANTS];
+
 const voies = {
-  henry: { court: 'Henry modifiée', titre: 'Voie de Henry modifiée (trans-gaine du FCR)', steps: [
+  henry: { court: 'Henry modifiée', titre: 'Voie de Henry modifiée (trans-gaine du FCR)', fendre: FENDRE_HENRY, steps: [
     { titre: 'Installation et incision', vue: 'op',
       texte: 'Vue de l’opérateur : décubitus dorsal, bras en abduction sur table à main, avant-bras en supination, garrot à la racine du bras. L’incision est longitudinale, sur le versant médial du relief du tendon fléchisseur radial du carpe (FCR), du pli de flexion distal du poignet vers le haut, sur 6 à 8 cm.',
       montrer: ['incision-henry'], masquer: [...REPERES, ...IMPLANTS] },
@@ -188,6 +234,34 @@ const voies = {
       texte: 'Réduction par traction et manœuvres directes, broches temporaires si besoin, contrôle scopique. La plaque est posée en proximal de la watershed line : plus distale, elle entre en conflit avec les fléchisseurs. Fixation provisoire par une vis corticale dans le trou oblong, réglage de la hauteur, puis vis verrouillées distales sous-chondrales, unicorticales ; l’incidence « skyline » vérifie qu’aucune ne dépasse en dorsal. Le carré pronateur est rabattu sur la plaque en fin d’intervention.',
       accent: ['watershed'], danger: ['aradiale', 'nmedian'], montrer: ['watershed', ...IMPLANTS], masquer: ['gaine-fcr'],
       ecarter: { ...PEAU_ECARTEE, ...FCR_EN_DEHORS, ...FLECHISSEURS_EN_DEDANS, ...CARRE_RECLINE } },
+  ] },
+  cc: { court: 'Canal carpien', titre: 'Abord du canal carpien (neurolyse du nerf médian)', fendre: fendreCC, steps: [
+    { titre: 'Installation et incision', vue: 'opCC',
+      texte: 'Vue de l’opérateur : main en supination sur la table à main, garrot, anesthésie locale ou loco-régionale. Incision de 3 cm dans l’axe du bord radial de l’annulaire (du côté ulnaire du long palmaire), entre le pli de flexion distal du poignet et la ligne cardinale de Kaplan. Rester du côté ulnaire protège le rameau cutané palmaire du nerf médian et son rameau moteur thénarien.',
+      montrer: ['incision-cc'], danger: ['rameau-palmaire', 'arcade-sup'], masquer: AUTRES },
+    { titre: 'Peau et aponévrose palmaire', vue: 'opCCProche',
+      texte: 'Peau, graisse sous-cutanée puis aponévrose palmaire superficielle sont incisées dans l’axe ; un écarteur autostatique tient les berges. Les fibres transversales, nacrées, du rétinaculum des fléchisseurs apparaissent.',
+      accent: ['FMA40120'], danger: ['rameau-palmaire', 'arcade-sup'], masquer: AUTRES, ecarter: ccOuvert(1) },
+    { titre: 'Section du rétinaculum des fléchisseurs', vue: 'opCCProche',
+      texte: 'Le rétinaculum est incisé sur son versant ulnaire, près de l’hamulus de l’hamatum, sous contrôle de la vue, d’abord en distal jusqu’à la graisse qui entoure l’arcade palmaire superficielle, puis en proximal jusqu’au fascia antébrachial, sectionné sur 2 cm. La section doit être complète : c’est la cause la plus fréquente d’échec. Du côté ulnaire : le canal de Guyon, avec le nerf et l’artère ulnaires.',
+      accent: ['FMA40120', 'nmedian'], danger: ['arcade-sup', 'aulnaire', 'nmedian/digitaux'], masquer: AUTRES, ecarter: { ...ccOuvert(1.2), ...retinaculumOuvert(1) } },
+    { titre: 'Nerf médian libéré', vue: 'opCCProche',
+      texte: 'Le nerf médian est exposé, souvent aminci « en sablier » sous l’ancien rétinaculum, sur le lit des tendons fléchisseurs. Le rameau moteur thénarien naît de son bord radial, à la sortie du canal (parfois à travers le rétinaculum) : il est vu, pas disséqué. Pas de neurolyse interne ni de synovectomie de principe. Hémostase après lâcher du garrot, fermeture de la peau seule, mobilisation immédiate des doigts.',
+      accent: ['nmedian', 'nmedian/digitaux'], danger: ['arcade-sup', 'aulnaire'], masquer: AUTRES, ecarter: { ...ccOuvert(1.3), ...retinaculumOuvert(1.5) } },
+  ] },
+  dorsale: { court: 'Dorsale', titre: 'Voie dorsale du poignet (3ᵉ compartiment)', fendre: fendreDos, steps: [
+    { titre: 'Installation et incision', vue: 'opDos',
+      texte: 'Vue de l’opérateur : main en pronation sur la table à main, garrot. Incision dorsale longitudinale, dans l’axe du 3ᵉ métacarpien, centrée sur le tubercule de Lister, qu’on palpe au dos du radius. Les branches superficielles des nerfs radial et ulnaire, et les veines dorsales, sont dans les lambeaux cutanés.',
+      montrer: ['incision-dorsale'], danger: ['nradial'], masquer: AUTRES },
+    { titre: 'Peau et rétinaculum des extenseurs', vue: 'opDosProche',
+      texte: 'Les lambeaux cutanés sont levés épais, au ras du rétinaculum des extenseurs, pour garder les nerfs sensitifs et les veines avec la peau. Le rétinaculum est nacré, à fibres transversales ; le tendon du long extenseur du pouce se devine contre le tubercule de Lister, qu’il contourne.',
+      accent: ['retinaculum-ext', 'FMA38522'], danger: ['nradial'], masquer: AUTRES, ecarter: dosOuvert(11) },
+    { titre: '3ᵉ compartiment : long extenseur du pouce', vue: 'opDosProche',
+      texte: 'Le rétinaculum est incisé sur le 3ᵉ compartiment, celui du long extenseur du pouce ; le tendon est libéré de sa coulisse et transposé du côté radial. Le rétinaculum est levé en deux lambeaux, qui serviront à recouvrir une plaque.',
+      accent: ['FMA38522', 'retinaculum-ext'], danger: ['nradial'], masquer: AUTRES, ecarter: { ...dosOuvert(13), ...retinaculumDorsal(8) } },
+    { titre: 'Radius dorsal exposé', vue: 'opDosProche',
+      texte: 'Les 2ᵉ et 4ᵉ compartiments sont décollés en sous-périosté, sans ouvrir leurs gaines : extenseurs radiaux du carpe du côté radial, extenseur des doigts du côté ulnaire. La face dorsale du radius distal et la capsule dorsale sont exposées ; le tubercule de Lister peut être réséqué pour asseoir une plaque. Sur le plancher du 4ᵉ compartiment : la branche terminale du nerf interosseux postérieur, qu’on peut réséquer. Capsulotomie dorsale à la demande pour voir la surface articulaire et le carpe.',
+      accent: ['FMA23464'], danger: ['nradial'], masquer: AUTRES, ecarter: { ...dosOuvert(15), ...retinaculumDorsal(13), ...TENDONS_ECARTES } },
   ] },
 };
 
