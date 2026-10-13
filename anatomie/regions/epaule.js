@@ -1,73 +1,92 @@
 // Épaule droite — voie delto-pectorale.
 // Repère BodyParts3D, en millimètres : x = latéral (-) / médial (+), y = avant (-) / arrière (+), z = vers le haut.
+import pieces from './epaule.pieces.js';
+import { peauFendue, charge, lame } from './outils.js';
 
 const meshes = [
-  ['FMA23130', 'Humérus', 'os', '#e9e2cf'],
-  ['FMA13395', 'Scapula', 'os', '#e9e2cf'],
-  ['FMA13322', 'Clavicule', 'os', '#ded6c0'],
-  ['FMA34680', 'Deltoïde — faisceau claviculaire', 'deltoide', '#c25a4c'],
-  ['FMA34682', 'Deltoïde — faisceau acromial', 'deltoide', '#b5483f'],
-  ['FMA34684', 'Deltoïde — faisceau spinal', 'deltoide', '#a8444f'],
-  ['FMA34690', 'Grand pectoral — chef claviculaire', 'pectoraux', '#c4527a'],
-  ['FMA79979', 'Grand pectoral — chef sterno-costal', 'pectoraux', '#b84a5e'],
-  ['FMA45874', 'Grand pectoral — chef abdominal', 'pectoraux', '#a8445a'],
-  ['FMA13375', 'Petit pectoral', 'pectoraux', '#9a5aa8'],
-  ['FMA37665', 'Coraco-brachial', 'conjoint', '#d9773f'],
-  ['FMA37684', 'Biceps — chef court', 'conjoint', '#e08a3c'],
-  ['FMA37686', 'Biceps — chef long', 'conjoint', '#d7a13a'],
-  ['FMA13414', 'Sous-scapulaire', 'coiffe', '#7d6bb5'],
-  ['FMA32544', 'Supra-épineux', 'coiffe', '#6f73b8'],
-  ['FMA32547', 'Infra-épineux', 'coiffe', '#6a7fb8'],
-  ['FMA32553', 'Petit rond', 'coiffe', '#6388b5'],
-  ['FMA32551', 'Grand rond', 'coiffe', '#5f93b0'],
+  ['peau-epaule', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
+  ...pieces,
 ];
 
+// Incision : une seule ligne, de la coracoïde vers l'insertion du deltoïde, sur le sillon delto-pectoral (trajet de la veine céphalique).
+const PEAU_DP = [[-135, -110, 1335], [-150, -123, 1315], [-165, -124, 1295], [-178, -122, 1275], [-188, -115, 1255], [-196, -112, 1235]];
+const SILLON = [[-140, -114, 1322], [-197, -94, 1242]]; // la même ligne, au fond, entre deltoïde et grand pectoral
+const FOND = [0.3, 0.95, 0];
+const N_MED = [0.76, -0.24, -0.6]; // perpendiculaire au sillon, vers le thorax
+const N_LAT = [-0.76, 0.24, 0.6];  // perpendiculaire au sillon, vers le moignon de l'épaule
+
+// Tracés à la main : incision, plaque et vis.
+const TETE = [-166, -72, 1322];
+const visTete = (n, x, y, z, vers) => [`plaque/vis-t${n}`, 'Vis verrouillée céphalique', 'implants', '#cfd6dd', 1.7, [[x, y, z], [(x + vers[0]) / 2, (y + vers[1]) / 2, (z + vers[2]) / 2], vers]];
+const visDiaphyse = (n, x, y, z) => [`plaque/vis-d${n}`, 'Vis corticale diaphysaire', 'implants', '#cfd6dd', 1.7, [[x - 1, y - 1, z], [x + 9, y + 7, z], [x + 18, y + 14, z]]];
 const tubes = [
-  ['cephalique', 'Veine céphalique (schématique)', 'vaisseaux', '#3b6fd1', 2.2,
-    [[-127, -113, 1342], [-134, -116, 1327], [-166, -122, 1297], [-188, -106, 1257], [-197, -99, 1226]]],
-  ['musculocutane', 'Nerf musculo-cutané (schématique)', 'nerfs', '#ffd23f', 1.7,
-    [[-108, -80, 1322], [-128, -85, 1296], [-150, -84, 1270], [-168, -82, 1240]]],
-  ['axillaire', 'Nerf axillaire (schématique)', 'nerfs', '#ffd23f', 1.9,
-    [[-98, -70, 1302], [-124, -73, 1274], [-150, -62, 1263], [-178, -50, 1270], [-207, -57, 1280], [-221, -77, 1284]]],
-  ['incision-dp', 'Incision — voie delto-pectorale', 'incisions', '#35e0c8', 1.4,
-    [[-129, -120, 1342], [-150, -126, 1316], [-171, -127, 1292], [-191, -113, 1255], [-200, -105, 1228]]],
-  ['axe-plaque', 'Position de la plaque (schématique)', 'reperes', '#7df9ff', 3,
-    [[-190, -84, 1314], [-195, -83, 1280], [-201, -79, 1240], [-206, -74, 1200]]],
+  ['incision-dp', 'Incision — voie delto-pectorale', 'incisions', '#35e0c8', 1.4, PEAU_DP.map(([x, y, z]) => [x - 1, y - 3.5, z])],
+  visTete(1, -189, -85, 1330, [-160, -66, 1334]), visTete(2, -190, -85, 1320, [-152, -70, 1326]), visTete(3, -191, -84, 1310, [-158, -62, 1318]),
+  visTete(4, -192, -84, 1298, [-152, -72, 1312]), visTete(5, -193, -83, 1288, [-150, -68, 1306]),
+  visDiaphyse(1, -197, -81, 1262), visDiaphyse(2, -200, -80, 1244), visDiaphyse(3, -203, -79, 1226),
+];
+const rubans = [
+  ['plaque', 'Plaque verrouillée d’humérus proximal', 'implants', '#b9c2cc', [[-188.5, -86, 1336], [-190.5, -86, 1312], [-193.5, -84, 1284], [-198, -82, 1254], [-203.5, -80, 1218]], 13, 2.6, [0.6, -0.8, 0]],
 ];
 
 const groupes = [
-  ['os', 'Os'], ['deltoide', 'Deltoïde'], ['pectoraux', 'Pectoraux'], ['conjoint', 'Tendon conjoint et biceps'], ['coiffe', 'Coiffe et ronds'],
-  ['vaisseaux', 'Vaisseaux'], ['nerfs', 'Nerfs'], ['incisions', 'Incisions'], ['reperes', 'Repères d’ostéosynthèse'],
+  ['peau', 'Peau'], ['graisse', 'Tissu sous-cutané'], ['os', 'Os'], ['deltoide', 'Deltoïde'], ['pectoraux', 'Pectoraux'], ['conjoint', 'Tendon conjoint et biceps'],
+  ['coiffe', 'Coiffe, ronds et grand dorsal'], ['bras', 'Bras'], ['ligaments', 'Capsule et ligaments'], ['vaisseaux', 'Artères et veines'], ['nerfs', 'Nerfs'],
+  ['incisions', 'Incisions'], ['implants', 'Plaque et vis'],
 ];
 
 const centre = [-165, -88, 1295];
-const vues = { ant: { de: [-110, -430, 70] }, proche: { de: [-95, -310, 35] }, humerus: { de: [-150, -290, 10], cible: [-178, -84, 1285] }, libre: { de: [-330, -330, 120] } };
-
-// Aucun muscle n'est incisé : le sillon delto-pectoral s'ouvre franchement, mais seulement en regard de l'incision.
-// La veine céphalique suit le deltoïde ; le nerf musculo-cutané suit le tendon conjoint.
-const LIGNE_SILLON = [[-140, -116, 1325], [-166, -118, 1295], [-186, -106, 1260]];
-const sillon = k => {
-  const dehors = { dep: [-19 * k, -2 * k, 0], autour: LIGNE_SILLON, rayon: 38 };
-  const dedans = { dep: [19 * k, -2 * k, 0], autour: LIGNE_SILLON, rayon: 38 };
-  return { FMA34680: dehors, cephalique: dehors, FMA34690: dedans, FMA79979: dedans, FMA45874: dedans };
+const SITE = [-172, -100, 1285];
+const vues = {
+  // position demi-assise : l'opérateur est en avant et en dehors de l'épaule, tête du patient en haut
+  op: { de: [-70, -400, 50], cible: SITE }, opProche: { de: [-70, -245, 25], cible: SITE },
+  opLateral: { de: [-185, -200, 25], cible: [-180, -90, 1285] },
+  libre: { de: [-330, -330, 120] },
 };
-const CONJOINT_EN_DEDANS = Object.fromEntries(['FMA37665', 'FMA37684', 'musculocutane'].map(id => [id, { dep: [13, 0, 0], autour: [[-150, -90, 1305], [-170, -84, 1262]], rayon: 34 }]));
+const IMPLANTS = ['plaque'];
+
+// Écarteurs : deux lames parallèles au sillon. Aucun muscle n'est incisé ; chacun reste attaché à ses insertions.
+const opts = { rayon: 28, profondeur: 46 };
+const DELTOIDE = ['deltoide-ant', 'deltoide-moy', 'cephalique']; // la veine céphalique part en dehors avec le deltoïde
+const PECTORAL = ['pectoral-clav', 'pectoral-sterno', 'pectoral-abdo'];
+const CONJOINT = ['coracobrachial', 'biceps-court', 'musculocutane']; // le nerf musculo-cutané part avec le tendon conjoint
+// Peau : berge /A médiale, /B latérale. L'humérus est sous le deltoïde, en dehors du sillon : l'exposition se gagne surtout en dehors.
+const PEAU_DROITE = [[-140, -119, 1326], [-196, -112, 1238]];
+const optsPeau = { rayon: 22, profondeur: 30 };
+const peauOuverte = (dehors, dedans) => ({
+  ...charge(['peau/B', 'graisse/B'], lame(PEAU_DROITE, N_LAT, FOND, dehors, dehors * 2.4 + 10, optsPeau)),
+  ...charge(['peau/A', 'graisse/A'], lame(PEAU_DROITE, N_MED, FOND, dedans, dedans * 2.4 + 10, optsPeau)),
+});
+const sillon = (dehors, dedans) => ({
+  ...charge(DELTOIDE, lame(SILLON, N_LAT, FOND, dehors, dehors * 2.4 + 12, opts)),
+  ...charge(PECTORAL, lame(SILLON, N_MED, FOND, dedans, dedans * 2.4 + 12, opts)),
+});
+const CONJOINT_EN_DEDANS = charge(CONJOINT, lame(SILLON, N_MED, FOND, 9, 50, { rayon: 26, profondeur: 62 }));
 
 const voies = {
-  dp: { court: 'Delto-pectorale', titre: 'Voie delto-pectorale', steps: [
-    { titre: 'Repères et incision', vue: 'ant',
-      texte: 'Position demi-assise, bras libre. Repère : le processus coracoïde. L’incision part de la coracoïde et descend obliquement en bas et en dehors, le long du sillon delto-pectoral, vers l’insertion du deltoïde.',
-      montrer: ['incision-dp'], accent: ['FMA34680', 'FMA34690'], danger: ['cephalique'], masquer: ['axe-plaque'] },
-    { titre: 'Sillon delto-pectoral', vue: 'proche',
-      texte: 'La veine céphalique repère le sillon. Elle est le plus souvent laissée en dehors, avec le deltoïde, après ligature de ses branches médiales. Le sillon s’ouvre le long de l’incision : deltoïde et veine en dehors, grand pectoral en dedans.',
-      accent: ['FMA34680', 'FMA34690'], danger: ['cephalique'], masquer: ['axe-plaque'], ecarter: sillon(0.7) },
-    { titre: 'Fascia clavi-pectoral et tendon conjoint', vue: 'proche',
-      texte: 'Au fond du sillon, le fascia clavi-pectoral est incisé en dehors du tendon conjoint (coraco-brachial et chef court du biceps), qui est récliné en dedans, avec douceur : le nerf musculo-cutané, qui le pénètre quelques centimètres sous la coracoïde, part avec lui.',
-      accent: ['FMA37665', 'FMA37684'], danger: ['musculocutane'], masquer: ['axe-plaque'], ecarter: { ...sillon(1), ...CONJOINT_EN_DEDANS } },
-    { titre: 'Humérus proximal', vue: 'humerus',
-      texte: 'La tête humérale, les tubercules et le tendon du long biceps, dans sa gouttière, sont exposés ; le sous-scapulaire est en avant. Le nerf axillaire passe au bord inférieur du sous-scapulaire puis contourne le col chirurgical : pas d’écarteur aveugle sous le deltoïde, pas de dissection en dessous du sous-scapulaire. La plaque se pose en dehors de la gouttière bicipitale.',
-      accent: ['FMA23130', 'FMA37686', 'axe-plaque'], danger: ['axillaire'], montrer: ['axe-plaque'], ecarter: { ...sillon(1.5), ...CONJOINT_EN_DEDANS } },
+  dp: { court: 'Delto-pectorale', titre: 'Voie delto-pectorale', fendre: peauFendue(PEAU_DP, FOND, 'médiale', 'latérale'), steps: [
+    { titre: 'Installation et incision', vue: 'op',
+      texte: 'Vue de l’opérateur : position demi-assise, épaule dégagée du bord de la table, bras libre sur un appui, amplificateur de brillance du côté de la tête. Repère : le processus coracoïde. L’incision, de 10 à 12 cm, part de la coracoïde et descend obliquement en bas et en dehors, le long du sillon delto-pectoral, vers l’insertion humérale du deltoïde.',
+      montrer: ['incision-dp'], danger: ['cephalique'], masquer: IMPLANTS },
+    { titre: 'Peau et veine céphalique', vue: 'opProche',
+      texte: 'Peau et tissu sous-cutané sont incisés. Le sillon delto-pectoral se reconnaît à son liseré graisseux, où chemine la veine céphalique. Elle est libérée et, le plus souvent, laissée en dehors avec le deltoïde (ses afférences sont surtout deltoïdiennes) ; ses branches médiales sont coagulées.',
+      accent: ['deltoide-ant', 'pectoral-clav'], danger: ['cephalique'], masquer: IMPLANTS, ecarter: peauOuverte(12, 10) },
+    { titre: 'Sillon delto-pectoral', vue: 'opProche',
+      texte: 'Le sillon est ouvert au doigt sur toute sa longueur, de la clavicule à l’insertion du deltoïde : deltoïde et veine céphalique en dehors, grand pectoral en dedans. Aucun muscle n’est sectionné. L’espace sous-deltoïdien est libéré au doigt ; le bras en abduction détend le deltoïde.',
+      accent: ['deltoide-ant', 'pectoral-clav', 'coracobrachial', 'biceps-court'], danger: ['cephalique'], masquer: IMPLANTS, ecarter: { ...peauOuverte(20, 12), ...sillon(18, 8) } },
+    { titre: 'Fascia clavi-pectoral et tendon conjoint', vue: 'opProche',
+      texte: 'Au fond, le fascia clavi-pectoral est incisé au bord latéral du tendon conjoint (coraco-brachial et chef court du biceps), jusqu’au ligament coraco-acromial. Le tendon conjoint est récliné en dedans, avec douceur : le nerf musculo-cutané le pénètre 5 à 8 cm sous la coracoïde et part avec lui. Pas d’écarteur appuyé sous la coracoïde.',
+      accent: ['coracobrachial', 'biceps-court', 'subscapulaire'], danger: ['musculocutane', 'cephalique'], masquer: IMPLANTS,
+      ecarter: { ...peauOuverte(27, 13), ...sillon(27, 9), ...CONJOINT_EN_DEDANS } },
+    { titre: 'Humérus proximal', vue: 'opProche',
+      texte: 'La tête humérale, les deux tubercules et le tendon du long biceps dans sa gouttière sont exposés : le long biceps est le repère pour replacer les tubercules. Le sous-scapulaire est en avant ; à son bord inférieur courent les vaisseaux circonflexes antérieurs. Le nerf axillaire passe sous le sous-scapulaire puis contourne le col chirurgical : il se palpe au doigt (« tug test »), et aucun écarteur n’est placé à l’aveugle sous le deltoïde ou sous le col.',
+      accent: ['humerus', 'biceps-long', 'subscapulaire'], danger: ['axillaire', 'axillaire-rameaux', 'acirc-ant', 'musculocutane'], masquer: [...IMPLANTS, 'gaine-biceps'],
+      ecarter: { ...peauOuverte(38, 13), ...sillon(40, 9), ...CONJOINT_EN_DEDANS } },
+    { titre: 'Réduction et plaque', vue: 'opLateral',
+      texte: 'Les tendons de la coiffe sont chargés sur fils pour manœuvrer les tubercules. Réduction de la tête (relèvement du valgus ou correction du varus, appui médial restauré), broches temporaires, contrôle scopique. La plaque se pose en dehors de la gouttière bicipitale, 5 à 8 mm sous le sommet du tubercule majeur ; vis céphaliques sous-chondrales sans effraction articulaire, vis de calcar si le varus menace. Les fils de la coiffe sont noués dans la plaque. Peau retirée, deltoïde estompé.',
+      accent: ['humerus'], danger: ['axillaire', 'axillaire-rameaux'], voiler: ['humerus'], montrer: IMPLANTS, masquer: ['peau', 'graisse', 'gaine-biceps'], estomper: ['deltoide-ant', 'deltoide-moy'],
+      ecarter: { ...sillon(40, 9), ...CONJOINT_EN_DEDANS } },
   ] },
 };
 
-export default { nom: 'Épaule droite', centre, vues, meshes, tubes, groupes, voies };
+export default { nom: 'Épaule droite', graisse: 5, centre, vues, meshes, tubes, rubans, groupes, voies };
