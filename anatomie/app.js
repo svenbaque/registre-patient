@@ -35,15 +35,25 @@ camera.add(headlight);
 headlight.position.set(-0.35, 0.55, 1);
 scene.add(camera);
 
-const controls = new OrbitControls(camera, canvas);
-controls.target.set(...R.centre);
-controls.minDistance = 40;
-controls.maxDistance = 1400;
-controls.enableDamping = true;   // le modèle continue un peu sur sa lancée : rotation plus douce
-controls.dampingFactor = 0.14;
-controls.rotateSpeed = 0.85;
-controls.zoomToCursor = true;    // on zoome vers l'endroit pincé, pas vers le centre
-controls.addEventListener('change', render);
+// Les commandes d'orbite mémorisent le « haut » de la caméra à leur création : on les recrée quand une vue change ce haut
+// (vue opératoire, patient couché sur le côté ou sur le dos).
+let controls = null;
+function makeControls(up) {
+  const target = controls ? controls.target.clone() : new THREE.Vector3(...R.centre);
+  if (controls) controls.dispose();
+  camera.up.set(...up);
+  controls = new OrbitControls(camera, canvas);
+  controls.target.copy(target);
+  controls.minDistance = 40;
+  controls.maxDistance = 1400;
+  controls.enableDamping = true;   // le modèle continue un peu sur sa lancée : rotation plus douce
+  controls.dampingFactor = 0.14;
+  controls.rotateSpeed = 0.85;
+  controls.zoomToCursor = true;    // on zoome vers l'endroit pincé, pas vers le centre
+  controls.addEventListener('change', render);
+  controls.addEventListener('start', () => keepSpinning(60000));
+  controls.addEventListener('end', () => keepSpinning(900));
+}
 // L'inertie demande de redessiner pendant et juste après le geste, puis on s'arrête (pas de boucle permanente).
 let spinning = false;
 let spinUntil = 0;
@@ -55,8 +65,7 @@ function keepSpinning(ms) {
   spinUntil = performance.now() + ms;
   if (!spinning) { spinning = true; requestAnimationFrame(spin); }
 }
-controls.addEventListener('start', () => keepSpinning(60000));
-controls.addEventListener('end', () => keepSpinning(900));
+makeControls([0, 0, 1]);
 
 function render() { renderer.render(scene, camera); }
 function resize() {
@@ -329,14 +338,50 @@ function splitPart([id, point, normal, nomA, nomB]) {
 
 /* ---------- Écartement : déformation des tissus ---------- */
 
-// Position écartée d'une pièce. Deux formes de consigne :
+// Position écartée d'une pièce. Formes de consigne :
 //   [dx, dy, dz]                               — déplacement en bloc ;
 //   { dep, autour, rayon, socle }              — traction locale : les sommets proches du point (ou du segment) « autour » suivent
 //                                                l'écarteur, l'effet s'éteint avec la distance (rayon), le reste du muscle garde son attache.
+//   { lame, pousse, course, rayon }           — écarteur : une lame (segment « lame ») repousse le tissu dans le sens « pousse ».
+//                                                Ce qui se trouve du côté de la plaie, à moins de « course » mm, vient se tasser contre la lame ;
+//                                                au-delà de ses extrémités et en profondeur, l'effet s'éteint (rayon). Les attaches restent en place.
+//   [consigne, consigne, …]                    — plusieurs consignes appliquées l'une après l'autre (berge écartée, puis lame d'écarteur).
 function deformed(part, spec) {
-  const base = part.base;
+  if (Array.isArray(spec) && typeof spec[0] === 'object') return spec.reduce((positions, one) => deformOnce(positions, one), part.base);
+  return deformOnce(part.base, spec);
+}
+
+function pushedByBlade(base, spec) {
+  const out = Float32Array.from(base);
+  const [a, b] = spec.lame;
+  const n = Math.hypot(...spec.pousse);
+  const dir = spec.pousse.map(c => c / n);
+  const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const len2 = ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2];
+  const course = spec.course;
+  const r2 = (spec.rayon ?? 24) ** 2;
+  const soft = spec.souplesse ?? 7; // épaisseur du bourrelet de tissu tassé contre la lame
+  for (let i = 0; i < base.length; i += 3) {
+    let px = base[i] - a[0], py = base[i + 1] - a[1], pz = base[i + 2] - a[2];
+    const t = Math.max(0, Math.min(1, (px * ab[0] + py * ab[1] + pz * ab[2]) / len2));
+    px -= ab[0] * t; py -= ab[1] * t; pz -= ab[2] * t;
+    const along = px * dir[0] + py * dir[1] + pz * dir[2];       // distance au plan de la lame, dans le sens de la poussée
+    if (along > soft * 4 || along < -course) continue;            // déjà au-delà de la lame, ou trop loin côté plaie (autre berge)
+    const side2 = px * px + py * py + pz * pz - along * along;    // écart hors du plan : au-delà des bouts de la lame, ou en profondeur
+    const reach = Math.exp(-side2 / r2);
+    const edge = Math.min(1, Math.max(0, (along + course) / (course * 0.45)));
+    const fade = edge * edge * (3 - 2 * edge);
+    const pushed = (along + Math.sqrt(along * along + soft * soft)) / 2; // jamais en deçà de la lame, en douceur
+    const d = (pushed - along) * fade * reach;
+    out[i] += dir[0] * d; out[i + 1] += dir[1] * d; out[i + 2] += dir[2] * d;
+  }
+  return out;
+}
+
+function deformOnce(base, spec) {
   const out = new Float32Array(base.length);
   if (!spec) { out.set(base); return out; }
+  if (spec.lame) return pushedByBlade(base, spec);
   if (Array.isArray(spec)) {
     for (let i = 0; i < base.length; i += 3) { out[i] = base[i] + spec[0]; out[i + 1] = base[i + 1] + spec[1]; out[i + 2] = base[i + 2] + spec[2]; }
     return out;
@@ -502,6 +547,8 @@ function applyState() {
 function flyTo(name) {
   const vue = R.vues[name];
   const cible = vue.cible || R.centre;
+  const up = vue.haut || [0, 0, 1];
+  if (camera.up.distanceToSquared(new THREE.Vector3(...up).normalize()) > 1e-6) makeControls(new THREE.Vector3(...up).normalize().toArray());
   // écran en hauteur (téléphone) : on recule pour garder le champ opératoire entier dans la largeur
   const recul = innerHeight > innerWidth ? Math.min(1.6, (innerHeight / innerWidth) * 0.75) : 1;
   camera.position.set(cible[0] + vue.de[0] * recul, cible[1] + vue.de[1] * recul, cible[2] + vue.de[2] * recul);
@@ -640,4 +687,4 @@ start().catch(error => {
 });
 
 // Accès depuis la console pour la mise au point.
-window.hanche3d = { parts, scene, camera, controls, render, setMode, setStep, flyTo, applyState, R };
+window.hanche3d = { parts, scene, camera, get controls() { return controls; }, render, setMode, setStep, flyTo, applyState, R };

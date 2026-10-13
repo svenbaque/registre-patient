@@ -122,6 +122,9 @@ const DIAPHYSE = [-112, -88, 745]; // cible des vues latérales : région trocha
 // Points de vue : décalage de la caméra par rapport à la cible (le centre, sauf cible précisée).
 const vues = {
   post: { de: [-230, 400, 110] }, postProche: { de: [-225, 320, -10] },
+  // vue de l'opérateur : patient couché sur le côté sain, opérateur dans son dos ; la tête du patient est à gauche, l'avant en haut de l'image
+  opPost: { de: [-400, 275, 0], haut: [-0.565, -0.826, 0] },
+  opPostProche: { de: [-250, 172, 0], haut: [-0.565, -0.826, 0], cible: [-112, -66, 822] },
   ant: { de: [-150, -430, 70] }, antProche: { de: [-120, -330, 10] },
   lat: { de: [-520, -60, 40], cible: DIAPHYSE }, latProche: { de: [-400, -90, 20], cible: DIAPHYSE },
   trochanter: { de: [-380, 60, 190], cible: [-120, -80, 835] },
@@ -151,6 +154,10 @@ const LAMBEAU_POSTERIEUR = {
   ...Object.fromEntries(ROTATEURS.map(id => [id, RABAT])),
   capsule: { dep: [30, 26, 0], autour: [[-110, -68, 796], [-104, -66, 832]], rayon: 24 },
 };
+// Écarteur de Hohmann sous le bord postérieur du moyen fessier, au-dessus du piriforme : la lame relève le moyen et le petit fessier
+// vers le haut et l'avant. Le tissu vient se tasser contre la lame ; l'insertion trochantérienne et l'origine iliaque restent en place.
+const HOHMANN_FESSIER = { lame: [[-134, -76, 826], [-104, -50, 852]], pousse: [-0.15, -0.62, 0.77], course: 34, rayon: 30 };
+const FESSIER_RELEVE = { FMA22330: HOHMANN_FESSIER, FMA22332: HOHMANN_FESSIER };
 // La capsule est incisée le long du col, en arrière, pour être rabattue avec les rotateurs.
 const SECTION_CAPSULE_POST = { capsule: { autour: [[-112, -70, 796], [-108, -68, 832]], rayon: 8 } };
 // Pour montrer le fond de la plaie sans transparence : le grand fessier et le fascia sont sectionnés autour de la partie haute de l'incision ;
@@ -193,24 +200,26 @@ const TROCHANTER_OUVERT = {
 
 const voies = {
   post: { court: 'Moore', titre: 'Voie postérieure (Moore)', steps: [
-    { titre: 'Repères et incision', vue: 'post',
-      texte: 'Patient en décubitus latéral strict. L’incision est centrée sur le bord postérieur du grand trochanter : elle descend dans l’axe du fémur et s’incurve en haut et en arrière, en direction de l’épine iliaque postéro-supérieure.',
+    { titre: 'Installation et incision', vue: 'opPost',
+      texte: 'Vue de l’opérateur : patient en décubitus latéral strict, tête à gauche, opérateur dans son dos. L’incision est centrée sur le bord postérieur du grand trochanter : elle descend dans l’axe du fémur et s’incurve en haut et en arrière, vers l’épine iliaque postéro-supérieure.',
       montrer: ['incision-post'], accent: ['FMA22328', 'FMA58776'], masquer: REPERES },
-    { titre: 'Fascia lata et grand fessier', vue: 'post',
+    { titre: 'Fascia lata et grand fessier', vue: 'opPost',
       texte: 'Le long de la même incision : en bas, le fascia lata est incisé dans l’axe du fémur ; en haut, les fibres du grand fessier sont dissociées dans leur sens. Les deux lèvres s’écartent sur toute la longueur.',
       accent: ['FMA22328', 'FMA58776'], masquer: REPERES, ecarter: moore(0.55) },
-    { titre: 'Pelvi-trochantériens et nerf sciatique', vue: 'postProche',
-      texte: 'Les lèvres de l’incision sont tenues écartées ; pour montrer le fond, le grand fessier est ici sectionné autour de l’incision, ses attaches restant en place. Membre en rotation interne pour tendre les rotateurs. De haut en bas, au fond de la plaie : piriforme, jumeau supérieur, obturateur interne, jumeau inférieur, carré fémoral. Le nerf sciatique sort sous le piriforme et descend en arrière d’eux : le repérer et le protéger.',
-      accent: [...ROTATEURS, 'FMA22338'], danger: ['sciatique'], masquer: REPERES, ecarter: MOORE_OUVERT, sectionner: SECTION_FESSIER },
-    { titre: 'Section des pelvi-trochantériens et de la capsule', vue: 'postProche',
-      texte: 'Piriforme, jumeaux et obturateur interne sont sectionnés au ras de leur insertion trochantérienne, puis la capsule postérieure est incisée le long du col. Rotateurs et capsule sont rabattus d’un seul tenant, en arrière et en dedans, sur fils : ce lambeau recouvre et protège le nerf sciatique, et découvre la tête et le col du fémur. Le carré fémoral est respecté ou partiellement désinséré.',
+    { titre: 'Écarteur de Charnley', vue: 'opPostProche',
+      texte: 'L’écarteur autostatique tient les deux lèvres largement ouvertes. Après effondrement de la bourse trochantérienne et de la graisse, le plan profond apparaît : le bord postérieur du moyen fessier en haut, puis les pelvi-trochantériens, tendus par la rotation interne du membre. Le nerf sciatique chemine en arrière d’eux, dans la graisse : il est repéré au doigt, pas disséqué.',
+      accent: [...ROTATEURS, 'FMA22338', 'FMA22330'], danger: ['sciatique'], masquer: REPERES, ecarter: moore(1.3) },
+    { titre: 'Moyen fessier récliné', vue: 'opPostProche',
+      texte: 'Un écarteur de Hohmann est glissé sous le bord postérieur du moyen fessier, au-dessus du tendon du piriforme, et le relève vers le haut et l’avant. L’insertion trochantérienne des pelvi-trochantériens est alors exposée : tendon du piriforme en haut, puis tendon conjoint (jumeaux et obturateur interne), carré fémoral en bas.',
+      accent: [...ROTATEURS, 'FMA22338'], danger: ['sciatique'], masquer: REPERES, ecarter: { ...moore(1.3), ...FESSIER_RELEVE } },
+    { titre: 'Section des pelvi-trochantériens et de la capsule', vue: 'opPostProche',
+      texte: 'Piriforme et tendon conjoint sont chargés sur fils puis sectionnés au ras de leur insertion trochantérienne ; la capsule postérieure est incisée le long du col. Rotateurs et capsule sont rabattus d’un seul tenant, en arrière et en dedans : ce lambeau recouvre et protège le nerf sciatique, et découvre la tête et le col du fémur. Le carré fémoral est respecté ou partiellement désinséré.',
       accent: ['FMA24474', 'capsule', ...ROTATEURS], danger: ['sciatique'], masquer: REPERES,
-      ecarter: { ...MOORE_OUVERT, ...LAMBEAU_POSTERIEUR }, sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS, ...SECTION_CAPSULE_POST } },
-    { titre: 'Tête fémorale et luxation', vue: 'postProche',
+      ecarter: { ...moore(1.3), ...FESSIER_RELEVE, ...LAMBEAU_POSTERIEUR }, sectionner: { ...SECTION_ROTATEURS, ...SECTION_CAPSULE_POST } },
+    { titre: 'Tête fémorale et luxation', vue: 'opPostProche',
       texte: 'Le lambeau capsulo-musculaire récliné, la tête fémorale est exposée. Elle est luxée par flexion, adduction et rotation interne. Le col est alors dégagé pour la coupe ; le cotyle sera abordé après l’exérèse de la tête.',
       accent: ['FMA24474'], danger: ['sciatique'], masquer: REPERES,
-      ecarter: { ...MOORE_OUVERT, ...LAMBEAU_POSTERIEUR, FMA22330: { dep: [-4, -10, 12], autour: [-124, -80, 834], rayon: 30 }, FMA22332: { dep: [-4, -10, 12], autour: [-124, -80, 834], rayon: 30 } },
-      sectionner: { ...SECTION_FESSIER, ...SECTION_ROTATEURS, ...SECTION_CAPSULE_POST } },
+      ecarter: { ...moore(1.3), ...FESSIER_RELEVE, ...LAMBEAU_POSTERIEUR }, sectionner: { ...SECTION_ROTATEURS, ...SECTION_CAPSULE_POST } },
   ] },
   ant: { court: 'Hueter', titre: 'Voie antérieure (Hueter)', steps: [
     { titre: 'Repères et incision', vue: 'ant',
