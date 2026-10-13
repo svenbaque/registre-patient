@@ -60,4 +60,5 @@ export default [
   ['popliteal-vein', "Veine poplitée", 'vaisseaux', '#2f4f9e', { id: 'vpoplitee', dossier: 'models-z/corps' }],
   ['anterior-tibial-veins', "Veines tibiales antérieures", 'vaisseaux', '#2f4f9e', { id: 'vtibiales-ant', dossier: 'models-z/corps' }],
   ['posterior-tibial-veins', "Veines tibiales postérieures", 'vaisseaux', '#2f4f9e', { id: 'vtibiales-post', dossier: 'models-z/corps' }],
+  ['iliotibial-tract', "Tractus ilio-tibial", 'ligaments', '#e9e4d6', { id: 'tractus', dossier: 'models-z/corps' }],
 ];
