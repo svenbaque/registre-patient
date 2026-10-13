@@ -43,10 +43,10 @@ const VOIES_ABORD = [
   ['Bassin et cotyle', [
     ['Kocher-Langenbeck', 'paroi et colonne postérieures', 'hanche:kl'],
     ['Ilio-inguinale (Letournel)', 'colonne antérieure'],
-    ['Stoppa modifiée', 'lame quadrilatère'],
+    ['Stoppa modifiée', 'lame quadrilatère', 'bassin:stoppa'],
     ['Ilio-fémorale (et élargie)', 'aile iliaque, fractures complexes'],
     ['Pararectus', 'colonne antérieure, lame quadrilatère'],
-    ['Pfannenstiel', 'symphyse pubienne'],
+    ['Pfannenstiel', 'symphyse pubienne', 'bassin:pfannenstiel'],
     ['Abords de la sacro-iliaque', 'anneau pelvien postérieur']]],
   ['Fémur', [
     ['Latérale du fémur proximal', 'DHS, vis-plaque', 'hanche:dhs'],
