@@ -53,9 +53,9 @@ const VOIES_ABORD = [
     ['Abord du grand trochanter pour clou', 'clou gamma, clou fémoral', 'hanche:clou'],
     ['Latérale / postéro-latérale de la diaphyse', 'plaque de fémur', 'femur:diaphyse'],
     ['Latérale du fémur distal, sub-vastus', 'plaque condylienne', 'femur:distal'],
-    ['Para-patellaire / swashbuckler', 'fémur distal articulaire'],
+    ['Para-patellaire / swashbuckler', 'fémur distal articulaire', 'genou:swash'],
     ['Abord pour clou rétrograde', 'clou fémoral rétrograde', 'genou:retro'],
-    ['Médiale du fémur distal', 'condyle médial']]],
+    ['Médiale du fémur distal', 'condyle médial', 'femur:mediale']]],
   ['Genou', [
     ['Para-patellaire médiale', 'prothèse totale de genou', 'genou:ptg'],
     ['Mid-vastus, sub-vastus', 'prothèse de genou', 'genou:subvastus'],

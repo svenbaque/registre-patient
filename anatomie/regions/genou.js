@@ -22,6 +22,7 @@ const visTige = (n, z, x, y) => [`plaque-plateau/vis${n}`, 'Vis corticale', 'imp
 const PEAU_LOB = [[-49, -27, 432], [-48, -27, 411], [-47, -25, 391], [-44, -19, 370], [-44, -18, 350], [-42, -14, 331]];
 const PEAU_POP = [[-81, -32, 470], [-80, -28, 450], [-79, -17, 430], [-79, -8, 409], [-80, -5, 391], [-81, 5, 370], [-81, 10, 350]];
 const tubes = [
+  ...[[-113, -88, 446, 62], [-115, -80, 440, 68], [-116, -90, 430, 66], [-116, -78, 424, 70]].map(([x, y, z, l], n) => [`plaque-condyle/vis${n}`, 'Vis épiphysaire', 'implants', '#cfd6dd', 2.2, [[x - 3, y, z], [x + l / 2, y, z], [x + l, y, z]]]),
   ['incision-lob', 'Incision — postéro-médiale (Lobenhoffer)', 'incisions', '#35e0c8', 1.3, PEAU_LOB.map(([x, y, z]) => [x + 1.2, y + 2.2, z])],
   ['incision-pop', 'Incision — creux poplité', 'incisions', '#35e0c8', 1.3, PEAU_POP.map(([x, y, z]) => [x, y + 2.5, z])],
   ['arthrotomie-lat', 'Arthrotomie para-patellaire latérale', 'incisions', '#35e0c8', 1, [[-97, -131, 520], [-98, -124, 490], [-99, -117, 460], [-100, -112, 440], [-106, -109, 422], [-103, -106, 402], [-96, -106, 382], [-94, -103, 358]]],
@@ -56,6 +57,8 @@ const tubes = [
 ];
 
 const rubans = [
+  ['plaque-condyle', 'Plaque condylienne latérale — tige', 'implants', '#b9c2cc', [[-107.5, -90.5, 520], [-107, -89, 496], [-107.5, -87.5, 472], [-112.5, -86, 452]], 15, 4, [0, 1, 0]],
+  ['plaque-condyle/tete', 'Plaque condylienne latérale — tête', 'implants', '#b9c2cc', [[-112.5, -86, 454], [-115.5, -82, 438], [-117, -80, 420]], 30, 4, [0, 1, 0]],
   ['plaque-lob', 'Plaque console postéro-médiale', 'implants', '#b9c2cc', [[-49.5, -38, 395], [-53.5, -44, 375], [-56.5, -50, 355], [-60.5, -57, 337]], 10, 2.4, [0.9, -0.45, 0]],
   ['plaque-plateau', 'Plaque latérale du plateau tibial — tige', 'implants', '#b9c2cc', [[-104.5, -90.5, 392], [-97.5, -96.5, 372], [-93, -100.5, 350], [-92, -100.5, 326], [-92.5, -97.5, 304]], 12, 3, [0.7, -0.7, 0]],
   ['plaque-plateau/tete', 'Plaque latérale du plateau tibial — tête', 'implants', '#b9c2cc', [[-111.5, -71, 394], [-107.5, -84.5, 394], [-99.5, -93.5, 394]], 11, 3, [0, 0, 1]],
@@ -184,6 +187,13 @@ const popMuscles = e => ({
   ...charge(['gastro-lat', 'biceps-long', 'biceps-court', 'nfibcommun'], lame(INT_POP, [-1, 0, 0], FOND_POP, e, e * 2.4 + 16, { rayon: 26, profondeur: 44 })),
 });
 const PAQUET_ECARTE = charge(['ntibial', 'apoplitee', 'vpoplitee', 'vpetite-saphene', 'sural'], { dep: [-13, 0, 0], autour: [[-80, -40, 440], [-82, -38, 370]], rayon: 40 });
+
+// Swashbuckler : arthrotomie para-patellaire latérale, tout le quadriceps (vaste latéral compris) récliné en dedans avec la patella.
+const swash = k => ({
+  ...charge(['droit-femoral/A', 'vaste-int/A', 'vaste-med', 'vaste-lat/A', 'patella', 'retinaculum-med', `droit-femoral/B/${COTE_MED}`, `vaste-int/B/${COTE_MED}`, `vaste-lat/B/${COTE_MED}`],
+    { dep: [38 * k, 6 * k, 0], autour: [[-90, -112, 520], [-88, -106, 418]], rayon: 44 }),
+  ...charge(['retinaculum-lat', 'tractus', `droit-femoral/B/${COTE_LAT}`, `vaste-int/B/${COTE_LAT}`, `vaste-lat/B/${COTE_LAT}`], { dep: [-10 * k, 0, 0], autour: AXE_PATELLA, rayon: 30 }),
+});
 
 const voies = {
   ptg: { court: 'Para-patellaire médiale', titre: 'Voie para-patellaire médiale (prothèse totale de genou)', fendre: [...peauFendue(PEAU_PTG, FOND, 'médiale', 'latérale'), ...fendrePtg], steps: [
@@ -338,6 +348,20 @@ const voies = {
       texte: 'Supéro-latérale ou supéro-médiale (lavage, corps étranger, patella) ; trans-tendineuse centrale ; postéro-médiale et postéro-latérale, créées de dedans en dehors sous contrôle de la vue par transillumination, genou fléchi à 90° — en arrière de ces voies : la veine et le nerf saphènes en dedans, le nerf fibulaire commun en dehors, derrière le biceps.',
       accent: ['lca', 'lcp', 'menisque-med', 'menisque-lat'], danger: ['nfibcommun', 'nsaphene', 'vsaphene', 'apoplitee'], voiler: ['patella'], montrer: ['arthroscope'],
       masquer: [...REPERES, ...PEAU, 'hoffa', 'capsule', 'retinaculum-lat', 'retinaculum-med', 'anastomose-patellaire', 'tractus'], estomper: [...QUADRICEPS] },
+  ] },
+  swash: { court: 'Swashbuckler', titre: 'Voie para-patellaire latérale étendue « swashbuckler » (fémur distal articulaire)', fendre: [...peauFendue(PEAU_PTG, FOND, 'médiale', 'latérale'), ...fendreKeblish], steps: [
+    { titre: 'Installation et incision', vue: 'opPtg',
+      texte: 'Décubitus dorsal, coussin sous la fesse, genou fléchi sur un billot stérile. Incision antérieure médiane ou légèrement latérale, de 10 cm au-dessus de la patella jusqu’à la tubérosité tibiale : elle resservira pour une prothèse.',
+      montrer: ['incision-ptg'], masquer: REPERES, ecarter: {} },
+    { titre: 'Arthrotomie para-patellaire latérale', vue: 'opPtgProche',
+      texte: 'Le fascia est incisé sur le vaste latéral, qui est décollé de la cloison intermusculaire latérale et de la face antérieure du fémur, sans être traversé ; l’arthrotomie longe le bord latéral de la patella et du ligament patellaire. Le tendon quadricipital n’est pas incisé. Les perforantes et l’artère supéro-latérale du genou sont liées.',
+      accent: ['vaste-lat', 'patella'], montrer: ['arthrotomie-lat'], danger: ['agenic-inf-lat'], masquer: REPERES, ecarter: keblishPeau(30, 18) },
+    { titre: 'Quadriceps et patella réclinés en dedans', vue: 'opPtgProche',
+      texte: 'Tout l’appareil extenseur — vaste latéral, droit fémoral, patella — est récliné en dedans par un écarteur posé sur le condyle médial. Toute la surface articulaire du fémur distal est sous les yeux : trochlée, deux condyles, échancrure, ainsi que la métaphyse latérale.',
+      accent: ['femur', 'patella'], masquer: [...REPERES, 'anastomose-patellaire', 'hoffa'], ecarter: { ...keblishPeau(30, 50), ...swash(1) }, sectionner: CAPSULE_OUVERTE },
+    { titre: 'Reconstruction articulaire et plaque', vue: 'opPtgProche',
+      texte: 'Les condyles sont réduits l’un sur l’autre sous contrôle de la vue (les fractures frontales de Hoffa sont recherchées), fixés par des vis de traction placées hors du trajet de la plaque, puis le bloc articulaire est solidarisé à la diaphyse par une plaque condylienne latérale verrouillée, glissée sous le vaste latéral.',
+      accent: ['femur'], voiler: ['femur'], montrer: ['plaque-condyle'], masquer: [...REPERES, 'anastomose-patellaire', 'hoffa'], ecarter: { ...keblishPeau(30, 50), ...swash(1) }, sectionner: CAPSULE_OUVERTE },
   ] },
 };
 

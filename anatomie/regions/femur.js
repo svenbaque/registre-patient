@@ -1,7 +1,7 @@
 // Fémur droit — voie latérale de la diaphyse et voie latérale du fémur distal.
 // Repère BodyParts3D, en millimètres : x = latéral (-) / médial (+), y = avant (-) / arrière (+), z = vers le haut.
 import pieces from './femur.pieces.js';
-import { peauFendue, berges, charge } from './outils.js';
+import { peauFendue, berges, charge, lame, deuxBerges } from './outils.js';
 
 const meshes = [
   ['peau-cuisse', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
@@ -16,7 +16,11 @@ const PEAU_DISTAL = [[-146, -85, 532], [-143, -85, 518], [-139, -85, 481], [-132
 const TRACTUS_DISTAL = [[-141, -86, 532], [-126, -86, 481], [-118, -86, 440], [-114, -88, 398]];
 
 const vis = (id, n, x, y, z, longueur = 30) => [`${id}/vis${n}`, 'Vis', 'implants', '#cfd6dd', 2.2, [[x - 3, y, z], [x + longueur / 2, y, z], [x + longueur, y, z]]];
+const PEAU_MED = [[-23, -88, 544], [-24, -88, 519], [-22, -88, 495], [-27, -88, 469], [-28, -88, 444], [-27, -87, 421], [-34, -85, 399]];
+const FOND_MED = [-0.98, 0.2, 0];
 const tubes = [
+  ['incision-med', 'Incision — voie médiale du fémur distal', 'incisions', '#35e0c8', 1.4, PEAU_MED.map(([x, y, z]) => [x + 2.2, y, z])],
+  ...[[-70, -92, 532, 30], [-64, -90, 506, 30], [-56, -87, 480, 34], [-34, -80, 446, 62], [-33, -74, 432, 66], [-33, -84, 424, 62]].map(([x, y, z, l], n) => [`plaque-med/vis${n}`, 'Vis', 'implants', '#cfd6dd', 2.2, [[x + 3, y, z], [x - l / 2, y, z], [x - l, y, z]]]),
   ['incision-diaphyse', 'Incision — voie latérale de la cuisse', 'incisions', '#35e0c8', 1.4, PEAU_DIAPHYSE.map(([x, y, z]) => [x - 2, y, z])],
   ['incision-distal', 'Incision — voie latérale du fémur distal', 'incisions', '#35e0c8', 1.4, PEAU_DISTAL.map(([x, y, z]) => [x - 2, y, z])],
   vis('plaque-diaphyse', 1, -117, -93, 686), vis('plaque-diaphyse', 2, -115.5, -94, 668), vis('plaque-diaphyse', 3, -114, -94, 650), vis('plaque-diaphyse', 4, -112.5, -94.5, 632),
@@ -25,6 +29,7 @@ const tubes = [
   vis('plaque-distale', 4, -113, -88, 446, 62), vis('plaque-distale', 5, -115, -80, 440, 68), vis('plaque-distale', 6, -116, -90, 430, 66), vis('plaque-distale', 7, -116, -78, 424, 70), vis('plaque-distale', 8, -115, -68, 432, 60),
 ];
 const rubans = [
+  ['plaque-med', 'Plaque médiale du fémur distal', 'implants', '#b9c2cc', [[-71.5, -92, 540], [-63.5, -90, 500], [-52.5, -86, 470], [-33, -80, 446], [-32.5, -76, 424]], 14, 3.5, [0, 1, 0]],
   ['plaque-diaphyse', 'Plaque latérale de la diaphyse fémorale', 'implants', '#b9c2cc', [[-118.5, -93, 694], [-116, -94, 655], [-112, -94.5, 615], [-109.5, -93.5, 578], [-107.5, -91.5, 546]], 16, 4.5, [0, 1, 0]],
   ['plaque-distale', 'Plaque condylienne latérale — tige', 'implants', '#b9c2cc', [[-107.5, -90.5, 534], [-107, -89, 500], [-107.5, -87.5, 472], [-112.5, -86, 452]], 15, 4, [0, 1, 0]],
   ['plaque-distale/tete', 'Plaque condylienne latérale — tête', 'implants', '#b9c2cc', [[-112.5, -86, 454], [-115.5, -82, 438], [-117, -80, 420]], 30, 4, [0, 1, 0]],
@@ -42,9 +47,11 @@ const vues = {
   // décubitus dorsal, coussin sous la fesse (ou décubitus latéral) : l'opérateur est en dehors de la cuisse, tête du patient à gauche, face antérieure en haut
   opDiaphyse: { de: [-470, -70, 0], haut: [0, -1, 0], cible: DIAPHYSE }, opDiaphyseProche: { de: [-330, -50, 0], haut: [0, -1, 0], cible: DIAPHYSE },
   opDistal: { de: [-400, -60, 0], haut: [0, -1, 0], cible: DISTAL }, opDistalProche: { de: [-270, -45, 0], haut: [0, -1, 0], cible: DISTAL },
+  // membre en rotation latérale, genou fléchi sur un coussin : face médiale, tête du patient à droite, face antérieure en haut
+  opMed: { de: [390, -60, 0], haut: [0, -1, 0], cible: [-45, -88, 470] }, opMedProche: { de: [250, -40, 0], haut: [0, -1, 0], cible: [-45, -88, 468] },
   libre: { de: [-350, -250, 60] },
 };
-const IMPLANTS = ['plaque-diaphyse', 'plaque-distale'];
+const IMPLANTS = ['plaque-diaphyse', 'plaque-distale', 'plaque-med'];
 const DECOR = ['nclc']; // nerf cutané qui traverse le champ au-dessus de la peau ouverte
 
 // Peau puis tractus ilio-tibial s'ouvrent sur la même ligne ; berge /A en avant, /B en arrière.
@@ -61,6 +68,18 @@ const fendre = (peau, tractus) => [
   ...peauFendue(peau, FOND, 'antérieure', 'postérieure'),
   ['tractus', { ligne: tractus, fond: FOND, rayon: 30 }, 'Tractus ilio-tibial — berge antérieure', 'Tractus ilio-tibial — berge postérieure'],
 ];
+
+// ----- Voie médiale du fémur distal : entre vaste médial (en avant) et sartorius (en arrière) -----
+const MED_AVANT = [-0.2, -0.98, 0];
+const MED_ARRIERE = [0.2, 0.98, 0];
+const INT_MED = [[-36, -88, 546], [-33, -80, 400]];
+const medPeau = e => deuxBerges(PEAU_MED, FOND_MED,
+  { vers: MED_AVANT, lame: lame([PEAU_MED[0], PEAU_MED[PEAU_MED.length - 1]], MED_AVANT, FOND_MED, e, e * 2.4 + 8, { rayon: 30, profondeur: 24 }) },
+  { vers: MED_ARRIERE, lame: lame([PEAU_MED[0], PEAU_MED[PEAU_MED.length - 1]], MED_ARRIERE, FOND_MED, e * 0.6, e * 1.6 + 8, { rayon: 30, profondeur: 24 }) });
+const medMuscles = (avant, arriere) => ({
+  ...charge(['vaste-med', 'agenic-sup-med'], lame(INT_MED, MED_AVANT, FOND_MED, avant, avant * 2.4 + 20, { rayon: 30, profondeur: 60 })),
+  ...charge(['sartorius', 'gracile', 'nsaphene', 'vsaphene', 'grand-adducteur'], lame(INT_MED, MED_ARRIERE, FOND_MED, arriere, arriere * 2.4 + 12, { rayon: 30, profondeur: 40 })),
+});
 
 const voies = {
   diaphyse: { court: 'Diaphyse', titre: 'Voie latérale de la diaphyse fémorale', fendre: fendre(PEAU_DIAPHYSE, TRACTUS_DIAPHYSE), steps: [
@@ -97,6 +116,20 @@ const voies = {
     { titre: 'Réduction et plaque', vue: 'opDistalProche',
       texte: 'Le bloc articulaire reconstruit est réaligné sur la diaphyse (longueur, axe frontal, récurvatum, rotation), puis fixé par une plaque anatomique verrouillée : sa tête épouse le condyle latéral, ses vis épiphysaires sont parallèles à l’interligne, sa tige est glissée sous le vaste latéral. Les vis distales ne doivent dépasser ni dans l’échancrure ni en dedans.',
       voiler: ['femur'], danger: ['agenic-sup-lat', 'nfibcommun'], montrer: ['plaque-distale'], masquer: ['plaque-diaphyse', ...DECOR], ecarter: { ...ouverture(PEAU_DISTAL, TRACTUS_DISTAL, 1.15), ...VASTE_DISTAL } },
+  ] },
+  mediale: { court: 'Médiale distale', titre: 'Voie médiale du fémur distal (sub-vastus médial)', fendre: peauFendue(PEAU_MED, FOND_MED, 'antérieure', 'postérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opMed',
+      texte: 'Décubitus dorsal, hanche en rotation latérale, genou fléchi à 30° sur un coussin. Incision médiale longitudinale, du tubercule de l’adducteur vers le haut, le long du bord postérieur du vaste médial. Le nerf saphène et la grande veine saphène sont en arrière, avec le sartorius.',
+      montrer: ['incision-med'], danger: ['nsaphene', 'vsaphene'], masquer: IMPLANTS },
+    { titre: 'Peau et fascia', vue: 'opMedProche',
+      texte: 'Peau et tissu sous-cutané, puis fascia au bord postérieur du vaste médial. L’intervalle est entre le vaste médial, en avant, et le sartorius, en arrière.',
+      accent: ['vaste-med', 'sartorius'], danger: ['nsaphene', 'vsaphene'], masquer: IMPLANTS, ecarter: medPeau(14) },
+    { titre: 'Vaste médial relevé', vue: 'opMedProche',
+      texte: 'Le vaste médial est décollé de la cloison intermusculaire médiale et du tendon du grand adducteur, puis relevé en avant, sous le muscle (sub-vastus). L’artère supéro-médiale du genou croise le champ : elle est liée. Limite à ne pas franchir : en haut et en arrière, à une main au-dessus de l’interligne, les vaisseaux fémoraux traversent le hiatus du grand adducteur pour devenir poplités.',
+      accent: ['femur', 'vaste-med', 'grand-adducteur'], danger: ['agenic-sup-med', 'afemorale', 'vfemorale', 'apoplitee', 'nsaphene'], masquer: IMPLANTS, ecarter: { ...medPeau(18), ...medMuscles(18, 8) } },
+    { titre: 'Condyle médial et plaque', vue: 'opMedProche',
+      texte: 'La face médiale de la métaphyse et du condyle médial est exposée ; une arthrotomie para-patellaire médiale la prolonge pour une fracture articulaire (condyle médial, Hoffa médial). Plaque médiale de soutien, seule ou en complément d’une plaque latérale dans les fractures comminutives et les pseudarthroses. Le ligament collatéral tibial, en arrière de l’épicondyle, est respecté.',
+      accent: ['femur'], danger: ['afemorale', 'vfemorale', 'apoplitee', 'nsaphene', 'lcm'], voiler: ['femur'], montrer: ['plaque-med'], masquer: ['plaque-diaphyse', 'plaque-distale'], ecarter: { ...medPeau(18), ...medMuscles(18, 8) } },
   ] },
 };
 
