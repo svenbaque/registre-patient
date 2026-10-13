@@ -1,83 +1,91 @@
 // Cheville droite — abords des malléoles latérale et médiale.
 // Repère BodyParts3D, en millimètres : x = latéral (-) / médial (+), y = avant (-) / arrière (+), z = vers le haut.
+import pieces from './cheville.pieces.js';
+import { peauFendue, berges } from './outils.js';
 
 const meshes = [
-  ['FMA24477', 'Tibia', 'os', '#e9e2cf'],
-  ['FMA24480', 'Fibula', 'os', '#e9e2cf'],
-  ['FMA24482', 'Talus', 'os', '#ded6c0'],
-  ['FMA24497', 'Calcanéus', 'os', '#ded6c0'],
-  ['FMA24528', 'Cuboïde', 'os', '#ded6c0'],
-  ['FMA35192', 'Membrane interosseuse', 'divers', '#cfd6dd'],
-  ['FMA22552', 'Long fibulaire', 'lateraux', '#d9773f'],
-  ['FMA22554', 'Court fibulaire', 'lateraux', '#e08a3c'],
-  ['FMA22550', 'Troisième fibulaire', 'anterieurs', '#cf6f5d'],
-  ['FMA22544', 'Tibial antérieur', 'anterieurs', '#c25a4c'],
-  ['FMA22546', 'Long extenseur de l’hallux', 'anterieurs', '#b84a5e'],
-  ['FMA22548', 'Long extenseur des orteils', 'anterieurs', '#a8444f'],
-  ['FMA65018', 'Tibial postérieur', 'posterieurs', '#7d6bb5'],
-  ['FMA65016', 'Long fléchisseur des orteils', 'posterieurs', '#6f73b8'],
-  ['FMA65014', 'Long fléchisseur de l’hallux', 'posterieurs', '#6388b5'],
-  ['FMA258847', 'Tendon calcanéen', 'posterieurs', '#e6e1d2'],
+  ['peau-jambe', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
+  ...pieces,
 ];
 
+// Lignes d'incision relevées sur la peau.
+const PEAU_LAT = [[-124, -52, 150], [-120, -53, 130], [-114, -53, 100], [-116, -51, 70], [-114, -48, 45]];
+const PEAU_MED = [[-58, -66, 125], [-54, -68, 100], [-47, -68, 80], [-43, -66, 65], [-44, -72, 52]];
+const FOND_LAT = [1, 0, 0];
+const FOND_MED = [-1, 0, 0];
+
+// Tracés à la main : incisions, plaque et vis.
 const tubes = [
-  ['nfibsup', 'Nerf fibulaire superficiel (schématique)', 'nerfs', '#ffd23f', 1.3,
-    [[-109, -60, 195], [-108, -66, 150], [-103, -76, 110], [-95, -90, 75], [-86, -104, 46]]],
-  ['sural', 'Nerf sural et petite veine saphène (schématique)', 'nerfs', '#ffd23f', 1.5,
-    [[-84, -22, 180], [-92, -26, 120], [-102, -32, 70], [-109, -38, 38], [-113, -56, 20]]],
-  ['vsaphene', 'Grande veine saphène et nerf saphène (schématique)', 'vaisseaux', '#3b6fd1', 2,
-    [[-60, -78, 180], [-55, -82, 125], [-52, -84, 90], [-53, -92, 62], [-60, -105, 42]]],
-  ['tibialpost', 'Paquet tibial postérieur (schématique)', 'vaisseaux', '#e0392b', 2.2,
-    [[-74, -40, 180], [-66, -38, 125], [-59, -36, 85], [-55, -33, 60], [-56, -28, 36]]],
-  ['incision-lat', 'Incision — malléole latérale', 'incisions', '#35e0c8', 1.2, [[-115, -53, 150], [-115, -52, 105], [-116, -51, 62], [-112, -50, 40]]],
-  ['incision-med', 'Incision — malléole médiale', 'incisions', '#35e0c8', 1.2, [[-52, -70, 125], [-46, -66, 95], [-44, -63, 70], [-49, -70, 52], [-56, -80, 46]]],
-  ['plaque-fibula', 'Position de la plaque fibulaire (schématique)', 'reperes', '#7df9ff', 2.4, [[-114, -51, 135], [-115, -50, 95], [-115, -50, 54]]],
-  ['vis-syndesmose', 'Vis de syndesmose (schématique)', 'reperes', '#7df9ff', 1.5, [[-116, -50, 76], [-92, -58, 80], [-68, -66, 84]]],
-  ['vis-mm1', 'Vis de la malléole médiale (schématique)', 'reperes', '#7df9ff', 1.4, [[-50, -62, 58], [-61, -64, 80], [-72, -66, 102]]],
-  ['vis-mm2', 'Vis de la malléole médiale (schématique)', 'reperes', '#7df9ff', 1.4, [[-52, -71, 60], [-63, -73, 82], [-74, -75, 104]]],
+  ['incision-lat', 'Incision — malléole latérale', 'incisions', '#35e0c8', 1.2, PEAU_LAT.map(([x, y, z]) => [x - 1.5, y, z])],
+  ['incision-med', 'Incision — malléole médiale', 'incisions', '#35e0c8', 1.2, PEAU_MED.map(([x, y, z]) => [x + 1.5, y, z])],
+  ...[136, 122, 108].map((z, i) => [`plaque/vis-p${i}`, 'Vis corticale de la plaque', 'implants', '#cfd6dd', 1.5, [[-110, -53, z], [-103, -54, z], [-95, -55, z]]]),
+  ...[62, 53].map((z, i) => [`plaque/vis-d${i}`, 'Vis spongieuse distale', 'implants', '#cfd6dd', 1.5, [[-110.5, -49, z], [-104, -50, z], [-98, -51, z]]]),
+  ['vis-syndesmose', 'Vis de syndesmose', 'implants', '#dfe6ec', 1.8, [[-111, -52, 94], [-90, -62, 95.5], [-66, -74, 97]]],
+  ['vis-mm1', 'Vis de la malléole médiale', 'implants', '#cfd6dd', 1.8, [[-45, -60, 61], [-57, -62, 84], [-69, -64, 107]]],
+  ['vis-mm2', 'Vis de la malléole médiale', 'implants', '#cfd6dd', 1.8, [[-46.5, -69, 62], [-58, -71, 85], [-70, -73, 108]]],
+];
+const rubans = [
+  ['plaque', 'Plaque tiers-de-tube fibulaire', 'implants', '#b9c2cc', [[-108, -52, 142], [-107.5, -54.5, 114], [-107, -53, 90], [-108.5, -51, 68], [-109, -47.5, 49]], 9, 1.6, [0, 1, 0]],
 ];
 
 const groupes = [
-  ['os', 'Os'], ['lateraux', 'Fibulaires'], ['anterieurs', 'Loge antérieure'], ['posterieurs', 'Loge postérieure'], ['divers', 'Membrane interosseuse'],
-  ['vaisseaux', 'Vaisseaux'], ['nerfs', 'Nerfs'], ['incisions', 'Incisions'], ['reperes', 'Repères d’ostéosynthèse'],
+  ['peau', 'Peau'], ['graisse', 'Tissu sous-cutané'], ['os', 'Os'], ['lateraux', 'Fibulaires'], ['anterieurs', 'Loge antérieure'], ['posterieurs', 'Loge postérieure'],
+  ['ligaments', 'Ligaments et rétinaculums'], ['vaisseaux', 'Artères et veines'], ['nerfs', 'Nerfs'], ['incisions', 'Incisions'], ['implants', 'Plaque et vis'],
 ];
 
 const centre = [-82, -58, 85];
-const LAT = [-108, -52, 92];
-const MED = [-56, -64, 84];
+const LAT = [-110, -52, 95];
+const MED = [-50, -66, 85];
 const vues = {
-  lat: { de: [-340, -70, 40], cible: LAT }, latProche: { de: [-230, -40, 25], cible: LAT },
-  med: { de: [340, -90, 40], cible: MED }, medProche: { de: [225, -60, 25], cible: MED },
+  // décubitus dorsal, coussin sous la fesse : l'opérateur regarde la face latérale, pied à droite, face antérieure en haut
+  opLat: { de: [-300, -55, 0], haut: [0, -1, 0], cible: LAT }, opLatProche: { de: [-185, -32, 0], haut: [0, -1, 0], cible: LAT },
+  // membre en rotation latérale : l'opérateur regarde la face médiale, pied à gauche, face antérieure en haut
+  opMed: { de: [300, -65, 0], haut: [0, -1, 0], cible: MED }, opMedProche: { de: [175, -38, 0], haut: [0, -1, 0], cible: MED },
   libre: { de: [-250, -300, 90] },
 };
-const REPERES = ['plaque-fibula', 'vis-syndesmose', 'vis-mm1', 'vis-mm2'];
-const AUTRE_COTE_LAT = ['incision-med', ...REPERES];
+const IMPLANTS_LAT = ['plaque', 'vis-syndesmose'];
+const IMPLANTS_MED = ['vis-mm1', 'vis-mm2'];
+const IMPLANTS = [...IMPLANTS_LAT, ...IMPLANTS_MED];
+
+const latOuverte = k => berges(PEAU_LAT, FOND_LAT, [0, -12, 0], k, 24);
+const medOuverte = k => ({
+  ...berges(PEAU_MED, FOND_MED, [0, -11, 0], k, 24),
+  // la grande veine saphène et le nerf saphène, juste en avant de la malléole, partent avec la berge antérieure
+  ...Object.fromEntries(['vsaphene', 'nsaphene'].map(id => [id, { dep: [0, -11 * k, 0], autour: PEAU_MED, rayon: 30, fond: FOND_MED }])),
+});
 
 const voies = {
-  lat: { court: 'Malléole latérale', titre: 'Abord latéral de la malléole latérale', steps: [
-    { titre: 'Repères et incision', vue: 'lat',
-      texte: 'Décubitus dorsal, coussin sous la fesse du même côté. Incision longitudinale centrée sur la fibula distale, légèrement en arrière de sa crête. Le nerf fibulaire superficiel croise en avant, environ quatre travers de doigt au-dessus de la pointe ; le nerf sural passe en arrière et en dessous.',
-      montrer: ['incision-lat'], accent: ['FMA24480'], danger: ['nfibsup', 'sural'], masquer: AUTRE_COTE_LAT },
-    { titre: 'Exposition du foyer', vue: 'latProche',
-      texte: 'Le plan est direct, sous-cutané. Les tendons fibulaires restent en arrière de la fibula, protégés. Le foyer est exposé en sous-périosté, sur la stricte étendue nécessaire à la réduction.',
-      accent: ['FMA24480', 'FMA22552', 'FMA22554'], danger: ['nfibsup', 'sural'], masquer: ['incision-lat', ...AUTRE_COTE_LAT] },
-    { titre: 'Plaque et syndesmose', vue: 'latProche',
-      texte: 'Après réduction (longueur, rotation, axe), la plaque est posée sur la face latérale ou postéro-latérale de la fibula. Le test de la syndesmose se fait sous scopie après la fixation : si elle est instable, une vis de syndesmose est posée, cheville en position neutre, dirigée de 30° vers l’avant.',
-      accent: ['plaque-fibula', 'vis-syndesmose'], voiler: ['FMA24480', 'FMA24477'], danger: ['nfibsup', 'sural'], montrer: ['plaque-fibula', 'vis-syndesmose'],
-      masquer: ['incision-lat', 'incision-med', 'vis-mm1', 'vis-mm2'] },
+  lat: { court: 'Malléole latérale', titre: 'Abord latéral de la malléole latérale', fendre: peauFendue(PEAU_LAT, FOND_LAT, 'postérieure', 'antérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opLat',
+      texte: 'Vue de l’opérateur : décubitus dorsal, coussin sous la fesse du même côté pour corriger la rotation latérale du membre, garrot à la cuisse. Incision longitudinale centrée sur la fibula distale, sur son bord postérieur ou sa face latérale ; elle peut s’incurver en avant à la pointe pour voir la syndesmose. Le nerf fibulaire superficiel perfore le fascia et croise en avant, environ 10 cm au-dessus de la pointe (parfois plus bas) ; le nerf sural et la petite veine saphène passent en arrière et en dessous.',
+      montrer: ['incision-lat'], danger: ['nfibsup', 'sural'], masquer: IMPLANTS },
+    { titre: 'Peau et tissu sous-cutané', vue: 'opLatProche',
+      texte: 'Le plan est direct : peau, tissu sous-cutané, puis l’os, sous-cutané à ce niveau. Lambeaux cutanés épais, sans décollement. En haut de l’incision, le nerf fibulaire superficiel est recherché et protégé dans la berge antérieure.',
+      accent: ['fibula'], danger: ['nfibsup', 'nfibsup-int', 'sural'], masquer: IMPLANTS, ecarter: latOuverte(1) },
+    { titre: 'Exposition du foyer', vue: 'opLatProche',
+      texte: 'Les tendons fibulaires restent en arrière de la fibula, dans leur gaine. Le périoste est incisé et récliné sur 1 à 2 mm de part et d’autre du trait, pas davantage ; le foyer est nettoyé du caillot et des interpositions. En avant, le ligament tibio-fibulaire antérieur et la syndesmose sont visibles.',
+      accent: ['fibula', 'ltfa'], danger: ['nfibsup', 'nfibsup-int', 'sural'], masquer: IMPLANTS, ecarter: latOuverte(1.25) },
+    { titre: 'Réduction et plaque', vue: 'opLatProche',
+      texte: 'Réduction anatomique au davier à pointes : longueur, rotation, axe. Une vis de traction antéro-postérieure perpendiculaire au trait, si celui-ci le permet, puis une plaque tiers-de-tube de neutralisation sur la face latérale (ou une plaque postéro-latérale anti-glissement). Les vis distales sont unicorticales : elles ne doivent pas pénétrer l’articulation.',
+      accent: ['fibula'], danger: ['nfibsup', 'sural'], montrer: ['plaque'], masquer: ['vis-syndesmose', ...IMPLANTS_MED], ecarter: latOuverte(1.25) },
+    { titre: 'Syndesmose', vue: 'opLatProche',
+      texte: 'La syndesmose est testée sous scopie après la fixation (traction latérale au crochet sur la fibula, ou rotation latérale forcée). Instable, elle est réduite puis fixée par une vis de position, 2 à 3 cm au-dessus de l’interligne, parallèle à lui, dirigée de 25 à 30° vers l’avant, de la fibula vers le tibia. Peau retirée et os translucides pour montrer le trajet.',
+      accent: ['vis-syndesmose'], voiler: ['fibula', 'tibia'], montrer: IMPLANTS_LAT, masquer: [...IMPLANTS_MED, 'peau', 'graisse'], estomper: ['fibulaire-long', 'fibulaire-court', 'fibulaire-3', 'edl', 'edl-tendons'] },
   ] },
-  med: { court: 'Malléole médiale', titre: 'Abord médial de la malléole médiale', steps: [
-    { titre: 'Repères et incision', vue: 'med',
-      texte: 'Incision arciforme antéro-médiale, centrée sur la malléole médiale. La grande veine saphène et le nerf saphène passent juste en avant de la malléole : ils sont repérés et protégés.',
-      montrer: ['incision-med'], accent: ['FMA24477'], danger: ['vsaphene'], masquer: ['incision-lat', ...REPERES] },
-    { titre: 'Exposition du foyer', vue: 'medProche',
-      texte: 'La veine saphène reste en avant, protégée par un écarteur. Le foyer est exposé et nettoyé : le périoste ou le ligament deltoïde s’y interposent souvent. En arrière de la malléole, le tendon tibial postérieur puis le paquet tibial postérieur sont protégés.',
-      accent: ['FMA24477', 'FMA65018'], danger: ['vsaphene', 'tibialpost'], masquer: ['incision-lat', 'incision-med', ...REPERES] },
-    { titre: 'Vissage', vue: 'medProche',
-      texte: 'Réduction anatomique sous contrôle de la vue et de la scopie, puis fixation par deux vis parallèles, perpendiculaires au trait, ou par embrochage-haubanage si le fragment est petit ou ostéoporotique.',
-      accent: ['vis-mm1', 'vis-mm2'], voiler: ['FMA24477'], danger: ['vsaphene', 'tibialpost'], montrer: ['vis-mm1', 'vis-mm2'],
-      masquer: ['incision-lat', 'incision-med', 'plaque-fibula', 'vis-syndesmose'] },
+  med: { court: 'Malléole médiale', titre: 'Abord antéro-médial de la malléole médiale', fendre: peauFendue(PEAU_MED, FOND_MED, 'antérieure', 'postérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opMed',
+      texte: 'Vue de l’opérateur : décubitus dorsal, le membre tombe en rotation latérale et présente la malléole médiale. Incision longitudinale légèrement courbe, centrée sur la malléole ; son extrémité distale s’incurve vers l’avant pour voir l’angle antéro-médial de l’articulation. La grande veine saphène et le nerf saphène passent juste en avant de la malléole.',
+      montrer: ['incision-med'], danger: ['vsaphene', 'nsaphene'], masquer: IMPLANTS },
+    { titre: 'Peau, veine saphène', vue: 'opMedProche',
+      texte: 'Peau et tissu sous-cutané sont incisés prudemment : la grande veine saphène et le nerf saphène sont repérés, libérés et réclinés en avant avec la berge antérieure, sur un lacs si besoin.',
+      accent: ['tibia'], danger: ['vsaphene', 'nsaphene'], masquer: IMPLANTS, ecarter: medOuverte(1) },
+    { titre: 'Exposition du foyer', vue: 'opMedProche',
+      texte: 'Le foyer est exposé et nettoyé : le périoste et parfois le ligament deltoïde s’y interposent. Une petite arthrotomie antéro-médiale permet de contrôler la réduction sur le cartilage et de laver l’articulation. En arrière de la malléole, le tendon tibial postérieur puis le paquet tibial postérieur sont protégés.',
+      accent: ['tibia', 'deltoide-nav', 'deltoide-calc'], danger: ['vsaphene', 'nsaphene', 'tibial-post', 'atibiale-post', 'ntibial'], masquer: IMPLANTS, ecarter: medOuverte(1.3) },
+    { titre: 'Réduction et vissage', vue: 'opMedProche',
+      texte: 'Réduction anatomique au crochet ou au davier à pointes, maintenue par deux broches. Fixation par deux vis spongieuses parallèles à filetage partiel, perpendiculaires au trait ; haubanage sur broches si le fragment est petit ou ostéoporotique, plaque anti-glissement pour un trait vertical. Peau retirée et tibia translucide pour montrer le trajet des vis.',
+      accent: IMPLANTS_MED, voiler: ['tibia'], danger: ['tibial-post', 'atibiale-post', 'ntibial'], montrer: IMPLANTS_MED, masquer: [...IMPLANTS_LAT, 'peau', 'graisse', 'ret-flechisseurs'] },
   ] },
 };
 
-export default { nom: 'Cheville droite', centre, vues, meshes, tubes, groupes, voies };
+export default { nom: 'Cheville droite', graisse: 2, centre, vues, meshes, tubes, rubans, groupes, voies };
