@@ -51,8 +51,8 @@ const VOIES_ABORD = [
   ['Fémur', [
     ['Latérale du fémur proximal', 'DHS, vis-plaque', 'hanche:dhs'],
     ['Abord du grand trochanter pour clou', 'clou gamma, clou fémoral', 'hanche:clou'],
-    ['Latérale / postéro-latérale de la diaphyse', 'plaque de fémur'],
-    ['Latérale du fémur distal, sub-vastus', 'plaque condylienne'],
+    ['Latérale / postéro-latérale de la diaphyse', 'plaque de fémur', 'femur:diaphyse'],
+    ['Latérale du fémur distal, sub-vastus', 'plaque condylienne', 'femur:distal'],
     ['Para-patellaire / swashbuckler', 'fémur distal articulaire'],
     ['Abord pour clou rétrograde', 'clou fémoral rétrograde'],
     ['Médiale du fémur distal', 'condyle médial']]],
