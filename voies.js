@@ -28,9 +28,9 @@ const VOIES_ABORD = [
     ['Antérieure du coude', 'biceps distal, pédicule'],
     ['Abord direct de l’olécrâne', 'haubanage, plaque', 'coude:olecrane']]],
   ['Avant-bras', [
-    ['Antérieure de Henry', 'diaphyse du radius'],
+    ['Antérieure de Henry', 'diaphyse du radius', 'avant-bras:henry'],
     ['Postéro-latérale de Thompson', 'radius proximal et moyen'],
-    ['Abord direct de l’ulna', 'diaphyse ulnaire, Monteggia']]],
+    ['Abord direct de l’ulna', 'diaphyse ulnaire, Monteggia', 'avant-bras:ulna']]],
   ['Poignet et main', [
     ['Henry modifiée (trans-gaine du FCR)', 'plaque antérieure du radius distal', 'poignet:henry'],
     ['Dorsale du poignet (3ᵉ compartiment)', 'radius dorsal, carpe, arthrodèses'],
