@@ -10,7 +10,7 @@ const VOIES_ABORD = [
     ['Médiale de Ludloff', 'hanche de l’enfant']]],
   ['Épaule et clavicule', [
     ['Delto-pectorale', 'humérus proximal, prothèse d’épaule', 'epaule:dp'],
-    ['Supéro-latérale transdeltoïdienne', 'coiffe, clou huméral, trochiter'],
+    ['Supéro-latérale transdeltoïdienne', 'coiffe, clou huméral, trochiter', 'epaule:td'],
     ['Postérieure de l’épaule (Judet)', 'scapula, glène'],
     ['Abord direct de la clavicule', 'ostéosynthèse de la clavicule', 'epaule:clavicule'],
     ['Abord supérieur de l’acromio-claviculaire', 'disjonctions']]],
@@ -77,7 +77,7 @@ const VOIES_ABORD = [
     ['Médiale de la malléole médiale', 'vissage, haubanage', 'cheville:med'],
     ['Postéro-latérale de cheville', 'fragment de Volkmann', 'cheville:pl'],
     ['Postéro-médiale de cheville', 'fragment postéro-médial'],
-    ['Antérieure de cheville', 'arthrodèse, prothèse'],
+    ['Antérieure de cheville', 'arthrodèse, prothèse', 'cheville:ant'],
     ['Antéro-médiale / antéro-latérale du pilon', 'pilon tibial']]],
   ['Pied', [
     ['Latérale étendue du calcanéus', 'fractures du calcanéus', 'pied:etendue'],

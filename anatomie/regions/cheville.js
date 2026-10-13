@@ -1,7 +1,7 @@
-// Cheville droite — abords des malléoles latérale et médiale, voie postéro-latérale.
+// Cheville droite — abords des malléoles latérale et médiale, voie postéro-latérale, voie antérieure.
 // Repère BodyParts3D, en millimètres : x = latéral (-) / médial (+), y = avant (-) / arrière (+), z = vers le haut.
 import pieces from './cheville.pieces.js';
-import { peauFendue, berges, charge, lame } from './outils.js';
+import { peauFendue, berges, charge, lame, deuxBerges } from './outils.js';
 
 const meshes = [
   ['peau-jambe', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
@@ -22,7 +22,12 @@ const N_PL_MED = [0.87, 0.5, 0.04];
 
 // Tracés à la main : incisions, plaque et vis.
 const visPost = (n, z, y) => [`plaque-post/vis${n}`, 'Vis de la plaque postérieure', 'implants', '#cfd6dd', 1.5, [[-80, y + 1.5, z], [-80, y - 13, z], [-80, y - 27, z]]];
+// Voie antérieure : incision longitudinale entre tibial antérieur et long extenseur de l'hallux.
+const PEAU_ANT = [[-92, -78, 150], [-89, -79, 134], [-86, -84, 116], [-83, -88, 102], [-80, -93, 90], [-77, -98, 78], [-75, -102, 69]];
+const FOND_ANT = [0, 1, 0];
+const INTERVALLE_ANT = [[-93, -72, 150], [-75, -88, 72]];
 const tubes = [
+  ['incision-ant', 'Incision — voie antérieure', 'incisions', '#35e0c8', 1.2, PEAU_ANT.map(([x, y, z]) => [x, y - 2.6, z])],
   ['incision-pl', 'Incision — voie postéro-latérale', 'incisions', '#35e0c8', 1.2, PEAU_PL.map(([x, y, z]) => [x - 1, y + 1.8, z])],
   visPost(1, 116, -50), visPost(2, 104, -47.5), visPost(3, 92, -44),
   ['incision-lat', 'Incision — malléole latérale', 'incisions', '#35e0c8', 1.2, PEAU_LAT.map(([x, y, z]) => [x - 1.5, y, z])],
@@ -53,6 +58,8 @@ const vues = {
   opMed: { de: [300, -65, 0], haut: [0, -1, 0], cible: MED }, opMedProche: { de: [175, -38, 0], haut: [0, -1, 0], cible: MED },
   // décubitus ventral : l'opérateur regarde la face postéro-latérale de la cheville, genou en haut de l'image
   opPL: { de: [-150, 260, 0], cible: [-92, -38, 100] }, opPLProche: { de: [-88, 150, 0], cible: [-90, -40, 100] },
+  // décubitus dorsal : l'opérateur regarde la face antérieure de la cheville, genou en haut
+  opAnt: { de: [-30, -290, 40], cible: [-82, -80, 105] }, opAntProche: { de: [-15, -165, 20], cible: [-82, -80, 100] },
   libre: { de: [-250, -300, 90] },
 };
 const IMPLANTS_LAT = ['plaque', 'vis-syndesmose'];
@@ -76,6 +83,23 @@ const plProfond = (dehors, dedans) => ({
   ...charge(['fibulaire-court', 'fibulaire-long'], lame(INTERVALLE_PL, N_PL_LAT, FOND_PL, dehors, dehors * 2.4 + 10, optsPL)),
   ...charge(['fhl', 'afibulaire'], lame(INTERVALLE_PL, N_PL_MED, FOND_PL, dedans, dedans * 2.4 + 14, optsPL)),
 });
+
+const PEAU_ANT_DROITE = [PEAU_ANT[0], PEAU_ANT[PEAU_ANT.length - 1]];
+const lamesAnt = (ligne, e, profondeur, ids, course = e * 2.4 + 8) => deuxBerges(PEAU_ANT, FOND_ANT,
+  { vers: [1, 0, 0], lame: lame(ligne, [1, 0, 0], FOND_ANT, e, course, { rayon: 18, profondeur }) },
+  { vers: [-1, 0, 0], lame: lame(ligne, [-1, 0, 0], FOND_ANT, e, course, { rayon: 18, profondeur }) }, ids);
+const antPeau = e => lamesAnt(PEAU_ANT_DROITE, e, 20, ['peau', 'graisse']);
+const antRetinaculum = e => lamesAnt(PEAU_ANT_DROITE, e, 24, ['ret-ext-sup', 'ret-ext-inf']);
+// Tibial antérieur en dedans ; long extenseur de l'hallux, paquet tibial antérieur et nerf fibulaire profond en dehors.
+const antProfond = e => ({
+  'tibial-ant': lame(INTERVALLE_ANT, [1, 0, 0], FOND_ANT, e, e * 2.4 + 10, { rayon: 18, profondeur: 30 }),
+  ...charge(['ehl', 'edl', 'edl-tendons', 'atibiale-ant', 'nfibprof', 'apedieuse'], lame(INTERVALLE_ANT, [-1, 0, 0], FOND_ANT, e, e * 2.4 + 16, { rayon: 18, profondeur: 30 })),
+});
+const fendreAnt = [
+  ...peauFendue(PEAU_ANT, FOND_ANT, 'médiale', 'latérale'),
+  ['ret-ext-sup', { ligne: PEAU_ANT, fond: FOND_ANT, rayon: 18 }, 'Rétinaculum supérieur des extenseurs — berge médiale', 'Rétinaculum supérieur des extenseurs — berge latérale'],
+  ['ret-ext-inf', { ligne: PEAU_ANT, fond: FOND_ANT, rayon: 18 }, 'Rétinaculum inférieur des extenseurs — berge médiale', 'Rétinaculum inférieur des extenseurs — berge latérale'],
+];
 
 const voies = {
   lat: { court: 'Malléole latérale', titre: 'Abord latéral de la malléole latérale', fendre: peauFendue(PEAU_LAT, FOND_LAT, 'postérieure', 'antérieure'), steps: [
@@ -125,6 +149,20 @@ const voies = {
     { titre: 'Plaque anti-glissement', vue: 'opPLProche',
       texte: 'Fixation par une plaque postérieure anti-glissement (tiers-de-tube ou plaque dédiée) dont la première vis, juste au-dessus de la pointe du fragment, le chasse vers le bas et l’avant ; ou par des vis postéro-antérieures. Par la même incision, en réclinant les fibulaires en dedans, la fibula peut recevoir une plaque postérieure. La syndesmose est testée après fixation.',
       accent: ['tibia'], danger: ['sural', 'afibulaire', 'ntibial'], montrer: ['plaque-post'], masquer: [...IMPLANTS_LAT, ...IMPLANTS_MED], ecarter: { ...plPeau(1.4), ...plProfond(9, 16) } },
+  ] },
+  ant: { court: 'Antérieure', titre: 'Voie antérieure de la cheville', fendre: fendreAnt, steps: [
+    { titre: 'Installation et incision', vue: 'opAnt',
+      texte: 'Vue de l’opérateur : décubitus dorsal, coussin sous la fesse pour mettre le pied au zénith, garrot. Incision antérieure longitudinale de 10 à 12 cm, centrée sur l’interligne, entre le tendon du tibial antérieur et celui du long extenseur de l’hallux. Les branches du nerf fibulaire superficiel croisent l’incision, juste sous la peau.',
+      montrer: ['incision-ant'], danger: ['nfibsup', 'nfibsup-med'], masquer: IMPLANTS },
+    { titre: 'Peau et rétinaculum des extenseurs', vue: 'opAntProche',
+      texte: 'La peau est incisée seule ; les rameaux du nerf fibulaire superficiel sont repérés et réclinés. Le rétinaculum des extenseurs est ouvert en regard de l’intervalle, en restant hors de la gaine du tibial antérieur, pour éviter la corde d’arc et faciliter la fermeture.',
+      accent: ['tibial-ant', 'ehl', 'ret-ext-sup', 'ret-ext-inf'], danger: ['nfibsup', 'nfibsup-med', 'atibiale-ant'], masquer: IMPLANTS, ecarter: antPeau(10) },
+    { titre: 'Intervalle tibial antérieur / long extenseur de l’hallux', vue: 'opAntProche',
+      texte: 'Le tibial antérieur est récliné en dedans ; le long extenseur de l’hallux en dehors, avec le paquet tibial antérieur et le nerf fibulaire profond, qui cheminent juste en dehors de lui à ce niveau et sont repérés avant d’être écartés. Variante de Hoppenfeld : intervalle entre long extenseur de l’hallux et long extenseur des orteils, paquet récliné en dedans.',
+      accent: ['tibial-ant', 'ehl'], danger: ['atibiale-ant', 'nfibprof', 'apedieuse'], masquer: IMPLANTS, ecarter: { ...antPeau(13), ...antRetinaculum(10), ...antProfond(9) } },
+    { titre: 'Articulation talo-crurale', vue: 'opAntProche',
+      texte: 'La capsule antérieure est incisée dans l’axe et décollée du tibia et du col du talus : le pilon tibial antérieur, le dôme du talus et les deux gouttières malléolaires sont exposés. C’est la voie des arthrodèses, des prothèses totales de cheville et des fractures antérieures du pilon. Fermeture soigneuse de la capsule et du rétinaculum ; la peau antérieure, mal vascularisée, est manipulée sans écarteur appuyé.',
+      accent: ['tibia', 'talus'], danger: ['atibiale-ant', 'nfibprof', 'apedieuse'], masquer: IMPLANTS, ecarter: { ...antPeau(16), ...antRetinaculum(14), ...antProfond(14) } },
   ] },
 };
 
