@@ -158,15 +158,16 @@ const FOND = [0, 1, 0]; // de la peau palmaire vers le radius
 // « course » vaut plus de deux fois l'écart : tout ce qui se trouve entre l'incision et la lame est chargé en entier.
 const lameRadiale = (ecart, course) => ({ lame: decale(ecart), pousse: N_RADIAL, course, rayon: 17, fond: FOND, profondeur: 48 });
 const lameUlnaire = (ecart, course) => ({ lame: decale(-ecart), pousse: N_ULNAIRE, course, rayon: 17, fond: FOND, profondeur: 48 });
-// ce que charge chaque lame, plan par plan (technique de la fiche : FCR et long palmaire en dehors, fléchisseurs et nerf médian en dedans)
+// ce que charge chaque lame, plan par plan (technique des ouvrages — voie trans-FCR : artère radiale en dehors ; FCR, fléchisseurs et nerf médian en dedans)
 const PEAU_RADIALE = ['peau/A', 'graisse/A'];
 const PEAU_ULNAIRE = ['peau/B', 'graisse/B'];
-const PLAN_RADIAL = ['FMA38460', 'FMA38463', 'aradiale', 'vradiales', 'FMA38486'];
-const PLAN_ULNAIRE = ['FMA38482', 'FMA38640', 'FMA38638', 'FMA38479', 'nmedian', 'rameau-palmaire'];
+const PLAN_RADIAL = ['aradiale', 'vradiales', 'FMA38486'];
+const PLAN_FCR = ['FMA38460', 'FMA38463', 'rameau-palmaire'];
+const PLAN_ULNAIRE = ['FMA38482', 'FMA38640', 'FMA38638', 'FMA38479', 'nmedian'];
 const charge = (ids, lame) => Object.fromEntries(ids.map(id => [id, lame]));
 const PEAU_OUVERTE = { ...charge(PEAU_RADIALE, lameRadiale(10, 30)), ...charge(PEAU_ULNAIRE, lameUlnaire(10, 30)) };
 const PEAU_ECARTEE = { ...charge(PEAU_RADIALE, lameRadiale(17, 42)), ...charge(PEAU_ULNAIRE, lameUlnaire(17, 42)) };
-const FCR_EN_DEHORS = charge(PLAN_RADIAL, lameRadiale(14, 62)); // la lame radiale charge aussi le long palmaire
+const FCR_EN_DEHORS = { ...charge(PLAN_RADIAL, lameRadiale(14, 62)), ...charge(PLAN_FCR, lameUlnaire(14, 62)) }; // artère radiale en dehors, FCR en dedans
 const FLECHISSEURS_EN_DEDANS = charge(PLAN_ULNAIRE, lameUlnaire(14, 62)); // la lame ulnaire balaie tout ce qui recouvre le radius
 
 // Carré pronateur incisé en L (bord radial et bord distal), relevé en sous-périosté vers l'ulna où il garde son attache.
@@ -220,8 +221,8 @@ const voies = {
     { titre: 'Peau et gaine du FCR', vue: 'opProche',
       texte: 'Peau et tissu sous-cutané sont incisés ; les berges sont tenues par deux écarteurs. Au fond apparaît la gaine du FCR. L’artère radiale est en dehors : on ne la dissèque pas.',
       accent: ['gaine-fcr', 'FMA38460'], danger: ['aradiale', 'rameau-palmaire'], masquer: [...REPERES, ...IMPLANTS], ecarter: PEAU_OUVERTE },
-    { titre: 'FCR récliné en dehors', vue: 'opProche',
-      texte: 'La gaine du FCR est ouverte sur toute la longueur de l’incision. Le FCR et le long palmaire sont réclinés en dehors par la lame radiale : ils emmènent et protègent l’artère radiale. Le plancher de la gaine apparaît ; il est incisé à son tour.',
+    { titre: 'FCR récliné en dedans', vue: 'opProche',
+      texte: 'La gaine du FCR est ouverte sur toute la longueur de l’incision. Le tendon du FCR est récliné en dedans, vers l’ulna : il protège le nerf médian et son rameau cutané palmaire, qui longe sa gaine. L’artère radiale reste en dehors, dans son tissu, sans être disséquée. Le plancher de la gaine apparaît ; il est incisé à son tour.',
       accent: ['FMA38460', 'FMA38463', 'FMA38482'], danger: ['aradiale', 'nmedian'], masquer: [...REPERES, ...IMPLANTS, 'gaine-fcr'], ecarter: { ...PEAU_ECARTEE, ...FCR_EN_DEHORS } },
     { titre: 'Long fléchisseur du pouce récliné en dedans', vue: 'opProche',
       texte: 'Sous le plancher de la gaine, le long fléchisseur du pouce est dégagé à la compresse puis récliné en dedans, au doigt, avec les autres fléchisseurs et le nerf médian, chargés par la lame ulnaire. Le carré pronateur occupe le fond du champ.',
