@@ -3,6 +3,7 @@
 
 // Pièces du modèle libre : [fichier, nom, groupe, couleur]
 const meshes = [
+  ['peau-hanche', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
   ['FMA16586', 'Os coxal', 'os', '#e9e2cf'],
   ['FMA24474', 'Fémur', 'os', '#e9e2cf'],
   ['FMA16202', 'Sacrum', 'os', '#ded6c0'],
@@ -91,31 +92,61 @@ const fendre = [
   ['FMA22330', [-127, -76, 840], [0, 1, 0], 'Moyen fessier — fibres postérieures', 'Moyen fessier — fibres antérieures'],
 ];
 
-// Structures absentes du modèle libre, tracées à la main d'après les repères osseux : [id, nom, groupe, couleur, rayon, points]
-// Tracés à la main : incisions et repères d'ostéosynthèse (nerfs, vaisseaux et capsule viennent maintenant de Z-Anatomy).
+// Tracés à la main : incisions (sur la peau) et repères d'ostéosynthèse. [id, nom, groupe, couleur, rayon, options, points]
 const tubes = [
   ['incision-post', 'Incision — voie postérieure', 'incisions', '#35e0c8', 1.4, {},
-    [[-151, -74, 712], [-153, -76, 760], [-152, -74, 800], [-143, -52, 838], [-125, -24, 872], [-104, -4, 898]]],
+    [[-174, -71, 714], [-173, -73, 758], [-168, -70, 800], [-154, -46, 838], [-128, -17, 871], [-105, 10, 899]]],
   ['incision-ant', 'Incision — voie antérieure', 'incisions', '#35e0c8', 1.4, {},
-    [[-127, -152, 882], [-132, -151, 850], [-137, -148, 815], [-141, -143, 782]]],
+    [[-132, -164, 882], [-135, -159, 851], [-142, -154, 816], [-149, -153, 782]]],
   ['incision-lat', 'Incision — voie latérale du fémur proximal', 'incisions', '#35e0c8', 1.4, {},
-    [[-159, -90, 806], [-161, -90, 760], [-161, -90, 710], [-159, -90, 660]]],
+    [[-168, -92, 808], [-175, -90, 758], [-176, -90, 707], [-176, -92, 660]]],
   ['incision-clou', 'Incision — abord du grand trochanter', 'incisions', '#35e0c8', 1.4, {},
-    [[-152, -76, 846], [-150, -76, 872], [-146, -76, 898]]],
+    [[-164, -74, 845], [-157, -77, 873], [-153, -74, 899]]],
   ['axe-clou', 'Axe du clou (schématique)', 'reperes', '#7df9ff', 2.2, {},
     [[-140, -68, 900], [-127, -77, 822], [-114, -88, 730], [-103, -93, 640], [-97, -94, 580]]],
   ['axe-vis', 'Axe de la vis cervicale (schématique)', 'reperes', '#7df9ff', 2.2, {},
     [[-150, -86, 765], [-128, -88, 780], [-98, -90, 800], [-70, -92, 819]]],
 ].map(([id, nom, groupe, couleur, rayon, options, points]) => [id, nom, groupe, couleur, rayon, points, options]);
 
-const groupes = [
-  ['os', 'Os'], ['fessiers', 'Fessiers et fascia lata'], ['rotateurs', 'Pelvi-trochantériens'], ['anterieurs', 'Loge antérieure et ilio-psoas'],
-  ['mediaux', 'Adducteurs'], ['posterieurs', 'Ischio-jambiers'], ['ligaments', 'Capsule et ligaments'], ['vaisseaux', 'Artères et veines'], ['nerfs', 'Nerfs'],
-  ['incisions', 'Incisions'], ['reperes', 'Repères d’ostéosynthèse'],
+// Implants (tracés schématiques) : plaque DHS et ses vis, clou gamma et ses vis.
+const rubans = [
+  ['dhs', 'Plaque DHS', 'implants', '#b9c2cc', [[-147, -86, 776], [-135, -87, 752], [-127, -87, 722], [-122, -90, 692], [-118, -92, 664]], 17, 4, [0, 1, 0]],
 ];
+const visPlaque = (n, x, y, z) => [`dhs/vis${n}`, 'Vis corticale de la plaque', 'implants', '#cfd6dd', 2.2, {}, [[x - 4, y, z], [x + 14, y, z], [x + 32, y, z]]];
+tubes.push(...[
+  ['dhs/vis-cervicale', 'Vis cervicale (DHS)', 'implants', '#cfd6dd', 4.5, {}, [[-146, -86, 767], [-110, -89, 791], [-72, -92, 817]]],
+  visPlaque(1, -131, -87, 742), visPlaque(2, -127, -87, 722), visPlaque(3, -123, -89, 700), visPlaque(4, -120, -91, 678),
+  ['gamma', 'Clou gamma', 'implants', '#b9c2cc', 6, {}, [[-128, -77, 828], [-122, -80, 792], [-114, -85, 752], [-108, -90, 712], [-104, -93, 672], [-101, -94, 642]]],
+  ['gamma/vis', 'Vis cervicale (clou gamma)', 'implants', '#cfd6dd', 4.5, {}, [[-140, -85, 764], [-118, -86, 779], [-72, -92, 817]]],
+  ['gamma/verrou', 'Vis de verrouillage distal', 'implants', '#cfd6dd', 2.4, {}, [[-124, -93, 668], [-104, -93, 668], [-86, -93, 668]]],
+].map(([id, nom, groupe, couleur, rayon, options, points]) => [id, nom, groupe, couleur, rayon, points, options]));
+
+const groupes = [
+  ['peau', 'Peau'], ['graisse', 'Tissu sous-cutané'], ['os', 'Os'], ['fessiers', 'Fessiers et fascia lata'], ['rotateurs', 'Pelvi-trochantériens'], ['anterieurs', 'Loge antérieure et ilio-psoas'],
+  ['mediaux', 'Adducteurs'], ['posterieurs', 'Ischio-jambiers'], ['ligaments', 'Capsule et ligaments'], ['vaisseaux', 'Artères et veines'], ['nerfs', 'Nerfs'],
+  ['incisions', 'Incisions'], ['reperes', 'Repères d’ostéosynthèse'], ['implants', 'Implants'],
+];
+
+// Lignes d'incision relevées sur la peau, en regard des incisions profondes. Chaque voie fend la peau et le tissu sous-cutané sur sa ligne ;
+// « /A » et « /B » désignent les deux berges (côté de la normale « tronçon × fond », et l'autre).
+const PEAU_MOORE = [[-172, -71, 714], [-171, -73, 758], [-166, -70, 800], [-152, -47, 838], [-127, -19, 871], [-105, 8, 899]];
+const PEAU_HUETER = [[-131, -162, 882], [-134, -157, 851], [-141, -152, 816], [-148, -151, 782]];
+const PEAU_LATERALE = [[-166, -92, 808], [-173, -90, 758], [-174, -90, 707], [-174, -92, 660]];
+const PEAU_CLOU = [[-162, -74, 845], [-155, -77, 873], [-151, -74, 899]];
+const peauFendue = (ligne, fond, nomA, nomB) => [
+  ['peau', { ligne, fond, rayon: 16 }, `Peau — berge ${nomA}`, `Peau — berge ${nomB}`],
+  ['graisse', { ligne, fond, rayon: 20 }, `Tissu sous-cutané — berge ${nomA}`, `Tissu sous-cutané — berge ${nomB}`],
+];
+// berges cutanées écartées : mêmes directions que le plan sous-jacent, un peu plus larges
+const berges = (ligne, fond, depA, k = 1, rayon = 38) => {
+  const A = { dep: Array.isArray(depA[0]) ? depA.map(d => d.map(c => c * k)) : depA.map(c => c * k), autour: ligne, rayon, fond };
+  const B = { ...A, dep: Array.isArray(depA[0]) ? depA.map(d => d.map(c => -c * k)) : depA.map(c => -c * k) };
+  return { 'peau/A': A, 'graisse/A': A, 'peau/B': B, 'graisse/B': B };
+};
 
 const ROTATEURS = ['FMA22340', 'FMA22334', 'FMA22324', 'FMA22336'];
 const REPERES = ['axe-clou', 'axe-vis'];
+const PEAU = ['peau', 'graisse'];
 const centre = [-92, -85, 825]; // articulation de la hanche droite
 const DIAPHYSE = [-112, -88, 745]; // cible des vues latérales : région trochantérienne et sous-trochantérienne
 
@@ -126,6 +157,11 @@ const vues = {
   opPost: { de: [-400, 275, 0], haut: [-0.565, -0.826, 0] },
   opPostProche: { de: [-250, 172, 0], haut: [-0.565, -0.826, 0], cible: [-112, -66, 822] },
   ant: { de: [-150, -430, 70] }, antProche: { de: [-120, -330, 10] },
+  // décubitus dorsal, opérateur du côté opéré : tête du patient à gauche, ligne médiane en haut de l'image
+  opAnt: { de: [-90, -420, 0], haut: [1, 0, 0], cible: [-125, -135, 830] }, opAntProche: { de: [-60, -270, 0], haut: [1, 0, 0], cible: [-120, -128, 828] },
+  // table orthopédique, opérateur en dehors de la cuisse : tête du patient à gauche, face antérieure de la cuisse en haut
+  opLat: { de: [-440, -70, 0], haut: [0, -1, 0], cible: [-125, -90, 735] }, opLatProche: { de: [-300, -45, 0], haut: [0, -1, 0], cible: [-125, -90, 735] },
+  opTroch: { de: [-400, -40, 130], haut: [0, -1, 0], cible: [-135, -78, 850] }, opTrochProche: { de: [-275, -25, 90], haut: [0, -1, 0], cible: [-135, -78, 850] },
   lat: { de: [-520, -60, 40], cible: DIAPHYSE }, latProche: { de: [-400, -90, 20], cible: DIAPHYSE },
   trochanter: { de: [-380, 60, 190], cible: [-120, -80, 835] },
   libre: { de: [-380, -260, 120] },
@@ -141,7 +177,9 @@ const moore = k => {
   const haut = PLAN_FESSIER_N.map(c => c * 27 * k);              // lèvre supérieure, en regard du grand fessier
   const avant = { dep: [bas, bas, haut, haut], autour: LIGNE_MOORE, rayon: 36 };
   const arriere = { dep: [bas, bas, haut, haut].map(d => d.map(c => -c)), autour: LIGNE_MOORE, rayon: 36 };
-  return { 'FMA58776/B': avant, 'FMA58776/A/A': avant, 'FMA22328/A': avant, 'FMA58776/A/B': arriere, 'FMA22328/B': arriere };
+  // peau et tissu sous-cutané : berge /A en arrière, /B en avant, sur la ligne relevée à la surface
+  const peau = berges(PEAU_MOORE, [0.75, -0.66, 0], [bas, bas, haut, haut, haut].map(d => d.map(c => -c * 1.1)), 1, 42);
+  return { ...peau, 'FMA58776/B': avant, 'FMA58776/A/A': avant, 'FMA22328/A': avant, 'FMA58776/A/B': arriere, 'FMA22328/B': arriere };
 };
 const MOORE_OUVERT = moore(1);
 // Pelvi-trochantériens sectionnés au ras du trochanter : la portion proche de l'insertion est retirée, le corps musculaire et le moignon restent.
@@ -168,6 +206,7 @@ const SECTION_FESSIER = { FMA22328: { autour: FENETRE_MOORE, rayon: 56 }, 'FMA58
 // Voie antérieure : aucun muscle n'est incisé. L'intervalle s'ouvre franchement, mais seulement en regard de l'incision.
 const LIGNE_HUETER = [[-120, -148, 872], [-128, -143, 800]];
 const hueter = k => ({
+  ...berges(PEAU_HUETER, [0.4, 0.9, 0], [22, -2, 0], k), // berge /A en dedans, /B en dehors
   FMA22425: { dep: [-20 * k, 0, 0], autour: LIGNE_HUETER, rayon: 34 }, FMA58776: { dep: [-20 * k, 0, 0], autour: LIGNE_HUETER, rayon: 34 },
   FMA22354: { dep: [20 * k, 0, 0], autour: LIGNE_HUETER, rayon: 34 }, nclc: { dep: [20 * k, 0, 0], autour: LIGNE_HUETER, rayon: 34 },
 });
@@ -184,27 +223,33 @@ const HUETER_CAPSULE = {
 
 const LIGNE_LATERALE = [[-159, -90, 802], [-159, -90, 664]];
 const lateral = k => ({
+  ...berges(PEAU_LATERALE, [1, 0, 0], [-3, -25, 0], k), // berge /A en avant, /B en arrière
   'FMA58776/A': { dep: [-3, 24 * k, 0], autour: LIGNE_LATERALE, rayon: 32 }, 'FMA58776/B/A': { dep: [-3, 24 * k, 0], autour: LIGNE_LATERALE, rayon: 32 },
   'FMA58776/B/B': { dep: [-3, -24 * k, 0], autour: LIGNE_LATERALE, rayon: 32 },
 });
-// Vaste latéral désinséré de la cloison et relevé : sa portion en regard de la plaque est retirée, le reste du muscle garde ses attaches.
+// Vaste latéral désinséré de la cloison intermusculaire et relevé en avant par un écarteur de Hohmann passé sur le bord antérieur du fémur :
+// le muscle se tasse contre la lame, ses attaches proximale et distale restent en place.
+const HOHMANN_VASTE = { lame: [[-134, -106, 792], [-122, -110, 668]], pousse: [0, -1, 0], course: 62, rayon: 26, fond: [1, 0, 0], profondeur: 46 };
+const VASTE_RELEVE = { FMA38930: HOHMANN_VASTE, FMA38934: HOHMANN_VASTE };
+// (ancienne représentation, par section du muscle)
 const SECTION_VASTE = { FMA38930: { autour: [[-146, -84, 785], [-140, -88, 672]], rayon: 27 }, FMA38934: { autour: [[-136, -88, 770], [-132, -90, 690]], rayon: 16 } };
 
 const LIGNE_CLOU = [[-152, -76, 846], [-146, -76, 898]];          // incision au-dessus du sommet du trochanter
 const LIGNE_CLOU_PROFONDE = [[-134, -76, 836], [-128, -76, 880]]; // même ligne, dans le moyen fessier
 const TROCHANTER_OUVERT = {
+  ...berges(PEAU_CLOU, [1, 0, 0], [0, 20, 0], 1, 30), // berge /A en arrière, /B en avant
   'FMA58776/A': { dep: [0, 20, 0], autour: LIGNE_CLOU, rayon: 28 }, 'FMA58776/B': { dep: [0, -20, 0], autour: LIGNE_CLOU, rayon: 28 },
   'FMA22328/A': { dep: [0, 20, 0], autour: LIGNE_CLOU, rayon: 28 },
   'FMA22330/A': { dep: [0, 15, 0], autour: LIGNE_CLOU_PROFONDE, rayon: 26 }, 'FMA22330/B': { dep: [0, -15, 0], autour: LIGNE_CLOU_PROFONDE, rayon: 26 },
 };
 
 const voies = {
-  post: { court: 'Moore', titre: 'Voie postérieure (Moore)', steps: [
+  post: { court: 'Moore', titre: 'Voie postérieure (Moore)', fendre: peauFendue(PEAU_MOORE, [0.75, -0.66, 0], 'postérieure', 'antérieure'), steps: [
     { titre: 'Installation et incision', vue: 'opPost',
       texte: 'Vue de l’opérateur : patient en décubitus latéral strict, tête à gauche, opérateur dans son dos. L’incision est centrée sur le bord postérieur du grand trochanter : elle descend dans l’axe du fémur et s’incurve en haut et en arrière, vers l’épine iliaque postéro-supérieure.',
-      montrer: ['incision-post'], accent: ['FMA22328', 'FMA58776'], masquer: REPERES },
+      montrer: ['incision-post'], masquer: REPERES },
     { titre: 'Fascia lata et grand fessier', vue: 'opPost',
-      texte: 'Le long de la même incision : en bas, le fascia lata est incisé dans l’axe du fémur ; en haut, les fibres du grand fessier sont dissociées dans leur sens. Les deux lèvres s’écartent sur toute la longueur.',
+      texte: 'Peau et tissu sous-cutané sont incisés jusqu’au fascia. Le long de la même incision : en bas, le fascia lata est incisé dans l’axe du fémur ; en haut, les fibres du grand fessier sont dissociées dans leur sens. Les deux lèvres s’écartent sur toute la longueur.',
       accent: ['FMA22328', 'FMA58776'], masquer: REPERES, ecarter: moore(0.55) },
     { titre: 'Écarteur de Charnley', vue: 'opPostProche',
       texte: 'L’écarteur autostatique tient les deux lèvres largement ouvertes. Après effondrement de la bourse trochantérienne et de la graisse, le plan profond apparaît : le bord postérieur du moyen fessier en haut, puis les pelvi-trochantériens, tendus par la rotation interne du membre. Le nerf sciatique chemine en arrière d’eux, dans la graisse : il est repéré au doigt, pas disséqué.',
@@ -221,48 +266,57 @@ const voies = {
       accent: ['FMA24474'], danger: ['sciatique'], masquer: REPERES,
       ecarter: { ...moore(1.3), ...FESSIER_RELEVE, ...LAMBEAU_POSTERIEUR }, sectionner: { ...SECTION_ROTATEURS, ...SECTION_CAPSULE_POST } },
   ] },
-  ant: { court: 'Hueter', titre: 'Voie antérieure (Hueter)', steps: [
-    { titre: 'Repères et incision', vue: 'ant',
-      texte: 'Patient en décubitus dorsal. Repère : l’épine iliaque antéro-supérieure. L’incision débute environ 2 cm en dehors et en dessous d’elle et descend obliquement en bas et en dehors sur le corps du tenseur du fascia lata, sur 8 à 10 cm.',
-      montrer: ['incision-ant'], accent: ['FMA22425'], danger: ['nclc'], masquer: REPERES },
-    { titre: 'Intervalle superficiel : tenseur du fascia lata / sartorius', vue: 'antProche',
-      texte: 'On ouvre la gaine du tenseur du fascia lata et on reste à l’intérieur. L’intervalle avec le sartorius s’ouvre en regard de l’incision : tenseur en dehors, sartorius en dedans. Le nerf cutané latéral de la cuisse chemine en dedans, sur le sartorius : rester dans la gaine le protège.',
-      accent: ['FMA22425', 'FMA22354'], danger: ['nclc'], masquer: REPERES, ecarter: hueter(1) },
-    { titre: 'Plan profond : droit fémoral / moyen fessier', vue: 'antProche',
-      texte: 'Au fond de l’intervalle, un second intervalle s’ouvre : le droit fémoral en dedans, les moyen et petit fessiers en dehors. La branche ascendante de l’artère circonflexe latérale croise le champ : elle est repérée puis liée ou coagulée.',
-      accent: ['FMA38928', 'FMA22330', 'FMA22332'], danger: ['circonflexe'], masquer: REPERES, ecarter: HUETER_PROFOND },
-    { titre: 'Capsule antérieure', vue: 'antProche',
-      texte: 'Des écarteurs sont passés de part et d’autre du col, au contact de l’os : droit fémoral et ilio-psoas en dedans, fessiers en dehors. La capsule antérieure est exposée au fond. Le paquet fémoral (nerf, artère, veine, de dehors en dedans) est juste en dedans.',
+  ant: { court: 'Hueter', titre: 'Voie antérieure (Hueter)', fendre: peauFendue(PEAU_HUETER, [0.4, 0.9, 0], 'médiale', 'latérale'), steps: [
+    { titre: 'Installation et incision', vue: 'opAnt',
+      texte: 'Vue de l’opérateur : décubitus dorsal, sur table orthopédique ou table ordinaire, opérateur du côté opéré, tête du patient à gauche. Repère : l’épine iliaque antéro-supérieure. L’incision débute 2 cm en dehors et 2 cm en dessous d’elle et descend obliquement en bas et en dehors, vers la tête de la fibula, sur le corps du tenseur du fascia lata, sur 8 à 10 cm.',
+      montrer: ['incision-ant'], danger: ['nclc'], masquer: REPERES },
+    { titre: 'Peau et gaine du tenseur du fascia lata', vue: 'opAnt',
+      texte: 'Peau et tissu sous-cutané sont incisés. L’aponévrose est ouverte sur le corps du tenseur du fascia lata, en dehors de l’intervalle : le nerf cutané latéral de la cuisse reste en dedans, sur le sartorius, hors du champ.',
+      accent: ['FMA22425'], danger: ['nclc'], masquer: REPERES, ecarter: hueter(0.5) },
+    { titre: 'Intervalle tenseur du fascia lata / sartorius', vue: 'opAntProche',
+      texte: 'On reste dans la gaine du tenseur : le doigt décolle son bord médial. Le tenseur est récliné en dehors, le sartorius en dedans avec le nerf cutané latéral de la cuisse. Aucun muscle n’est sectionné.',
+      accent: ['FMA22425', 'FMA22354'], danger: ['nclc'], masquer: REPERES, ecarter: hueter(1.1) },
+    { titre: 'Pédicule circonflexe et droit fémoral', vue: 'opAntProche',
+      texte: 'Au fond, le feuillet profond de l’aponévrose est ouvert. Le pédicule circonflexe latéral (branche ascendante) croise le champ : il est lié ou coagulé soigneusement. Un coussin sous le genou détend le droit fémoral : il est décollé de la capsule et récliné en dedans, les moyen et petit fessiers en dehors.',
+      accent: ['FMA38928', 'FMA22330', 'FMA22332'], danger: ['circonflexe', 'vcirconflexe'], masquer: REPERES, ecarter: HUETER_PROFOND },
+    { titre: 'Capsule antérieure', vue: 'opAntProche',
+      texte: 'Deux écarteurs contre-coudés sont passés de part et d’autre du col, au contact de la capsule : l’un au-dessus (fessiers en dehors), l’autre en dessous (droit fémoral et ilio-psoas en dedans). La graisse pré-capsulaire est réséquée : la capsule antérieure est exposée. Le paquet fémoral (nerf, artère, veine, de dehors en dedans) est juste en dedans de l’écarteur médial : sa pointe doit rester au contact de l’os.',
       accent: ['capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], masquer: REPERES, ecarter: HUETER_CAPSULE },
-    { titre: 'Capsulotomie et exposition du col', vue: 'antProche',
-      texte: 'Capsulotomie antérieure : le col et la tête sont exposés. La coupe du col se fait en place, puis la tête est extraite avant la préparation du cotyle.',
+    { titre: 'Capsulotomie, col fémoral', vue: 'opAntProche',
+      texte: 'Capsulotomie antérieure (en T, en H ou résection) ; les écarteurs sont replacés à l’intérieur de la capsule. Le col et la tête sont exposés. La coupe du col se fait en place, puis la tête est extraite au tire-bouchon avant la préparation du cotyle.',
       accent: ['FMA24474', 'capsule'], danger: ['nfemoral', 'afemorale', 'vfemorale'], masquer: REPERES, ecarter: HUETER_CAPSULE, sectionner: { capsule: { autour: [[-84, -116, 834], [-104, -112, 792]], rayon: 15 } } },
   ] },
-  dhs: { court: 'DHS', titre: 'Voie latérale du fémur proximal (DHS)', steps: [
-    { titre: 'Repères et incision', vue: 'lat',
-      texte: 'Patient sur table orthopédique, fracture réduite. Incision longitudinale sur la face latérale de la cuisse, depuis le grand trochanter vers le bas, dans l’axe du fémur, sur 8 à 12 cm selon la longueur de plaque.',
-      montrer: ['incision-lat'], accent: ['FMA58776'], masquer: REPERES },
-    { titre: 'Fascia lata', vue: 'lat',
-      texte: 'Le fascia lata est incisé dans l’axe de ses fibres, sur la ligne de l’incision cutanée. Ses deux berges s’écartent franchement : le vaste latéral apparaît au fond.',
-      accent: ['FMA58776', 'FMA38930'], masquer: REPERES, ecarter: lateral(1) },
-    { titre: 'Vaste latéral', vue: 'latProche',
-      texte: 'Le vaste latéral est désinséré de la cloison intermusculaire latérale et relevé en avant, avec une contre-incision en L sous le tubercule du vaste : sa portion en regard de la plaque est ici retirée, le reste du muscle garde ses attaches. Les artères perforantes traversent la cloison : elles sont repérées et liées ou coagulées.',
-      accent: ['FMA24474'], danger: ['perforantes'], masquer: REPERES, ecarter: lateral(1.15), sectionner: SECTION_VASTE },
-    { titre: 'Face latérale du fémur', vue: 'latProche',
-      texte: 'La corticale latérale sous-trochantérienne est exposée. Le viseur d’angle se pose sous le grand trochanter : la broche-guide vise le centre de la tête, de face comme de profil. Le fémur est ici translucide pour montrer l’axe de la vis.',
-      accent: ['axe-vis'], voiler: ['FMA24474'], danger: ['perforantes'], montrer: ['axe-vis'], masquer: ['axe-clou'], ecarter: lateral(1.15), sectionner: SECTION_VASTE },
+  dhs: { court: 'DHS', titre: 'Voie latérale du fémur proximal (DHS)', fendre: peauFendue(PEAU_LATERALE, [1, 0, 0], 'antérieure', 'postérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opLat',
+      texte: 'Vue de l’opérateur : décubitus dorsal sur table orthopédique, fracture réduite sous scopie de face et de profil, opérateur en dehors de la cuisse, tête du patient à gauche. Incision longitudinale sur la face latérale de la cuisse, à partir de la crête du vaste latéral vers le bas, dans l’axe du fémur, sur 6 à 10 cm selon la longueur de la plaque.',
+      montrer: ['incision-lat'], masquer: [...REPERES] },
+    { titre: 'Peau et fascia lata', vue: 'opLat',
+      texte: 'Peau et tissu sous-cutané sont incisés, puis le fascia lata dans l’axe de ses fibres, sur la même ligne. Les berges sont tenues par un écarteur autostatique : le vaste latéral apparaît au fond.',
+      accent: ['FMA58776', 'FMA38930'], masquer: [...REPERES, 'nclc'], ecarter: lateral(1) },
+    { titre: 'Vaste latéral relevé', vue: 'opLatProche',
+      texte: 'Le vaste latéral n’est pas traversé : il est désinséré de la cloison intermusculaire latérale, d’arrière en avant, avec une contre-incision en L sous le tubercule du vaste. Un écarteur de Hohmann passé sur le bord antérieur du fémur le relève en avant. Les artères perforantes traversent la cloison : elles sont repérées puis liées ou coagulées.',
+      accent: ['FMA24474', 'FMA38930'], danger: ['perforantes'], masquer: [...REPERES, 'nclc'], ecarter: { ...lateral(1.2), ...VASTE_RELEVE } },
+    { titre: 'Broche-guide', vue: 'opLatProche',
+      texte: 'La corticale latérale sous-trochantérienne est exposée. Le viseur d’angle (135° le plus souvent) se pose sur elle, environ 2 cm sous le tubercule du vaste : la broche-guide vise le centre de la tête de face comme de profil, jusqu’à l’os sous-chondral. Le fémur est ici translucide pour montrer l’axe de la vis.',
+      accent: ['axe-vis'], voiler: ['FMA24474'], danger: ['perforantes'], montrer: ['axe-vis'], masquer: ['axe-clou', 'nclc'], ecarter: { ...lateral(1.2), ...VASTE_RELEVE } },
+    { titre: 'Vis cervicale et plaque', vue: 'opLatProche',
+      texte: 'Mesure, alésage à la mèche triple, taraudage si l’os est dur, puis vis cervicale au centre de la tête (distance pointe-apex inférieure à 25 mm). La plaque-canon est glissée sur la vis, plaquée sur la diaphyse et fixée par des vis corticales. Le vaste latéral retombe sur la plaque ; fermeture du fascia lata.',
+      voiler: ['FMA24474'], danger: ['perforantes'], montrer: ['dhs'], masquer: [...REPERES, 'nclc'], ecarter: { ...lateral(1.2), ...VASTE_RELEVE } },
   ] },
-  clou: { court: 'Clou gamma', titre: 'Abord du grand trochanter (clou gamma)', steps: [
-    { titre: 'Repères et incision', vue: 'trochanter',
-      texte: 'Patient sur table orthopédique, tronc incliné du côté opposé, fracture réduite. Incision de 3 à 5 cm, quelques centimètres au-dessus du sommet du grand trochanter, dans le prolongement de l’axe du fémur.',
-      montrer: ['incision-clou'], accent: ['FMA58776', 'FMA22328'], masquer: REPERES },
-    { titre: 'Fascia et moyen fessier', vue: 'trochanter',
-      texte: 'Sur la même ligne : le fascia est incisé, puis les fibres du moyen fessier sont dissociées dans leur sens, au doigt, jusqu’à palper le sommet du grand trochanter. Le nerf glutéal supérieur chemine entre moyen et petit fessier, environ 5 cm au-dessus du sommet : ne pas prolonger la dissociation vers le haut.',
+  clou: { court: 'Clou gamma', titre: 'Abord du grand trochanter (clou gamma)', fendre: peauFendue(PEAU_CLOU, [1, 0, 0], 'postérieure', 'antérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opTroch',
+      texte: 'Vue de l’opérateur : table orthopédique, fracture réduite sous scopie, membre en adduction et tronc incliné du côté opposé pour dégager le sommet du trochanter. Incision de 3 à 5 cm, quelques centimètres au-dessus du sommet du grand trochanter, dans le prolongement de l’axe du fémur.',
+      montrer: ['incision-clou'], masquer: REPERES },
+    { titre: 'Peau, fascia et moyen fessier', vue: 'opTrochProche',
+      texte: 'Sur la même ligne : peau, tissu sous-cutané, puis fascia. Les fibres du moyen fessier sont dissociées dans leur sens, au doigt, jusqu’à palper le sommet du grand trochanter. Le nerf glutéal supérieur chemine entre moyen et petit fessier, environ 5 cm au-dessus du sommet : ne pas prolonger la dissociation vers le haut.',
       accent: ['FMA22330'], danger: ['nglutealsup'], masquer: REPERES, ecarter: TROCHANTER_OUVERT },
-    { titre: 'Point d’entrée et axe du clou', vue: 'trochanter',
-      texte: 'Le point d’entrée est au sommet du grand trochanter de face, dans l’axe du canal médullaire de profil. La broche-guide puis le clou suivent l’axe du canal ; la vis cervicale vise le centre de la tête. Le fémur est ici translucide.',
-      accent: ['axe-clou', 'axe-vis'], voiler: ['FMA24474'], estomper: ['FMA38930', 'FMA38934'], danger: ['nglutealsup'], montrer: REPERES, ecarter: TROCHANTER_OUVERT },
+    { titre: 'Point d’entrée et broche-guide', vue: 'opTrochProche',
+      texte: 'Le point d’entrée est au sommet du grand trochanter de face, à la jonction de son tiers antérieur et de ses deux tiers postérieurs de profil, dans l’axe du canal médullaire. Pointe carrée ou broche-guide, puis alésage de l’entrée. Peau et muscles sont ici retirés et le fémur translucide pour montrer l’axe.',
+      accent: ['axe-clou'], voiler: ['FMA24474'], estomper: ['FMA38930', 'FMA38934', 'FMA58776', 'FMA22328'], danger: ['nglutealsup'], montrer: ['axe-clou'], masquer: ['axe-vis', ...PEAU], ecarter: TROCHANTER_OUVERT },
+    { titre: 'Clou, vis cervicale et verrouillage', vue: 'lat',
+      texte: 'Le clou est descendu à la main, sans marteau, jusqu’à ce que l’orifice cervical soit en regard du col. À travers le viseur, par une courte incision latérale : broche puis vis cervicale au centre de la tête, de face comme de profil (distance pointe-apex inférieure à 25 mm). Verrouillage distal par le viseur, puis vis de blocage proximale.',
+      voiler: ['FMA24474'], estomper: ['FMA38930', 'FMA38934', 'FMA58776', 'FMA22328', 'FMA22330', 'FMA22332', 'FMA22425'], montrer: ['gamma'], masquer: [...REPERES, ...PEAU], ecarter: TROCHANTER_OUVERT },
   ] },
 };
 
-export default { nom: 'Hanche droite', dossier: 'models-hd', fascias: ['FMA58776', 'FMA21964'], centre, vues, meshes, fendre, tubes, groupes, voies };
+export default { nom: 'Hanche droite', dossier: 'models-hd', graisse: 9, fascias: ['FMA58776', 'FMA21964'], centre, vues, meshes, fendre, tubes, rubans, groupes, voies };

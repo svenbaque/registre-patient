@@ -265,10 +265,16 @@ function addFat(depth = 4) {
       }
     }
     // on enfonce le long de la normale, dans le sens qui rapproche de l'os
-    const towardBone = best === Infinity ? -1 : Math.sign(normal[i] * bx + normal[i + 1] * by + normal[i + 2] * bz) || -1;
-    inner[i] = x + normal[i] * depth * towardBone;
-    inner[i + 1] = y + normal[i + 1] * depth * towardBone;
-    inner[i + 2] = z + normal[i + 2] * depth * towardBone;
+    let nx = normal[i], ny = normal[i + 1], nz = normal[i + 2];
+    if (best === Infinity) { nx = -nx; ny = -ny; nz = -nz; } else {
+      const far = Math.sqrt(best) || 1;
+      const cos = (nx * bx + ny * by + nz * bz) / far;
+      // normale douteuse (pli, couture du maillage) : on enfonce droit vers l'os
+      if (Math.abs(cos) < 0.6) { nx = bx / far; ny = by / far; nz = bz / far; } else if (cos < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    }
+    inner[i] = x + nx * depth;
+    inner[i + 1] = y + ny * depth;
+    inner[i + 2] = z + nz * depth;
   }
   const fat = new THREE.BufferGeometry();
   fat.setAttribute('position', new THREE.BufferAttribute(inner, 3));
@@ -521,7 +527,7 @@ function splitPart(spec) {
 
 // Position écartée d'une pièce. Formes de consigne :
 //   [dx, dy, dz]                               — déplacement en bloc ;
-//   { dep, autour, rayon, socle }              — traction locale : les sommets proches du point (ou du segment) « autour » suivent
+//   { dep, autour, rayon, socle, fond }        — traction locale : les sommets proches du point (ou du segment) « autour » suivent
 //                                                l'écarteur, l'effet s'éteint avec la distance (rayon), le reste du muscle garde son attache.
 //   { lame, pousse, course, rayon }           — écarteur : une lame (segment « lame ») repousse le tissu dans le sens « pousse ».
 //                                                Ce qui se trouve du côté de la plaie, à moins de « course » mm, vient se tasser contre la lame ;
@@ -582,23 +588,37 @@ function deformOnce(base, spec) {
   const deps = Array.isArray(spec.dep[0]) ? spec.dep : line.slice(1).map(() => spec.dep);
   const socle = spec.socle ?? 0;
   const r2 = spec.rayon * spec.rayon;
+  // « fond » : direction de la profondeur de la plaie. La distance à l'incision est alors mesurée sans elle :
+  // la peau, le tissu sous-cutané et le plan sous-jacent s'écartent du même mouvement.
+  const deepNorm = spec.fond ? Math.hypot(...spec.fond) : 0;
+  const deep = spec.fond ? spec.fond.map(c => c / deepNorm) : null;
   const segments = line.slice(1).map((b, i) => {
     const a = line[i];
     const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     return { a, ab, len2: ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2], dep: deps[Math.min(i, deps.length - 1)] };
   });
+  // abscisse de chaque tronçon le long de l'incision : avec « fond », l'ouverture s'effile vers les deux bouts (plaie en fuseau)
+  let total = 0;
+  for (const seg of segments) { seg.from = total; seg.len = Math.sqrt(seg.len2); total += seg.len; }
   for (let i = 0; i < base.length; i += 3) {
-    let sum = 0, best = 0, dx = 0, dy = 0, dz = 0;
-    for (const { a, ab, len2, dep } of segments) {
+    let sum = 0, best = 0, dx = 0, dy = 0, dz = 0, along = 0.5;
+    for (const { a, ab, len2, dep, from, len } of segments) {
       let px = base[i] - a[0], py = base[i + 1] - a[1], pz = base[i + 2] - a[2];
+      let t = 0;
       if (len2 > 0) {
-        const t = Math.max(0, Math.min(1, (px * ab[0] + py * ab[1] + pz * ab[2]) / len2));
+        t = Math.max(0, Math.min(1, (px * ab[0] + py * ab[1] + pz * ab[2]) / len2));
         px -= ab[0] * t; py -= ab[1] * t; pz -= ab[2] * t;
+      }
+      if (deep) {
+        const down = px * deep[0] + py * deep[1] + pz * deep[2];
+        const kept = Math.abs(down) > 30 ? down - Math.sign(down) * 30 : 0; // au-delà de 3 cm de profondeur, l'effet s'éteint quand même
+        px -= deep[0] * (down - kept); py -= deep[1] * (down - kept); pz -= deep[2] * (down - kept);
       }
       const w = Math.exp(-(px * px + py * py + pz * pz) / r2);
       sum += w; dx += dep[0] * w; dy += dep[1] * w; dz += dep[2] * w;
-      if (w > best) best = w;
+      if (w > best) { best = w; along = total > 0 ? (from + t * len) / total : 0.5; }
     }
+    if (deep) { const e = Math.min(1, Math.min(along, 1 - along) / 0.22); best *= e * (2 - e); }
     // direction : moyenne des tronçons proches ; ampleur : celle du tronçon le plus proche
     const k = sum > 0 ? (socle + (1 - socle) * best) / sum : 0;
     out[i] = base[i] + dx * k; out[i + 1] = base[i + 1] + dy * k; out[i + 2] = base[i + 2] + dz * k;
@@ -823,7 +843,8 @@ function buildToggles() {
     return items.length ? `<h4>${titre}</h4>${items.map(([id, part]) => `<label style="--c:${part.couleur}"><i></i>${part.nom}<input type="checkbox" data-id="${id}"${part.coche ? ' checked' : ''}></label>`).join('')}` : '';
   }).join('');
   $('#toggles').addEventListener('change', e => {
-    parts.get(e.target.dataset.id).coche = e.target.checked;
+    // une pièce fendue pour la voie en cours (peau, fascia) porte d'autres identifiants : la case agit sur toutes ses berges
+    for (const [id, part] of parts) if (id === e.target.dataset.id || id.startsWith(`${e.target.dataset.id}/`)) part.coche = e.target.checked;
     applyState();
   });
 }
