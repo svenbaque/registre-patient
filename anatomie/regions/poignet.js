@@ -1,4 +1,4 @@
-// Poignet droit — voie de Henry modifiée, canal carpien, voie dorsale.
+// Poignet droit — voie de Henry modifiée, canal carpien, voie dorsale, voie antéro-ulnaire étendue, voies antérieure et dorsale du scaphoïde.
 import { peauFendue, berges, charge as chargeLame, lame, deuxBerges } from './outils.js';
 
 // Repère BodyParts3D, en millimètres : membre le long du corps, paume vers l'avant.
@@ -130,6 +130,9 @@ const vues = {
   opDos: { de: [0, 250, 0], haut: [-1, 0, 0], cible: [-258, -96, 835] }, opDosProche: { de: [0, 140, 0], haut: [-1, 0, 0], cible: [-258, -96, 835] },
   // vue de l'opérateur : avant-bras en supination sur la table à main, main à droite, bord ulnaire en haut
   op: { de: [0, -330, 0], haut: [1, 0, 0], cible: SITE }, opProche: { de: [0, -185, 0], haut: [1, 0, 0], cible: SITE },
+  opUl: { de: [0, -300, 0], haut: [1, 0, 0], cible: [-245, -128, 838] }, opUlProche: { de: [0, -170, 0], haut: [1, 0, 0], cible: [-246, -125, 838] },
+  opRu: { de: [-5, -230, 30], haut: [1, 0, 0], cible: [-265, -132, 818] }, opRuProche: { de: [-3, -125, 18], haut: [1, 0, 0], cible: [-265, -128, 816] },
+  opDS: { de: [0, 230, 0], haut: [-1, 0, 0], cible: [-260, -100, 823] }, opDSProche: { de: [0, 125, 0], haut: [-1, 0, 0], cible: [-260, -102, 822] },
 };
 
 const REPERES = ['watershed'];
@@ -179,6 +182,23 @@ const rubans = [
   ['plaque', 'Plaque palmaire — tige', 'implants', '#b9c2cc', [[-262, -121, 832], [-262, -116.5, 841], [-261, -108, 860], [-259, -99.5, 884]], 9, 2, [1, 0, 0]],
   ['plaque/tete', 'Plaque palmaire — barre distale', 'implants', '#b9c2cc', [[-276, -121.5, 831.5], [-263, -123, 831.5], [-251, -122.5, 831.5]], 8.5, 2, [0, 0, 1]],
 ];
+// ----- Voie antéro-ulnaire étendue : bord radial du fléchisseur ulnaire du carpe, prolongée en zigzag au canal carpien -----
+const PEAU_UL = [[-238, -125, 880], [-239, -127, 865], [-241, -128, 850], [-244, -130, 836], [-248, -134, 822], [-250, -140, 810], [-250, -144, 798]];
+// ----- Scaphoïde, voie antérieure (Russe) : en crosse de hockey, le long du FCR jusqu'au tubercule du scaphoïde puis vers la base du pouce -----
+const PEAU_RU = [[-257, -132, 840], [-259, -134, 830], [-262, -136, 820], [-265, -141, 812], [-271, -146, 805], [-277, -150, 799]];
+// ----- Scaphoïde, voie dorsale : 3 cm à partir du tubercule de Lister, entre 3e et 4e compartiments -----
+const PEAU_DS = [[-259, -88, 840], [-259, -91, 832], [-260, -92, 824], [-261, -95, 816], [-262, -98, 808]];
+const visUl = (n, y, z) => [`plaque-ul/vis${n}`, 'Vis', 'implants', '#cfd6dd', 1.2, [[-250, y - 1.5, z], [-250, y + 9, z], [-250, y + 19, z]]];
+tubes.push(
+  ['incision-ul', 'Incision — voie antéro-ulnaire étendue', 'incisions', '#35e0c8', 1, PEAU_UL.map(([x, y, z]) => [x, y - 1.5, z])],
+  ['incision-ru', 'Incision — voie antérieure du scaphoïde', 'incisions', '#35e0c8', 0.9, PEAU_RU.map(([x, y, z]) => [x, y - 1.5, z])],
+  ['incision-ds', 'Incision — voie dorsale du scaphoïde', 'incisions', '#35e0c8', 0.9, PEAU_DS.map(([x, y, z]) => [x, y + 1.5, z])],
+  visUl(1, -121, 834), visUl(2, -117, 845), visUl(3, -112.5, 856),
+  ['vis-scaphoide-ant', 'Vis canulée sans tête (rétrograde, par le pôle distal)', 'implants', '#cfd6dd', 1.5, [[-269, -125, 806], [-262.5, -117.5, 813], [-256, -110, 820]]],
+  ['vis-scaphoide-dos', 'Vis canulée sans tête (antérograde, par le pôle proximal)', 'implants', '#cfd6dd', 1.5, [[-257, -107, 819], [-264, -115.5, 812.5], [-271, -124, 806]]],
+);
+rubans.push(['plaque-ul', 'Plaque du fragment antéro-ulnaire', 'implants', '#b9c2cc', [[-250, -122.5, 831], [-250, -118, 845], [-250, -113.5, 858]], 8, 1.6, [1, 0, 0]]);
+
 const visDistale = x => [`vis/d${-x}`, 'Vis distale verrouillée (sous-chondrale)', 'implants', '#cfd6dd', 1.25, [[x, -123, 831.5], [x, -114, 831], [x, -104.5, 830.5]]];
 const visTige = (n, y, z, fond) => [`vis/p${n}`, 'Vis corticale de la tige', 'implants', '#cfd6dd', 1.25, [[-261.5, y - 1.5, z], [-261, (y + fond) / 2, z], [-260.5, fond, z]]];
 tubes.push(visDistale(-272), visDistale(-265), visDistale(-258), visDistale(-252), visTige(1, -112, 850, -97), visTige(2, -106, 864, -91), visTige(3, -101, 878, -86));
@@ -212,6 +232,45 @@ const fendreDos = [
   ['retinaculum-ext', { ligne: PEAU_DORSALE, fond: FOND_DORSAL, rayon: 20 }, 'Rétinaculum des extenseurs — lambeau radial', 'Rétinaculum des extenseurs — lambeau ulnaire'],
 ];
 const AUTRES = [...REPERES, ...IMPLANTS];
+
+// ----- Voie antéro-ulnaire étendue -----
+const UL = [PEAU_UL[0], PEAU_UL[PEAU_UL.length - 1]];
+const ulLames = (e, profondeur, ids, course = e * 2.2 + 6) => deuxBerges(PEAU_UL, FOND,
+  { vers: [1, 0, 0], lame: lame(UL, [1, 0, 0], FOND, e, course, { rayon: 12, profondeur }) },
+  { vers: [-1, 0, 0], lame: lame(UL, [-1, 0, 0], FOND, e, course, { rayon: 12, profondeur }) }, ids);
+const ulPeau = e => ulLames(e, 16, ['peau', 'graisse']);
+// pédicule ulnaire et FCU en dedans ; tendons fléchisseurs et nerf médian en dehors
+const ulProfond = e => ({
+  ...chargeLame(['aulnaire', 'vulnaires', 'nulnaire', 'nulnaire/sup', 'nulnaire/prof', 'fcu', 'fcu/ulnaire'], lame(UL, [1, 0, 0], FOND, e, e * 2.4 + 10, { rayon: 14, profondeur: 40 })),
+  ...chargeLame(['FMA38638', 'FMA38640', 'FMA38479', 'nmedian', 'nmedian/digitaux', 'FMA38463', 'rameau-palmaire'], lame(UL, [-1, 0, 0], FOND, e, e * 2.4 + 10, { rayon: 14, profondeur: 40 })),
+});
+const ulRetinaculum = e => ulLames(e, 20, ['FMA40120']);
+const PQ_ULNAIRE = { 'FMA38454/A': { autour: [[-246, -116, 834], [-247, -112, 860]], rayon: 9 } };
+
+// ----- Scaphoïde, voie antérieure : les berges suivent la crosse de hockey -----
+const ruPeau = d => berges(PEAU_RU, FOND, [[d, 0, 0], [d, 0, 0], [d, 0, 0], [0.7 * d, 0, -0.7 * d], [0.7 * d, 0, -0.7 * d]], 1, 9);
+const RU_FCR = [[-257, -132, 840], [-264, -140, 812]];
+const ruProfond = e => ({
+  ...chargeLame(['FMA38460', 'gaine-fcr', 'aradiale', 'vradiales'], lame(RU_FCR, [-1, 0, 0], FOND, e / 2, e + 4, { rayon: 6, profondeur: 12 })),
+  ...chargeLame(['rameau-palmaire', 'FMA38482'], lame(RU_FCR, [1, 0, 0], FOND, e, e * 2.4 + 6, { rayon: 9, profondeur: 16 })),
+});
+// fibres proximales des muscles thénariens désinsérées du tubercule
+const RU_THENAR = { FMA37386: { autour: [[-266, -139, 810], [-279, -147, 797]], rayon: 10 } };
+const RU_CAPSULE = { ...RU_THENAR, 'lig-palm/rsc': { autour: [[-262, -122, 822], [-266, -125, 806]], rayon: 6 }, capsule: { autour: [[-262, -124, 822], [-267, -127, 805]], rayon: 6 } };
+
+// ----- Scaphoïde, voie dorsale -----
+const DS = [PEAU_DS[0], PEAU_DS[PEAU_DS.length - 1]];
+const dsLames = (e, profondeur, ids, course = e * 2.2 + 6) => deuxBerges(PEAU_DS, FOND_DORSAL,
+  { vers: [-1, 0, 0], lame: lame(DS, [-1, 0, 0], FOND_DORSAL, e, course, { rayon: 10, profondeur }) },
+  { vers: [1, 0, 0], lame: lame(DS, [1, 0, 0], FOND_DORSAL, e, course, { rayon: 10, profondeur }) }, ids);
+const dsPeau = e => dsLames(e, 14, ['peau', 'graisse']);
+const dsRetinaculum = e => dsLames(e, 18, ['retinaculum-ext']);
+// long extenseur du pouce et extenseurs radiaux en dehors, extenseur des doigts et de l'index en dedans
+const dsTendons = e => ({
+  ...chargeLame(['FMA38522', 'FMA38498', 'nradial'], lame(DS, [-1, 0, 0], FOND_DORSAL, e, e * 2.4 + 6, { rayon: 10, profondeur: 20 })),
+  ...chargeLame(['FMA38501', 'FMA38525'], lame(DS, [1, 0, 0], FOND_DORSAL, e, e * 2.4 + 6, { rayon: 10, profondeur: 20 })),
+});
+const DS_CAPSULE = { capsule: { autour: [[-259, -106, 824], [-262, -108, 810]], rayon: 6 }, 'lig-dors/ic': { autour: [[-259, -106, 824], [-262, -108, 810]], rayon: 6 }, 'lig-dors/rc': { autour: [[-259, -106, 824], [-262, -108, 810]], rayon: 6 } };
 
 const voies = {
   henry: { court: 'Henry modifiée', titre: 'Voie de Henry modifiée (trans-gaine du FCR)', fendre: FENDRE_HENRY, steps: [
@@ -263,6 +322,53 @@ const voies = {
     { titre: 'Radius dorsal exposé', vue: 'opDosProche',
       texte: 'Les 2ᵉ et 4ᵉ compartiments sont décollés en sous-périosté, sans ouvrir leurs gaines : extenseurs radiaux du carpe du côté radial, extenseur des doigts du côté ulnaire. La face dorsale du radius distal et la capsule dorsale sont exposées ; le tubercule de Lister peut être réséqué pour asseoir une plaque. Sur le plancher du 4ᵉ compartiment : la branche terminale du nerf interosseux postérieur, qu’on peut réséquer. Capsulotomie dorsale à la demande pour voir la surface articulaire et le carpe.',
       accent: ['FMA23464'], danger: ['nradial'], masquer: AUTRES, ecarter: { ...dosOuvert(15), ...retinaculumDorsal(13), ...TENDONS_ECARTES } },
+  ] },
+  ulnaire: { court: 'Antéro-ulnaire', titre: 'Voie antéro-ulnaire étendue (fragment antéro-médial et canal carpien)', fendre: [...peauFendue(PEAU_UL, FOND, 'ulnaire', 'radiale'),
+    ['FMA40120', { ligne: PEAU_UL.slice(3), fond: FOND, rayon: 18 }, 'Rétinaculum des fléchisseurs — berge ulnaire', 'Rétinaculum des fléchisseurs — berge radiale']], steps: [
+    { titre: 'Installation et incision', vue: 'opUl',
+      texte: 'Vue de l’opérateur : avant-bras en supination sur la table à main, garrot. Incision longitudinale sur le bord radial du fléchisseur ulnaire du carpe, à l’avant-bras, qui croise le pli de flexion du poignet en oblique et se prolonge dans la paume, dans l’axe du 4ᵉ rayon, comme pour un canal carpien. Elle donne le fragment antéro-médial (« volar ulnar corner »), que la voie de Henry atteint mal, et permet de libérer le nerf médian dans le même temps.',
+      montrer: ['incision-ul'], danger: ['aulnaire', 'nulnaire', 'rameau-palmaire'], masquer: AUTRES },
+    { titre: 'Entre pédicule ulnaire et fléchisseurs', vue: 'opUlProche',
+      texte: 'Le fascia antébrachial est ouvert. On passe entre le pédicule ulnaire (artère et nerf ulnaires), récliné en dedans avec le fléchisseur ulnaire du carpe, et la masse des fléchisseurs des doigts, réclinée en dehors avec le nerf médian. Le rameau cutané palmaire du médian, plus radial, reste dans la berge.',
+      accent: ['aulnaire', 'nulnaire', 'FMA38638'], danger: ['aulnaire', 'nulnaire', 'nmedian'], masquer: AUTRES, ecarter: { ...ulPeau(7), ...ulProfond(4) } },
+    { titre: 'Canal carpien ouvert', vue: 'opUlProche',
+      texte: 'En distal, le rétinaculum des fléchisseurs est sectionné sur son versant ulnaire, sous contrôle de la vue, jusqu’à la graisse de l’arcade palmaire superficielle. Les tendons fléchisseurs et le nerf médian, libérés, peuvent alors être réclinés en dehors sans traction excessive sur le nerf.',
+      accent: ['FMA40120', 'nmedian'], danger: ['arcade-sup', 'aulnaire', 'nmedian'], masquer: AUTRES, ecarter: { ...ulPeau(9), ...ulProfond(8), ...ulRetinaculum(5) } },
+    { titre: 'Fragment antéro-médial', vue: 'opUlProche',
+      texte: 'Le carré pronateur est désinséré de son bord ulnaire et relevé en dehors : la face antérieure de l’épiphyse radiale côté ulnaire, la fossette lunarienne et la radio-ulnaire distale sont exposées. Ce petit fragment porte les ligaments radio-lunaires courts : non fixé, il laisse le carpe se luxer en avant.',
+      accent: ['FMA23464', 'p-ru-palmaire', 'lig-palm/ru'], danger: ['aulnaire', 'nulnaire', 'nmedian'], sectionner: PQ_ULNAIRE, masquer: AUTRES, ecarter: { ...ulPeau(9), ...ulProfond(12), ...ulRetinaculum(5) } },
+    { titre: 'Fixation du fragment', vue: 'opUlProche',
+      texte: 'Réduction sous contrôle de la vue et de la scopie, puis plaque spécifique en crochet ou petite plaque de soutien, très distale, sous le bord du fragment ; ce petit fragment peut aussi être pris par l’extrémité ulnaire d’une plaque palmaire standard. Le canal carpien n’est pas refermé.',
+      accent: ['plaque-ul'], voiler: ['FMA23464'], montrer: ['plaque-ul', 'plaque-ul/vis1', 'plaque-ul/vis2', 'plaque-ul/vis3'], danger: ['nmedian', 'aulnaire'], sectionner: PQ_ULNAIRE, masquer: REPERES, ecarter: { ...ulPeau(9), ...ulProfond(12), ...ulRetinaculum(5) } },
+  ] },
+  'scapho-ant': { court: 'Scaphoïde antérieur', titre: 'Voie antérieure du scaphoïde (Russe)', fendre: peauFendue(PEAU_RU, FOND, 'ulnaire', 'radiale'), steps: [
+    { titre: 'Installation et incision', vue: 'opRu',
+      texte: 'Vue de l’opérateur : avant-bras en supination, poignet en extension sur un rouleau, garrot. Incision en crosse de hockey : 2 à 3 cm le long du tendon fléchisseur radial du carpe (FCR) jusqu’au tubercule du scaphoïde, palpable, puis coudée vers la base du pouce, en regard de l’articulation scapho-trapézienne. Voie des fractures du corps (taille) et du pôle distal, et des pseudarthroses avec greffe palmaire.',
+      montrer: ['incision-ru'], danger: ['aradiale', 'aradiale/carpe', 'rameau-palmaire'], masquer: AUTRES },
+    { titre: 'Gaine du FCR', vue: 'opRuProche',
+      texte: 'La gaine du FCR est ouverte ; le tendon est récliné en dehors. L’artère radiale, en dehors, et sa branche palmaire superficielle qui croise le champ en distal sont protégées (la branche peut être ligaturée). Le plancher de la gaine est incisé, et les fibres proximales des muscles thénariens sont désinsérées pour voir le tubercule et le trapèze.',
+      accent: ['FMA38460', 'gaine-fcr', 'FMA37386'], danger: ['aradiale', 'aradiale/carpe'], sectionner: RU_THENAR, masquer: AUTRES, ecarter: { ...ruPeau(4), ...ruProfond(4) } },
+    { titre: 'Capsule et ligament radio-scapho-capitate', vue: 'opRuProche',
+      texte: 'La capsule est incisée longitudinalement, dans l’axe du scaphoïde, avec le ligament radio-scapho-capitate qui croise la taille : il sera réparé soigneusement à la fermeture (sinon, risque d’instabilité ulnaire du carpe). L’ouverture de l’articulation scapho-trapézienne donne le point d’entrée de la vis.',
+      accent: ['FMA24435', 'FMA24443', 'lig-palm/rsc'], danger: ['aradiale'], sectionner: RU_CAPSULE, masquer: AUTRES, ecarter: { ...ruPeau(5), ...ruProfond(6) } },
+    { titre: 'Réduction et vissage', vue: 'opRuProche',
+      texte: 'Réduction aux broches « joysticks », correction de la bascule en flexion (« humpback ») et greffe si besoin. Une broche-guide est passée du pôle distal vers le pôle proximal, dans l’axe central du scaphoïde (on résèque au besoin le bord du trapèze), puis vis canulée sans tête enfouie sous le cartilage ; contrôle scopique multi-incidences.',
+      accent: ['vis-scaphoide-ant'], voiler: ['FMA24435', 'FMA24443'], montrer: ['vis-scaphoide-ant'], danger: ['aradiale'], sectionner: RU_CAPSULE, masquer: AUTRES, ecarter: { ...ruPeau(5), ...ruProfond(6) } },
+  ] },
+  'scapho-dos': { court: 'Scaphoïde dorsal', titre: 'Voie dorsale du scaphoïde (pôle proximal)', fendre: [...peauFendue(PEAU_DS, FOND_DORSAL, 'radiale', 'ulnaire'),
+    ['retinaculum-ext', { ligne: PEAU_DS, fond: FOND_DORSAL, rayon: 16 }, 'Rétinaculum des extenseurs — lambeau radial', 'Rétinaculum des extenseurs — lambeau ulnaire']], steps: [
+    { titre: 'Installation et incision', vue: 'opDS',
+      texte: 'Vue de l’opérateur : main en pronation sur la table à main, garrot. Incision dorsale droite de 3 cm, partant du tubercule de Lister vers la base du 3ᵉ métacarpien, un peu en dedans de lui. C’est la voie de référence des fractures du pôle proximal : elle respecte la vascularisation palmaire et permet d’entrer la vis au centre du petit fragment.',
+      montrer: ['incision-ds'], danger: ['nradial'], masquer: AUTRES },
+    { titre: 'Rétinaculum et long extenseur du pouce', vue: 'opDSProche',
+      texte: 'Les rameaux de la branche superficielle du nerf radial restent dans le lambeau radial. Le rétinaculum est ouvert en distal sur le 3ᵉ compartiment : le long extenseur du pouce est récliné en dehors avec les extenseurs radiaux du carpe, l’extenseur des doigts et l’extenseur de l’index en dedans (4ᵉ compartiment).',
+      accent: ['FMA38522', 'FMA38501'], danger: ['nradial'], masquer: AUTRES, ecarter: { ...dsPeau(6), ...dsRetinaculum(4), ...dsTendons(4) } },
+    { titre: 'Capsulotomie', vue: 'opDSProche',
+      texte: 'Capsulotomie dorsale limitée (ou en volet respectant les ligaments radio-carpien et intercarpien dorsaux, selon Berger). On respecte les vaisseaux qui pénètrent la crête dorsale du scaphoïde et on ménage le ligament scapho-lunaire. Le poignet fléchi présente le pôle proximal.',
+      accent: ['FMA24435', 'FMA24437'], danger: ['nradial'], sectionner: DS_CAPSULE, masquer: AUTRES, ecarter: { ...dsPeau(7), ...dsRetinaculum(5), ...dsTendons(6) } },
+    { titre: 'Vissage antérograde', vue: 'opDSProche',
+      texte: 'Poignet en flexion forte (sans quoi le radius gêne), la broche-guide entre au bord du ligament scapho-lunaire, au centre du pôle proximal, et vise la base du pouce dans l’axe du scaphoïde. Vis canulée sans tête enfouie, contrôle scopique. Fermeture de la capsule et du rétinaculum, le long extenseur du pouce peut être laissé hors de sa coulisse.',
+      accent: ['vis-scaphoide-dos'], voiler: ['FMA24435'], montrer: ['vis-scaphoide-dos'], danger: ['nradial'], sectionner: DS_CAPSULE, masquer: AUTRES, ecarter: { ...dsPeau(7), ...dsRetinaculum(5), ...dsTendons(6) } },
   ] },
 };
 

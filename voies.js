@@ -34,9 +34,9 @@ const VOIES_ABORD = [
   ['Poignet et main', [
     ['Henry modifiée (trans-gaine du FCR)', 'plaque antérieure du radius distal', 'poignet:henry'],
     ['Dorsale du poignet (3ᵉ compartiment)', 'radius dorsal, carpe, arthrodèses', 'poignet:dorsale'],
-    ['Antéro-ulnaire étendue', 'fragment antéro-médial, canal carpien'],
-    ['Antérieure du scaphoïde', 'vissage, greffe'],
-    ['Dorsale du scaphoïde', 'pôle proximal'],
+    ['Antéro-ulnaire étendue', 'fragment antéro-médial, canal carpien', 'poignet:ulnaire'],
+    ['Antérieure du scaphoïde', 'vissage, greffe', 'poignet:scapho-ant'],
+    ['Dorsale du scaphoïde', 'pôle proximal', 'poignet:scapho-dos'],
     ['Abord du canal carpien', 'nerf médian', 'poignet:cc'],
     ['Abords des métacarpiens et phalanges', 'ostéosynthèses de la main', 'main:mc'],
     ['Bruner et médio-latérale des doigts', 'fléchisseurs, Dupuytren', 'main:bruner']]],
