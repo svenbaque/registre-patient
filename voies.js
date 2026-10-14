@@ -87,9 +87,9 @@ const VOIES_ABORD = [
     ['Médiale du premier rayon', 'hallux valgus', 'pied:hallux'],
     ['Dorsales des métatarsiens', 'fractures, ostéotomies', 'pied:meta']]],
   ['Rachis', [
-    ['Postérieure médiane', 'arthrodèses, laminectomies'],
-    ['Paramédiane de Wiltse', 'vis pédiculaires'],
-    ['Antérieure cervicale', 'discectomie, arthrodèse'],
-    ['Thoracotomie, thoraco-phréno-lombotomie', 'corps vertébraux'],
-    ['Rétropéritonéale (ALIF, XLIF)', 'arthrodèses lombaires']]],
+    ['Postérieure médiane', 'arthrodèses, laminectomies', 'rachis:post'],
+    ['Paramédiane de Wiltse', 'vis pédiculaires', 'rachis:wiltse'],
+    ['Antérieure cervicale', 'discectomie, arthrodèse', 'rachis:cervicale'],
+    ['Thoracotomie, thoraco-phréno-lombotomie', 'corps vertébraux', 'rachis:tpl'],
+    ['Rétropéritonéale (ALIF, XLIF)', 'arthrodèses lombaires', 'rachis:xlif']]],
 ];
