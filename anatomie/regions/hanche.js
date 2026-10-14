@@ -1,41 +1,14 @@
 // Hanche droite — données de la région pour le visualiseur.
 // Repère BodyParts3D, en millimètres : x = droite (-) / gauche (+), y = avant (-) / arrière (+), z = vers le haut.
 
+import pieces from './hanche.pieces.js';
 import { lame, deuxBerges } from './outils.js';
 
 // Pièces du modèle libre : [fichier, nom, groupe, couleur]
 const meshes = [
   ['peau-hanche', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
-  ['FMA16586', 'Os coxal', 'os', '#e9e2cf'],
-  ['FMA24474', 'Fémur', 'os', '#e9e2cf'],
-  ['FMA16202', 'Sacrum', 'os', '#ded6c0'],
-  ['FMA22328', 'Grand fessier', 'fessiers', '#b5483f'],
-  ['FMA22330', 'Moyen fessier', 'fessiers', '#c25a4c'],
-  ['FMA22332', 'Petit fessier', 'fessiers', '#cf6f5d'],
-  ['FMA22425', 'Tenseur du fascia lata', 'fessiers', '#d9773f'],
-  ['FMA58776', 'Fascia lata (tractus ilio-tibial)', 'fessiers', '#cfd6dd'],
-  ['FMA22340', 'Piriforme', 'rotateurs', '#e08a3c'],
-  ['FMA22334', 'Jumeau supérieur', 'rotateurs', '#d7a13a'],
-  ['FMA22324', 'Obturateur interne', 'rotateurs', '#c9b23c'],
-  ['FMA22336', 'Jumeau inférieur', 'rotateurs', '#d7a13a'],
-  ['FMA22338', 'Carré fémoral', 'rotateurs', '#b98a3e'],
-  ['FMA22326', 'Obturateur externe', 'rotateurs', '#a87946'],
-  ['FMA22354', 'Sartorius', 'anterieurs', '#c4527a'],
-  ['FMA38928', 'Droit fémoral', 'anterieurs', '#b84a5e'],
-  ['FMA38930', 'Vaste latéral', 'anterieurs', '#a8444f'],
-  ['FMA38934', 'Vaste intermédiaire', 'anterieurs', '#9c4048'],
-  ['FMA38932', 'Vaste médial', 'anterieurs', '#a8444f'],
-  ['FMA22322', 'Iliaque', 'anterieurs', '#9a5aa8'],
-  ['FMA22342', 'Grand psoas', 'anterieurs', '#8a4f9c'],
-  ['FMA22450', 'Pectiné', 'mediaux', '#7d6bb5'],
-  ['FMA22456', 'Long adducteur', 'mediaux', '#6f73b8'],
-  ['FMA22452', 'Court adducteur', 'mediaux', '#6a7fb8'],
-  ['FMA22459', 'Grand adducteur', 'mediaux', '#6388b5'],
-  ['FMA43883', 'Gracile', 'mediaux', '#5f93b0'],
-  ['FMA45888', 'Biceps fémoral (chef long)', 'posterieurs', '#8f5b4a'],
-  ['FMA22358', 'Semi-tendineux', 'posterieurs', '#9a6652'],
-  ['FMA22448', 'Semi-membraneux', 'posterieurs', '#a5705a'],
-  ['FMA21964', 'Ligament inguinal', 'ligaments', '#dfe6ec'],
+  // Os et muscles : modèle Z-Anatomy (CC BY-SA 4.0) ; ils gardent les identifiants FMA de l'ancien modèle BodyParts3D, utilisés par les voies.
+  ...pieces,
   // Capsule, ligaments, nerfs, artères et veines : modèle Z-Anatomy (CC BY-SA 4.0), replacé dans le repère BodyParts3D.
   ['hanche-capsule', 'Capsule articulaire de la hanche', 'ligaments', '#efe9da', { id: 'capsule', dossier: 'models-z' }],
   ['hanche-iliofemoral-desc', 'Ligament ilio-fémoral — faisceau descendant', 'ligaments', '#e9e4d6', { id: 'capsule/iliofem-desc', dossier: 'models-z' }],
