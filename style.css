@@ -415,3 +415,36 @@ details.section.astuces summary { color: #b7791f; }
 .tag-soon { background: var(--line); color: var(--muted); font-weight: 600; }
 .viewer3d { position: fixed; inset: 0; z-index: 60; background: #0e1622; }
 .viewer3d iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* ----- Menu « squelette » (voies d'abord, classifications) ----- */
+.body-menu { margin: 6px auto 4px; max-width: 460px; }
+.body-menu svg { display: block; width: 100%; height: auto; touch-action: manipulation; }
+.bm-os { stroke: color-mix(in srgb, var(--muted) 62%, var(--card)); }
+.bm-os rect, .bm-os circle { fill: color-mix(in srgb, var(--muted) 62%, var(--card)); stroke: none; }
+.bm-os circle[stroke-width], .bm-os ellipse { fill: none; }
+.bm-hot { cursor: pointer; outline: none; }
+.bm-line { stroke: var(--brand-fill); stroke-width: 1.6; fill: none; opacity: .85; }
+#bm-arrow path { fill: var(--brand-fill); }
+.bm-pill { fill: var(--card); stroke: var(--brand-fill); stroke-width: 1.4; }
+.bm-hot text { fill: var(--text); font-size: 12.5px; font-weight: 600; }
+.bm-hot text.bm-badge { fill: var(--brand); font-size: 9.5px; font-weight: 700; }
+.bm-hot:active .bm-pill, .bm-hot:focus-visible .bm-pill { fill: var(--brand-fill); }
+.bm-hot:active text, .bm-hot:focus-visible text { fill: #fff; }
+.bm-back { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+.bm-back .btn { flex: none; padding: 8px 14px; }
+.bm-back strong { font-size: 17px; overflow-wrap: anywhere; }
+.classif-general { display: block; width: 100%; margin: 8px 0 2px; text-align: left; font-size: 14.5px; }
+.classif-list { display: grid; gap: 10px; }
+details.classif { background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+details.classif summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; list-style: none; }
+details.classif summary::-webkit-details-marker { display: none; }
+details.classif summary strong { display: block; font-size: 16px; }
+details.classif summary small { display: block; margin-top: 2px; color: var(--muted); font-size: 13px; }
+details.classif .chevron { transition: transform .2s; color: var(--muted); font-size: 20px; }
+details.classif[open] .chevron { transform: rotate(90deg); }
+details.classif dl { margin: 0; padding: 0 14px 6px; }
+details.classif dl > div { display: grid; grid-template-columns: minmax(64px, 30%) 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+details.classif dt { font-weight: 700; color: var(--brand); overflow-wrap: anywhere; }
+details.classif dd { margin: 0; line-height: 1.45; font-size: 14.5px; }
+.classif-note { margin: 0; padding: 10px 14px 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.tabbar button { font-size: 11px; }

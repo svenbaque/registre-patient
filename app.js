@@ -304,8 +304,8 @@ function render() {
   const n = store.data.patients.length;
   $('#counter').textContent = plural(n, 'patient');
   document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
-  $('#title').textContent = { patients: 'Patients', stats: 'Statistiques', fiches: 'Fiches', voies: 'Voies d’abord' }[currentTab];
-  ({ patients: renderPatients, stats: renderStats, fiches: openFicheId ? renderFiche : renderFiches, voies: renderVoies })[currentTab]();
+  $('#title').textContent = { patients: 'Patients', stats: 'Statistiques', fiches: 'Fiches', voies: 'Voies d’abord', classif: 'Classifications' }[currentTab];
+  ({ patients: renderPatients, stats: renderStats, fiches: openFicheId ? renderFiche : renderFiches, voies: renderVoies, classif: renderClassif })[currentTab]();
 }
 
 /* ---------- Patients ---------- */
@@ -605,22 +605,139 @@ function renderStats() {
     <p class="legend"><i></i>Opérateur <i class="aide"></i>Aide</p>`;
 }
 
+/* ---------- Menu « squelette » : une silhouette osseuse, des flèches, une liste par région ---------- */
+
+// Squelette stylisé, vu de face (moitié droite du patient dessinée, l'autre obtenue par symétrie).
+function skeletonSvg() {
+  const cotes = Array.from({ length: 7 }, (_, i) => `<path d="M196 ${110 + i * 12} C${176 - i} ${104 + i * 12} ${158 - i * 1.5} ${112 + i * 12} ${156 - i} ${128 + i * 12.5}"/>`).join('');
+  const doigts = [[98, 372], [105, 378], [112, 380], [119, 378], [125, 370]].map(([x, y], i) => `<path d="M${108 + i * 3.4} 340 L${x} ${y}"/>`).join('');
+  const moitie = `
+    <path d="M196 98 Q172 90 146 96" stroke-width="5"/>
+    <path d="M150 104 L166 110 L156 152 Z" stroke-width="2" opacity=".55"/>
+    <g stroke-width="2.4" opacity=".8">${cotes}</g>
+    <circle cx="142" cy="100" r="8"/><path d="M141 108 L130 208" stroke-width="9"/>
+    <circle cx="129" cy="214" r="6"/>
+    <path d="M126 221 L112 322" stroke-width="5"/><path d="M133 221 L122 324" stroke-width="5"/>
+    <rect x="108" y="326" width="18" height="12" rx="5"/>
+    <g stroke-width="3">${doigts}</g>
+    <path d="M200 284 C170 278 152 290 154 312 C156 330 172 332 180 324 C186 338 194 344 200 344" stroke-width="5"/>
+    <ellipse cx="184" cy="330" rx="6" ry="8" stroke-width="2"/>
+    <circle cx="170" cy="326" r="8"/><path d="M168 330 L158 334 L164 344 L174 454" stroke-width="9"/>
+    <circle cx="175" cy="460" r="6.5"/>
+    <path d="M176 470 L178 588" stroke-width="9"/><path d="M166 472 L168 590" stroke-width="4"/>
+    <path d="M170 592 L182 592 L180 606 L148 614 L146 608 L168 600 Z" stroke-width="3"/>`;
+  return `<g class="bm-os" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="200" cy="46" rx="23" ry="27" stroke-width="5"/><path d="M185 64 q15 16 30 0" stroke-width="4"/>
+    <circle cx="191" cy="42" r="4" stroke-width="2"/><circle cx="209" cy="42" r="4" stroke-width="2"/>
+    <path d="M200 74 L200 96" stroke-width="7" stroke-dasharray="3 3"/>
+    <path d="M200 100 L200 166" stroke-width="8"/>
+    <path d="M200 170 L200 284" stroke-width="9" stroke-dasharray="6 3"/>
+    <path d="M190 288 L210 288 L200 320 Z" stroke-width="3"/>
+    ${moitie}<g transform="translate(400,0) scale(-1,1)">${moitie}</g>
+  </g>`;
+}
+
+// spots : [{ key, label, at: [x, y] (point visé), side: 'l' | 'r', y (hauteur de l'étiquette), badge }]
+function bodyMenu(spots) {
+  const W = 104;
+  const hot = spots.map(s => {
+    const x = s.side === 'l' ? 3 : 400 - W - 3;
+    const from = s.side === 'l' ? x + W : x;
+    return `<g class="bm-hot" data-key="${esc(s.key)}" tabindex="0" role="button" aria-label="${esc(s.label)}">
+      <path class="bm-line" d="M${from} ${s.y} L${s.at[0]} ${s.at[1]}" marker-end="url(#bm-arrow)"/>
+      <rect class="bm-pill" x="${x}" y="${s.y - 16}" width="${W}" height="32" rx="16"/>
+      <text x="${x + W / 2}" y="${s.y + (s.badge ? -1 : 4.5)}" text-anchor="middle">${esc(s.label)}</text>
+      ${s.badge ? `<text class="bm-badge" x="${x + W / 2}" y="${s.y + 11}" text-anchor="middle">${esc(s.badge)}</text>` : ''}
+    </g>`;
+  }).join('');
+  return `<div class="body-menu"><svg viewBox="0 0 400 630" role="group" aria-label="Squelette : choisir une région">
+    <defs><marker id="bm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>
+    ${skeletonSvg()}${hot}</svg></div>`;
+}
+function bindBodyMenu(onPick) {
+  view.querySelectorAll('.bm-hot').forEach(g => {
+    g.addEventListener('click', () => onPick(g.dataset.key));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(g.dataset.key); } });
+  });
+}
+const backRow = (label, titre) => `<div class="bm-back"><button type="button" class="btn ghost" id="bm-back">‹ ${esc(label)}</button><strong>${esc(titre)}</strong></div>`;
+
 /* ---------- Voies d'abord ---------- */
 
-// Catalogue des voies d'abord par région (voies.js). Celles qui ont un modèle 3D ouvrent le visualiseur ; les autres sont annoncées.
+// Emplacement des régions du catalogue (voies.js) sur le squelette.
+const VOIES_SPOTS = [
+  ['Épaule et clavicule', 'Épaule', [140, 98], 'l', 88], ['Bras', 'Bras', [134, 156], 'l', 150], ['Coude', 'Coude', [127, 214], 'l', 212],
+  ['Avant-bras', 'Avant-bras', [117, 270], 'l', 274], ['Poignet et main', 'Poignet, main', [113, 332], 'l', 336],
+  ['Rachis', 'Rachis', [203, 222], 'r', 200], ['Bassin et cotyle', 'Bassin, cotyle', [240, 300], 'r', 268], ['Hanche', 'Hanche', [234, 326], 'r', 326],
+  ['Fémur', 'Fémur', [232, 392], 'r', 392], ['Genou', 'Genou', [230, 460], 'r', 460], ['Jambe', 'Jambe', [226, 524], 'r', 524],
+  ['Cheville et pilon tibial', 'Cheville', [226, 588], 'r', 578], ['Pied', 'Pied', [240, 610], 'r', 612],
+];
+let voiesRegion = null;
+
+// Catalogue des voies d'abord (voies.js) : le squelette d'abord, puis la liste de la région touchée. Les voies marquées 3D ouvrent le visualiseur.
 function renderVoies() {
-  const ready = VOIES_ABORD.reduce((n, [, voies]) => n + voies.filter(v => v[2]).length, 0);
+  const count = voies => voies.filter(v => v[2]).length;
+  const region = VOIES_ABORD.find(([nom]) => nom === voiesRegion);
+  if (!region) {
+    const ready = VOIES_ABORD.reduce((n, [, voies]) => n + count(voies), 0);
+    const total = VOIES_ABORD.reduce((n, [, voies]) => n + voies.length, 0);
+    view.innerHTML = `
+      <p class="voies-intro"><b>${ready} voies en 3D</b> sur ${total}. Touchez une région du squelette pour voir ses voies d’abord.</p>
+      ${bodyMenu(VOIES_SPOTS.map(([key, label, at, side, y]) => {
+        const voies = VOIES_ABORD.find(([nom]) => nom === key)?.[1] || [];
+        return { key, label, at, side, y, badge: `${count(voies)} / ${voies.length} en 3D` };
+      }))}
+      <p class="voies-intro">Anatomie : Z-Anatomy (CC BY-SA 4.0) et BodyParts3D, © The Database Center for Life Science (CC BY-SA 2.1 Japon). Incisions et implants sont des tracés schématiques. Outil de révision, sans valeur de référence chirurgicale.</p>`;
+    bindBodyMenu(key => { voiesRegion = key; render(); scrollTo(0, 0); });
+    return;
+  }
+  const [nom, voies] = region;
   view.innerHTML = `
-    <p class="voies-intro"><b>${plural(ready, 'voie')} en 3D</b> pour l’instant. Touchez une voie marquée <span class="tag-3d">3D</span> pour l’ouvrir : étapes, muscles écartés comme au bloc et structures à risque.</p>
-    ${VOIES_ABORD.map(([region, voies]) => `
-      <h2 class="section">${esc(region)}</h2>
-      <ul class="list">${voies.map(([nom, usage, voie3d]) => `
-        <li class="card voie${voie3d ? ' ready' : ''}"${voie3d ? ` data-voie="${esc(voie3d)}"` : ''}>
-          <div class="card-head"><strong>${esc(nom)}</strong>${voie3d ? '<span class="tag-3d">3D</span>' : '<span class="tag-soon">à venir</span>'}</div>
-          <div class="card-date">${esc(usage)}</div>
-        </li>`).join('')}</ul>`).join('')}
-    <p class="voies-intro">Anatomie : BodyParts3D, © The Database Center for Life Science, licence CC BY-SA 2.1 Japon. Nerfs, vaisseaux fémoraux, capsule et incisions sont des tracés schématiques. Outil de révision, sans valeur de référence chirurgicale.</p>`;
+    ${backRow('Squelette', nom)}
+    <ul class="list">${voies.map(([titre, usage, voie3d]) => `
+      <li class="card voie${voie3d ? ' ready' : ''}"${voie3d ? ` data-voie="${esc(voie3d)}"` : ''}>
+        <div class="card-head"><strong>${esc(titre)}</strong>${voie3d ? '<span class="tag-3d">3D</span>' : '<span class="tag-soon">à venir</span>'}</div>
+        <div class="card-date">${esc(usage)}</div>
+      </li>`).join('')}</ul>`;
+  $('#bm-back').addEventListener('click', () => { voiesRegion = null; render(); });
   view.querySelectorAll('.voie.ready').forEach(li => li.addEventListener('click', () => openVoie3D(li.dataset.voie)));
+}
+
+/* ---------- Classifications ---------- */
+
+// Emplacement des os du fichier classifications.js sur le squelette.
+const CLASSIF_SPOTS = [
+  ['epaule', 'Épaule', [140, 100], 'l', 76], ['humerus', 'Humérus', [135, 156], 'l', 138], ['coude', 'Coude', [127, 214], 'l', 204],
+  ['avant-bras', 'Avant-bras', [118, 270], 'l', 268], ['poignet', 'Poignet', [114, 326], 'l', 324], ['main', 'Main', [108, 362], 'l', 372],
+  ['clavicule', 'Clavicule', [236, 93], 'r', 76], ['rachis', 'Rachis', [203, 222], 'r', 190], ['bassin', 'Bassin, cotyle', [240, 300], 'r', 262],
+  ['hanche', 'Fémur proximal', [234, 328], 'r', 322], ['femur', 'Fémur', [232, 392], 'r', 392], ['genou', 'Genou', [230, 460], 'r', 460],
+  ['jambe', 'Jambe', [226, 524], 'r', 524], ['cheville', 'Cheville, pilon', [226, 588], 'r', 578], ['pied', 'Pied', [240, 610], 'r', 612],
+];
+let classifRegion = null;
+
+function renderClassif() {
+  const region = CLASSIFICATIONS.find(([key]) => key === classifRegion);
+  if (!region) {
+    const total = CLASSIFICATIONS.reduce((n, [, , liste]) => n + liste.length, 0);
+    view.innerHTML = `
+      <p class="voies-intro"><b>${total} classifications</b>. Touchez un os du squelette pour voir celles qui le concernent.</p>
+      <button type="button" class="btn ghost classif-general" id="classif-general">Classifications générales · fractures ouvertes, enfant, AO</button>
+      ${bodyMenu(CLASSIF_SPOTS.map(([key, label, at, side, y]) => ({ key, label, at, side, y, badge: `${CLASSIFICATIONS.find(([k]) => k === key)?.[2].length || 0} classif.` })))}
+      <p class="voies-intro">Aide-mémoire de révision, rédigé à partir des classifications usuelles ; il ne remplace pas les ouvrages de référence.</p>`;
+    bindBodyMenu(key => { classifRegion = key; render(); scrollTo(0, 0); });
+    $('#classif-general').addEventListener('click', () => { classifRegion = 'general'; render(); scrollTo(0, 0); });
+    return;
+  }
+  const [, titre, liste] = region;
+  view.innerHTML = `
+    ${backRow('Squelette', titre)}
+    <div class="classif-list">${liste.map((c, i) => `
+      <details class="classif"${i === 0 ? ' open' : ''}>
+        <summary><span><strong>${esc(c.nom)}</strong><small>${esc(c.objet)}</small></span><span class="chevron">›</span></summary>
+        <dl>${c.types.map(([type, texte]) => `<div><dt>${esc(type)}</dt><dd>${esc(texte)}</dd></div>`).join('')}</dl>
+        ${c.note ? `<p class="classif-note">${esc(c.note)}</p>` : ''}
+      </details>`).join('')}</div>`;
+  $('#bm-back').addEventListener('click', () => { classifRegion = null; render(); });
 }
 
 // Visualiseur 3D en plein écran, dans un cadre : il se referme par son bouton retour (message « fermer-3d »).
