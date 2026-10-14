@@ -448,3 +448,140 @@ details.classif dt { font-weight: 700; color: var(--brand); overflow-wrap: anywh
 details.classif dd { margin: 0; line-height: 1.45; font-size: 14.5px; }
 .classif-note { margin: 0; padding: 10px 14px 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; line-height: 1.45; }
 .tabbar button { font-size: 11px; }
+
+/* =====================================================================
+   Refonte 2026 : style minimaliste. Fond neutre, une seule couleur d'accent
+   (celle des réglages), traits fins, peu d'ombres, typographie système serrée.
+   Cette couche vient en dernier et remplace l'habillage précédent.
+   ===================================================================== */
+:root {
+  --bg: #f5f5f7;
+  --card: #ffffff;
+  --text: #111114;
+  --muted: #7a7a82;
+  --line: rgba(17, 17, 20, .08);
+  --brand: color-mix(in srgb, var(--accent) 88%, #000);
+  --brand-fill: var(--accent);
+  --brand-soft: color-mix(in srgb, var(--accent) 11%, transparent);
+  --brand-glow: color-mix(in srgb, var(--accent) 25%, transparent);
+  --shadow: 0 1px 2px rgba(17, 17, 20, .04);
+  --radius: 16px;
+  --tabbar-h: 58px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+}
+:root[data-theme="dark"] {
+  --bg: #0b0b0d;
+  --card: #17171a;
+  --text: #f2f2f4;
+  --muted: #8b8b93;
+  --line: rgba(255, 255, 255, .08);
+  --brand: color-mix(in srgb, var(--accent) 72%, #fff);
+  --brand-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --shadow: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0b0d;
+    --card: #17171a;
+    --text: #f2f2f4;
+    --muted: #8b8b93;
+    --line: rgba(255, 255, 255, .08);
+    --brand: color-mix(in srgb, var(--accent) 72%, #fff);
+    --brand-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+    --shadow: none;
+  }
+}
+body { font-family: var(--font); letter-spacing: -.005em; -webkit-font-smoothing: antialiased; }
+
+/* En-tête : grand titre sur le fond, barre translucide */
+.topbar {
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: saturate(1.6) blur(20px); backdrop-filter: saturate(1.6) blur(20px);
+  color: var(--text); border-radius: 0; box-shadow: none;
+  padding: calc(env(safe-area-inset-top) + 14px) 20px 12px;
+  border-bottom: 1px solid transparent;
+}
+.topbar h1 { font-size: 30px; font-weight: 700; letter-spacing: -.025em; }
+.counter { background: none; color: var(--muted); font-size: 13px; font-weight: 500; padding: 0 4px; }
+.icon-btn { color: var(--text); width: 38px; height: 38px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.icon-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+main { padding: 6px 20px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 96px); }
+
+/* Barre d'onglets : icônes au trait */
+.tabbar { background: color-mix(in srgb, var(--card) 78%, transparent); border-top: 1px solid var(--line); }
+.tabbar button { gap: 3px; font-size: 10.5px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.tabbar button svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar button.active { color: var(--brand-fill); font-weight: 600; }
+.tabbar button.active svg { stroke-width: 2; }
+
+/* Surfaces : cartes plates, filet fin */
+.card, .tile, .months, details.section, .fiche-images, .fiche-content, .op-block, .scan-result, .set-group, .tuto section, details.classif {
+  border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: var(--radius);
+}
+details.section .fiche-content { border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+.list { gap: 8px; }
+.card { padding: 14px 16px; }
+.card-head strong { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.card-op { font-size: 14.5px; font-weight: 500; }
+.card-date { font-size: 13px; }
+.card.patient { border-left: 1px solid var(--line); padding-left: 18px; }
+.card.patient::before { content: ''; position: absolute; left: 8px; top: 16px; bottom: 16px; width: 3px; border-radius: 3px; background: var(--brand-fill); }
+.card.patient.aide { background: var(--card); }
+.card.patient.aide::before { background: var(--aide); }
+.badge-aide { background: color-mix(in srgb, var(--aide) 14%, transparent); color: var(--aide); font-weight: 600; letter-spacing: .04em; }
+.search { border: 1px solid var(--line); box-shadow: none; border-radius: 12px; padding: 10px 14px; background: var(--card); }
+.search:focus { outline: 2px solid var(--brand-glow); }
+h2.section, .set-title { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tile b { font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+.tile span { font-size: 11.5px; }
+.bar { height: 5px; background: var(--line); }
+.month i { border-radius: 3px 3px 0 0; }
+.empty { font-size: 15px; }
+
+/* Boutons */
+.btn { border-radius: 12px; padding: 11px 18px; font-weight: 600; font-size: 15.5px; }
+.btn.primary { background: var(--brand-fill); }
+.btn.ghost { background: var(--card); border: 1px solid var(--line); }
+.fab { width: 56px; height: 56px; border-radius: 18px; font-size: 30px; font-weight: 300; box-shadow: 0 8px 24px var(--brand-glow), 0 1px 2px rgba(0, 0, 0, .1); }
+.segmented span { border-radius: 10px; font-size: 15px; }
+.sheet { background: var(--bg); border-radius: 22px 22px 0 0; }
+.sheet h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.sheet input:not([type=file]), .sheet textarea { border: 1px solid var(--line); border-radius: 12px; }
+.sheet-close { background: var(--card); color: var(--muted); box-shadow: 0 0 0 1px var(--line); }
+.open-radios, .edit-section, .scan-line button { border-radius: 8px; }
+.tips, .backup-banner { border-radius: var(--radius); }
+
+/* Pages Voies et Classifications */
+.page-lead { margin: 0 0 2px; color: var(--muted); font-size: 14px; }
+.credit { margin: 10px 0 0; color: var(--muted); font-size: 11.5px; text-align: center; opacity: .8; }
+.body-menu { margin: 0 auto; max-width: 520px; }
+.body-menu svg { display: block; width: 100%; height: auto; overflow: visible; }
+.body-menu image { filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .14)); }
+:root[data-theme="dark"] .body-menu image { filter: drop-shadow(0 0 40px rgba(255, 255, 255, .05)); }
+.bm-hit { fill: transparent; }
+.bm-line { stroke: var(--muted); stroke-width: 2.4; fill: none; opacity: .55; }
+.bm-dot { fill: var(--brand-fill); stroke: var(--bg); stroke-width: 5; }
+.bm-dot-halo { fill: var(--brand-fill); opacity: .16; transform-box: fill-box; transform-origin: center; animation: bm-pulse 2.6s ease-out infinite; }
+.bm-hot text { fill: var(--text); font-size: 46px; font-weight: 500; letter-spacing: -.01em; }
+.bm-hot:hover text, .bm-hot:focus-visible text { fill: var(--brand-fill); }
+.bm-hot:hover .bm-line, .bm-hot:focus-visible .bm-line { stroke: var(--brand-fill); opacity: 1; }
+.bm-hot:active .bm-dot-halo { opacity: .4; }
+@keyframes bm-pulse { 0% { transform: scale(.6); opacity: .28; } 70%, 100% { transform: scale(1.5); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .bm-dot-halo { animation: none; } }
+.chip-link { display: block; margin: 6px auto 0; padding: 9px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--text); font-size: 14px; font-weight: 500; }
+.bm-back { display: block; margin: 0 0 16px; }
+.back-link { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 6px -6px; padding: 4px 6px; border: 0; background: none; color: var(--brand-fill); font-size: 15px; font-weight: 500; }
+.back-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bm-back h2 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.025em; }
+.card.voie { opacity: .5; border-left: 1px solid var(--line); }
+.card.voie.ready { opacity: 1; border-left: 1px solid var(--line); }
+.card.voie .card-date { margin-top: 2px; }
+.tag-3d { background: var(--brand-soft); color: var(--brand); font-size: 11px; font-weight: 700; letter-spacing: .04em; border-radius: 6px; padding: 3px 7px; }
+details.classif summary { padding: 14px 16px; }
+details.classif summary strong { font-weight: 600; }
+details.classif dt { color: var(--text); }
+details.classif dl { padding: 0 16px 6px; }
+.sheet label.btn.file, .img-block .btn.file, .sheet .btn.add-op, .fiche-images .btn.file {
+  border: 1px solid var(--line); border-style: solid; background: var(--card); color: var(--brand-fill); border-radius: 12px; font-weight: 600;
+}
+.sheet .segmented span { border-radius: 10px; }

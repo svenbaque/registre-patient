@@ -28,7 +28,8 @@ const prefs = {
     root.style.setProperty('--accent', this.data.accent);
     // l'aide est en violet : si l'appli elle-même passe en violet, l'aide passe en orange pour rester distincte
     if (this.data.accent === '#7c5ce6') root.style.setProperty('--aide', '#ef8a24'); else root.style.removeProperty('--aide');
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', this.data.accent);
+    // barre d'état de la couleur du fond (l'en-tête n'est plus coloré)
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(root).getPropertyValue('--bg').trim() || '#f5f5f7');
   },
 };
 prefs.load();
@@ -380,7 +381,7 @@ function openPatientForm(id) {
           <label class="aide"><input type="radio" name="role" value="aide"${isAide(p) ? ' checked' : ''}><span>Aide</span></label>
         </div>
       </div>
-      <label class="btn ghost file scan-btn"><span id="scan-label">📷 Scanner une étiquette</span><input type="file" id="scan-input" accept="image/*" capture="environment" hidden></label>
+      <label class="btn ghost file scan-btn"><span id="scan-label">Scanner une étiquette</span><input type="file" id="scan-input" accept="image/*" capture="environment" hidden></label>
       <div class="scan-result" id="scan-result" hidden></div>
       <label>Nom<input name="nom" value="${esc(p.nom)}" autocomplete="off" autocapitalize="characters" required></label>
       <label>Prénom<input name="prenom" value="${esc(p.prenom)}" autocomplete="off" autocapitalize="words"></label>
@@ -393,7 +394,7 @@ function openPatientForm(id) {
       </div>
       <div class="field">Radios post-op
         <div class="radio-grid" id="radio-grid"></div>
-        <label class="btn ghost file">📷 Ajouter une radio<input type="file" id="radio-input" accept="image/*" multiple hidden></label>
+        <label class="btn ghost file">Ajouter une radio<input type="file" id="radio-input" accept="image/*" multiple hidden></label>
       </div>
       <div class="actions">
         ${existing ? '<button type="button" class="btn danger" id="delete-patient">Supprimer</button>' : ''}
@@ -444,7 +445,7 @@ function openPatientForm(id) {
       scanResult.innerHTML = '<p><b>La lecture n’a pas pu se faire.</b> Le premier scan a besoin du réseau pour charger le moteur de lecture ; réessayez avec une connexion.</p>';
     } finally {
       ocrProgress = null;
-      scanLabel.textContent = '📷 Scanner une étiquette';
+      scanLabel.textContent = 'Scanner une étiquette';
     }
   });
 
@@ -605,54 +606,26 @@ function renderStats() {
     <p class="legend"><i></i>Opérateur <i class="aide"></i>Aide</p>`;
 }
 
-/* ---------- Menu « squelette » : une silhouette osseuse, des flèches, une liste par région ---------- */
+/* ---------- Menu « squelette » : rendu du squelette réel (Z-Anatomy), un point par région ---------- */
 
-// Squelette stylisé, vu de face (moitié droite du patient dessinée, l'autre obtenue par symétrie).
-function skeletonSvg() {
-  const cotes = Array.from({ length: 7 }, (_, i) => `<path d="M196 ${110 + i * 12} C${176 - i} ${104 + i * 12} ${158 - i * 1.5} ${112 + i * 12} ${156 - i} ${128 + i * 12.5}"/>`).join('');
-  const doigts = [[98, 372], [105, 378], [112, 380], [119, 378], [125, 370]].map(([x, y], i) => `<path d="M${108 + i * 3.4} 340 L${x} ${y}"/>`).join('');
-  const moitie = `
-    <path d="M196 98 Q172 90 146 96" stroke-width="5"/>
-    <path d="M150 104 L166 110 L156 152 Z" stroke-width="2" opacity=".55"/>
-    <g stroke-width="2.4" opacity=".8">${cotes}</g>
-    <circle cx="142" cy="100" r="8"/><path d="M141 108 L130 208" stroke-width="9"/>
-    <circle cx="129" cy="214" r="6"/>
-    <path d="M126 221 L112 322" stroke-width="5"/><path d="M133 221 L122 324" stroke-width="5"/>
-    <rect x="108" y="326" width="18" height="12" rx="5"/>
-    <g stroke-width="3">${doigts}</g>
-    <path d="M200 284 C170 278 152 290 154 312 C156 330 172 332 180 324 C186 338 194 344 200 344" stroke-width="5"/>
-    <ellipse cx="184" cy="330" rx="6" ry="8" stroke-width="2"/>
-    <circle cx="170" cy="326" r="8"/><path d="M168 330 L158 334 L164 344 L174 454" stroke-width="9"/>
-    <circle cx="175" cy="460" r="6.5"/>
-    <path d="M176 470 L178 588" stroke-width="9"/><path d="M166 472 L168 590" stroke-width="4"/>
-    <path d="M170 592 L182 592 L180 606 L148 614 L146 608 L168 600 Z" stroke-width="3"/>`;
-  return `<g class="bm-os" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="200" cy="46" rx="23" ry="27" stroke-width="5"/><path d="M185 64 q15 16 30 0" stroke-width="4"/>
-    <circle cx="191" cy="42" r="4" stroke-width="2"/><circle cx="209" cy="42" r="4" stroke-width="2"/>
-    <path d="M200 74 L200 96" stroke-width="7" stroke-dasharray="3 3"/>
-    <path d="M200 100 L200 166" stroke-width="8"/>
-    <path d="M200 170 L200 284" stroke-width="9" stroke-dasharray="6 3"/>
-    <path d="M190 288 L210 288 L200 320 Z" stroke-width="3"/>
-    ${moitie}<g transform="translate(400,0) scale(-1,1)">${moitie}</g>
-  </g>`;
-}
-
-// spots : [{ key, label, at: [x, y] (point visé), side: 'l' | 'r', y (hauteur de l'étiquette), badge }]
+// L'image (img/squelette.webp, 760 × 1905 px, vue de face) est posée au centre d'un SVG plus large :
+// les étiquettes occupent les marges, reliées au point visé par un trait fin.
+// spots : [{ key, label, at: [x, y] en pixels de l'image, side: 'l' | 'r', y: hauteur de l'étiquette }]
 function bodyMenu(spots) {
-  const W = 104;
   const hot = spots.map(s => {
-    const x = s.side === 'l' ? 3 : 400 - W - 3;
-    const from = s.side === 'l' ? x + W : x;
+    const left = s.side === 'l';
+    const tx = left ? -50 : 810;
+    const lx = left ? -32 : 792;
     return `<g class="bm-hot" data-key="${esc(s.key)}" tabindex="0" role="button" aria-label="${esc(s.label)}">
-      <path class="bm-line" d="M${from} ${s.y} L${s.at[0]} ${s.at[1]}" marker-end="url(#bm-arrow)"/>
-      <rect class="bm-pill" x="${x}" y="${s.y - 16}" width="${W}" height="32" rx="16"/>
-      <text x="${x + W / 2}" y="${s.y + (s.badge ? -1 : 4.5)}" text-anchor="middle">${esc(s.label)}</text>
-      ${s.badge ? `<text class="bm-badge" x="${x + W / 2}" y="${s.y + 11}" text-anchor="middle">${esc(s.badge)}</text>` : ''}
+      <rect class="bm-hit" x="${left ? -300 : s.at[0] - 30}" y="${Math.min(s.y, s.at[1]) - 45}" width="${left ? s.at[0] + 330 : 1090 - s.at[0]}" height="${Math.abs(s.y - s.at[1]) + 90}"/>
+      <path class="bm-line" d="M${lx} ${s.y} L${s.at[0] + (left ? -16 : 16)} ${s.y} L${s.at[0]} ${s.at[1]}"/>
+      <circle class="bm-dot-halo" cx="${s.at[0]}" cy="${s.at[1]}" r="26"/>
+      <circle class="bm-dot" cx="${s.at[0]}" cy="${s.at[1]}" r="11"/>
+      <text x="${tx}" y="${s.y + 16}" text-anchor="${left ? 'end' : 'start'}">${esc(s.label)}</text>
     </g>`;
   }).join('');
-  return `<div class="body-menu"><svg viewBox="0 0 400 630" role="group" aria-label="Squelette : choisir une région">
-    <defs><marker id="bm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>
-    ${skeletonSvg()}${hot}</svg></div>`;
+  return `<div class="body-menu"><svg viewBox="-300 -20 1360 1945" role="group" aria-label="Squelette : choisir une région">
+    <image href="img/squelette.webp" x="0" y="0" width="760" height="1905"/>${hot}</svg></div>`;
 }
 function bindBodyMenu(onPick) {
   view.querySelectorAll('.bm-hot').forEach(g => {
@@ -660,17 +633,17 @@ function bindBodyMenu(onPick) {
     g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(g.dataset.key); } });
   });
 }
-const backRow = (label, titre) => `<div class="bm-back"><button type="button" class="btn ghost" id="bm-back">‹ ${esc(label)}</button><strong>${esc(titre)}</strong></div>`;
+const backRow = (label, titre) => `<div class="bm-back"><button type="button" class="back-link" id="bm-back" aria-label="Retour : ${esc(label)}"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>${esc(label)}</button><h2>${esc(titre)}</h2></div>`;
 
 /* ---------- Voies d'abord ---------- */
 
 // Emplacement des régions du catalogue (voies.js) sur le squelette.
 const VOIES_SPOTS = [
-  ['Épaule et clavicule', 'Épaule', [140, 98], 'l', 88], ['Bras', 'Bras', [134, 156], 'l', 150], ['Coude', 'Coude', [127, 214], 'l', 212],
-  ['Avant-bras', 'Avant-bras', [117, 270], 'l', 274], ['Poignet et main', 'Poignet, main', [113, 332], 'l', 336],
-  ['Rachis', 'Rachis', [203, 222], 'r', 200], ['Bassin et cotyle', 'Bassin, cotyle', [240, 300], 'r', 268], ['Hanche', 'Hanche', [234, 326], 'r', 326],
-  ['Fémur', 'Fémur', [232, 392], 'r', 392], ['Genou', 'Genou', [230, 460], 'r', 460], ['Jambe', 'Jambe', [226, 524], 'r', 524],
-  ['Cheville et pilon tibial', 'Cheville', [226, 588], 'r', 578], ['Pied', 'Pied', [240, 610], 'r', 612],
+  ['Épaule et clavicule', 'Épaule', [196, 372], 'l', 330], ['Bras', 'Bras', [150, 520], 'l', 500], ['Coude', 'Coude', [128, 680], 'l', 670],
+  ['Avant-bras', 'Avant-bras', [100, 810], 'l', 830], ['Poignet et main', 'Main', [72, 960], 'l', 990],
+  ['Rachis', 'Rachis', [380, 700], 'r', 640], ['Bassin et cotyle', 'Bassin', [468, 830], 'r', 800], ['Hanche', 'Hanche', [528, 968], 'r', 960],
+  ['Fémur', 'Fémur', [496, 1190], 'r', 1170], ['Genou', 'Genou', [462, 1400], 'r', 1390], ['Jambe', 'Jambe', [458, 1570], 'r', 1580],
+  ['Cheville et pilon tibial', 'Cheville', [458, 1748], 'r', 1740], ['Pied', 'Pied', [478, 1868], 'r', 1880],
 ];
 let voiesRegion = null;
 
@@ -680,14 +653,10 @@ function renderVoies() {
   const region = VOIES_ABORD.find(([nom]) => nom === voiesRegion);
   if (!region) {
     const ready = VOIES_ABORD.reduce((n, [, voies]) => n + count(voies), 0);
-    const total = VOIES_ABORD.reduce((n, [, voies]) => n + voies.length, 0);
     view.innerHTML = `
-      <p class="voies-intro"><b>${ready} voies en 3D</b> sur ${total}. Touchez une région du squelette pour voir ses voies d’abord.</p>
-      ${bodyMenu(VOIES_SPOTS.map(([key, label, at, side, y]) => {
-        const voies = VOIES_ABORD.find(([nom]) => nom === key)?.[1] || [];
-        return { key, label, at, side, y, badge: `${count(voies)} / ${voies.length} en 3D` };
-      }))}
-      <p class="voies-intro">Anatomie : Z-Anatomy (CC BY-SA 4.0) et BodyParts3D, © The Database Center for Life Science (CC BY-SA 2.1 Japon). Incisions et implants sont des tracés schématiques. Outil de révision, sans valeur de référence chirurgicale.</p>`;
+      <p class="page-lead">${ready} voies d’abord en 3D</p>
+      ${bodyMenu(VOIES_SPOTS.map(([key, label, at, side, y]) => ({ key, label, at, side, y })))}
+      <p class="credit">Anatomie : Z-Anatomy (CC BY-SA 4.0), BodyParts3D (CC BY-SA 2.1 JP). Outil de révision.</p>`;
     bindBodyMenu(key => { voiesRegion = key; render(); scrollTo(0, 0); });
     return;
   }
@@ -696,7 +665,7 @@ function renderVoies() {
     ${backRow('Squelette', nom)}
     <ul class="list">${voies.map(([titre, usage, voie3d]) => `
       <li class="card voie${voie3d ? ' ready' : ''}"${voie3d ? ` data-voie="${esc(voie3d)}"` : ''}>
-        <div class="card-head"><strong>${esc(titre)}</strong>${voie3d ? '<span class="tag-3d">3D</span>' : '<span class="tag-soon">à venir</span>'}</div>
+        <div class="card-head"><strong>${esc(titre)}</strong>${voie3d ? '<span class="tag-3d">3D</span>' : ''}</div>
         <div class="card-date">${esc(usage)}</div>
       </li>`).join('')}</ul>`;
   $('#bm-back').addEventListener('click', () => { voiesRegion = null; render(); });
@@ -707,11 +676,11 @@ function renderVoies() {
 
 // Emplacement des os du fichier classifications.js sur le squelette.
 const CLASSIF_SPOTS = [
-  ['epaule', 'Épaule', [140, 100], 'l', 76], ['humerus', 'Humérus', [135, 156], 'l', 138], ['coude', 'Coude', [127, 214], 'l', 204],
-  ['avant-bras', 'Avant-bras', [118, 270], 'l', 268], ['poignet', 'Poignet', [114, 326], 'l', 324], ['main', 'Main', [108, 362], 'l', 372],
-  ['clavicule', 'Clavicule', [236, 93], 'r', 76], ['rachis', 'Rachis', [203, 222], 'r', 190], ['bassin', 'Bassin, cotyle', [240, 300], 'r', 262],
-  ['hanche', 'Fémur proximal', [234, 328], 'r', 322], ['femur', 'Fémur', [232, 392], 'r', 392], ['genou', 'Genou', [230, 460], 'r', 460],
-  ['jambe', 'Jambe', [226, 524], 'r', 524], ['cheville', 'Cheville, pilon', [226, 588], 'r', 578], ['pied', 'Pied', [240, 610], 'r', 612],
+  ['epaule', 'Épaule', [196, 372], 'l', 330], ['humerus', 'Humérus', [150, 520], 'l', 500], ['coude', 'Coude', [128, 680], 'l', 670],
+  ['avant-bras', 'Avant-bras', [100, 810], 'l', 820], ['poignet', 'Poignet', [80, 945], 'l', 950], ['main', 'Main', [62, 1040], 'l', 1090],
+  ['clavicule', 'Clavicule', [500, 336], 'r', 300], ['rachis', 'Rachis', [380, 700], 'r', 640], ['bassin', 'Bassin', [468, 830], 'r', 800],
+  ['hanche', 'Hanche', [528, 968], 'r', 960], ['femur', 'Fémur', [496, 1190], 'r', 1170], ['genou', 'Genou', [462, 1400], 'r', 1390],
+  ['jambe', 'Jambe', [458, 1570], 'r', 1580], ['cheville', 'Cheville', [458, 1748], 'r', 1740], ['pied', 'Pied', [478, 1868], 'r', 1880],
 ];
 let classifRegion = null;
 
@@ -720,10 +689,10 @@ function renderClassif() {
   if (!region) {
     const total = CLASSIFICATIONS.reduce((n, [, , liste]) => n + liste.length, 0);
     view.innerHTML = `
-      <p class="voies-intro"><b>${total} classifications</b>. Touchez un os du squelette pour voir celles qui le concernent.</p>
-      <button type="button" class="btn ghost classif-general" id="classif-general">Classifications générales · fractures ouvertes, enfant, AO</button>
-      ${bodyMenu(CLASSIF_SPOTS.map(([key, label, at, side, y]) => ({ key, label, at, side, y, badge: `${CLASSIFICATIONS.find(([k]) => k === key)?.[2].length || 0} classif.` })))}
-      <p class="voies-intro">Aide-mémoire de révision, rédigé à partir des classifications usuelles ; il ne remplace pas les ouvrages de référence.</p>`;
+      <p class="page-lead">${total} classifications</p>
+      ${bodyMenu(CLASSIF_SPOTS.map(([key, label, at, side, y]) => ({ key, label, at, side, y })))}
+      <button type="button" class="chip-link" id="classif-general">Classifications générales</button>
+      <p class="credit">Aide-mémoire de révision ; ne remplace pas les ouvrages de référence.</p>`;
     bindBodyMenu(key => { classifRegion = key; render(); scrollTo(0, 0); });
     $('#classif-general').addEventListener('click', () => { classifRegion = 'general'; render(); scrollTo(0, 0); });
     return;
@@ -971,7 +940,7 @@ function toast(message) {
 const imageBlock = (imgKey, label) => `
   <div class="img-block" data-key="${esc(imgKey)}">
     <div class="radio-grid"></div>
-    <label class="btn ghost file">📷 ${label}<input type="file" accept="image/*" multiple hidden></label>
+    <label class="btn ghost file">${label}<input type="file" accept="image/*" multiple hidden></label>
   </div>`;
 
 // Branche les blocs d'images affichés : enregistrées dès l'ajout, sans bouton de validation.
