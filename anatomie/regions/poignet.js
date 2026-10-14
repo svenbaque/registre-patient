@@ -1,4 +1,5 @@
 // Poignet droit — voie de Henry modifiée, canal carpien, voie dorsale, voie antéro-ulnaire étendue, voies antérieure et dorsale du scaphoïde.
+import pieces from './poignet.pieces.js';
 import { peauFendue, berges, charge as chargeLame, lame, deuxBerges } from './outils.js';
 
 // Repère BodyParts3D, en millimètres : membre le long du corps, paume vers l'avant.
@@ -6,57 +7,8 @@ import { peauFendue, berges, charge as chargeLame, lame, deuxBerges } from './ou
 
 const meshes = [
   ['peau-poignet', 'Peau', 'peau', '#e2b596', { id: 'peau', dossier: 'models-z' }],
-  ['FMA23464', 'Radius', 'os', '#e9e2cf'],
-  ['FMA23467', 'Ulna', 'os', '#e9e2cf'],
-  ['FMA24435', 'Scaphoïde', 'os', '#ded6c0'],
-  ['FMA24437', 'Lunatum', 'os', '#ded6c0'],
-  ['FMA24439', 'Triquétrum', 'os', '#ded6c0'],
-  ['FMA24441', 'Pisiforme', 'os', '#ded6c0'],
-  ['FMA24443', 'Trapèze', 'os', '#ded6c0'],
-  ['FMA23725', 'Trapézoïde', 'os', '#ded6c0'],
-  ['FMA24446', 'Capitatum', 'os', '#ded6c0'],
-  ['FMA24448', 'Hamatum', 'os', '#ded6c0'],
-  ['FMA24464', '1er métacarpien', 'os', '#e9e2cf'],
-  ['FMA24466', '2e métacarpien', 'os', '#e9e2cf'],
-  ['FMA24468', '3e métacarpien', 'os', '#e9e2cf'],
-  ['FMA24470', '4e métacarpien', 'os', '#e9e2cf'],
-  ['FMA24472', '5e métacarpien', 'os', '#e9e2cf'],
-  ['FMA24450', 'Phalange proximale du pouce', 'os', '#e9e2cf'],
-  ['FMA24451', 'Phalange proximale de l’index', 'os', '#e9e2cf'],
-  ['FMA24452', 'Phalange proximale du majeur', 'os', '#e9e2cf'],
-  ['FMA24453', 'Phalange proximale de l’annulaire', 'os', '#e9e2cf'],
-  ['FMA24454', 'Phalange proximale de l’auriculaire', 'os', '#e9e2cf'],
-  ['FMA24455', 'Phalange moyenne de l’index', 'os', '#e9e2cf'],
-  ['FMA24456', 'Phalange moyenne du majeur', 'os', '#e9e2cf'],
-  ['FMA24457', 'Phalange moyenne de l’annulaire', 'os', '#e9e2cf'],
-  ['FMA24458', 'Phalange moyenne de l’auriculaire', 'os', '#e9e2cf'],
-  ['FMA24459', 'Phalange distale du pouce', 'os', '#e9e2cf'],
-  ['FMA24460', 'Phalange distale de l’index', 'os', '#e9e2cf'],
-  ['FMA24461', 'Phalange distale du majeur', 'os', '#e9e2cf'],
-  ['FMA24462', 'Phalange distale de l’annulaire', 'os', '#e9e2cf'],
-  ['FMA24463', 'Phalange distale de l’auriculaire', 'os', '#e9e2cf'],
-  ['FMA38460', 'Fléchisseur radial du carpe (FCR)', 'flechisseurs', '#c4527a'],
-  ['FMA38463', 'Long palmaire', 'flechisseurs', '#b5483f'],
-  ['FMA38482', 'Long fléchisseur du pouce', 'flechisseurs', '#d9773f'],
-  ['FMA38640', 'Fléchisseur superficiel des doigts (chef radial)', 'flechisseurs', '#a8444f'],
-  ['FMA38638', 'Fléchisseur superficiel des doigts (chef huméro-ulnaire)', 'flechisseurs', '#9c4048'],
-  ['FMA38479', 'Fléchisseur profond des doigts', 'flechisseurs', '#8f3d46'],
-  ['FMA38454', 'Carré pronateur', 'profond', '#c9b23c'],
-  ['FMA38486', 'Brachio-radial', 'lateraux', '#7d6bb5'],
-  ['FMA38516', 'Long abducteur du pouce', 'lateraux', '#6f73b8'],
-  ['FMA38519', 'Court extenseur du pouce', 'extenseurs', '#6a7fb8'],
-  ['FMA38522', 'Long extenseur du pouce', 'extenseurs', '#6388b5'],
-  ['FMA38495', 'Long extenseur radial du carpe', 'extenseurs', '#5f93b0'],
-  ['FMA38498', 'Court extenseur radial du carpe', 'extenseurs', '#5b9aa8'],
-  ['FMA38501', 'Extenseur des doigts', 'extenseurs', '#5a8f9c'],
-  ['FMA38504', 'Extenseur du petit doigt', 'extenseurs', '#568595'],
-  ['FMA38525', 'Extenseur de l’index', 'extenseurs', '#527b8d'],
-  ['FMA37386', 'Court abducteur du pouce', 'main', '#c25a4c'],
-  ['FMA37390', 'Opposant du pouce', 'main', '#b5524a'],
-  ['FMA37396', 'Abducteur du petit doigt', 'main', '#b05a55'],
-  ['FMA37398', 'Court fléchisseur du petit doigt', 'main', '#a8554f'],
-  ['FMA37400', 'Opposant du petit doigt', 'main', '#a0504a'],
-  ['FMA40120', 'Rétinaculum des fléchisseurs', 'ligaments', '#dfe6ec'],
+  // Os, muscles et rétinaculum : modèle Z-Anatomy (CC BY-SA 4.0), avec les identifiants FMA de l'ancien modèle BodyParts3D, utilisés par les voies.
+  ...pieces,
   // Nerfs, artères, veines, ligaments, gaine du FCR et fléchisseur ulnaire du carpe : modèle Z-Anatomy (CC BY-SA 4.0).
   ['m-fcu-humeral', 'Fléchisseur ulnaire du carpe (chef huméral)', 'flechisseurs', '#b0506a', { id: 'fcu', dossier: 'models-z' }],
   ['m-fcu-ulnaire', 'Fléchisseur ulnaire du carpe (chef ulnaire)', 'flechisseurs', '#b0506a', { id: 'fcu/ulnaire', dossier: 'models-z' }],
@@ -372,4 +324,4 @@ const voies = {
   ] },
 };
 
-export default { nom: 'Poignet droit', dossier: 'models-hd', graisse: 3, centre, vues, meshes, fendre, tubes, rubans, groupes, voies };
+export default { nom: 'Poignet droit', graisse: 3, centre, vues, meshes, fendre, tubes, rubans, groupes, voies };

@@ -439,4 +439,4 @@ const voies = {
   ] },
 };
 
-export default { nom: 'Hanche droite', dossier: 'models-hd', graisse: 9, fascias: ['FMA58776', 'FMA21964'], centre, vues, meshes, fendre, tubes, rubans, groupes, voies };
+export default { nom: 'Hanche droite', graisse: 9, fascias: ['FMA58776', 'FMA21964'], centre, vues, meshes, fendre, tubes, rubans, groupes, voies };
