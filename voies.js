@@ -3,10 +3,10 @@ const VOIES_ABORD = [
   ['Hanche', [
     ['Postérieure de Moore', 'PTH, prothèse intermédiaire', 'hanche:post'],
     ['Antérieure de Hueter', 'PTH, prothèse intermédiaire', 'hanche:ant'],
-    ['Antéro-latérale de Watson-Jones / Röttinger', 'PTH, col fémoral'],
+    ['Antéro-latérale de Watson-Jones / Röttinger', 'PTH, col fémoral', 'hanche:wj'],
     ['Latérale transglutéale de Hardinge', 'PTH, prothèse intermédiaire', 'hanche:hardinge'],
     ['Smith-Petersen', 'abord antérieur étendu', 'bassin:sp'],
-    ['Trochantérotomie, luxation de Ganz', 'reprises, tête fémorale'],
+    ['Trochantérotomie, luxation de Ganz', 'reprises, tête fémorale', 'hanche:ganz'],
     ['Médiale de Ludloff', 'hanche de l’enfant']]],
   ['Épaule et clavicule', [
     ['Delto-pectorale', 'humérus proximal, prothèse d’épaule', 'epaule:dp'],

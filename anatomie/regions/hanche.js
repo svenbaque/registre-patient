@@ -95,6 +95,7 @@ const fendre = [
 ];
 
 // Tracés à la main : incisions (sur la peau) et repères d'ostéosynthèse. [id, nom, groupe, couleur, rayon, options, points]
+const PEAU_WJ = [[-152, -101, 900], [-157, -108, 874], [-160, -114, 850], [-165, -118, 824], [-166, -108, 801], [-170, -102, 777], [-175, -103, 752]];
 const tubes = [
   ['incision-post', 'Incision — voie postérieure', 'incisions', '#35e0c8', 1.4, {},
     [[-174, -71, 714], [-173, -73, 758], [-168, -70, 800], [-154, -46, 838], [-128, -17, 871], [-105, 10, 899]]],
@@ -102,6 +103,8 @@ const tubes = [
     [[-132, -164, 882], [-135, -159, 851], [-142, -154, 816], [-149, -153, 782]]],
   ['incision-lat', 'Incision — voie latérale du fémur proximal', 'incisions', '#35e0c8', 1.4, {},
     [[-168, -92, 808], [-175, -90, 758], [-176, -90, 707], [-176, -92, 660]]],
+  ['incision-wj', 'Incision — voie antéro-latérale de Watson-Jones', 'incisions', '#35e0c8', 1.4, {}, PEAU_WJ.map(([x, y, z]) => [x - 1.8, y - 1, z])],
+  ['osteotomie-troch', 'Trait de l’ostéotomie du grand trochanter', 'incisions', '#7df9ff', 1, {}, [[-124, -70, 821], [-130, -76, 803], [-136, -82, 786], [-141, -86, 773]]],
   ['incision-hardinge', 'Incision — voie latérale de Hardinge', 'incisions', '#35e0c8', 1.4, {},
     [[-153, -78, 905], [-155, -77, 880], [-160, -77, 855], [-163, -78, 831], [-167, -77, 806], [-172, -77, 780], [-174, -77, 756], [-177, -78, 733]]],
   ['incision-clou', 'Incision — abord du grand trochanter', 'incisions', '#35e0c8', 1.4, {},
@@ -119,6 +122,8 @@ const rubans = [
 ];
 const visPlaque = (n, x, y, z) => [`dhs/vis${n}`, 'Vis corticale de la plaque', 'implants', '#cfd6dd', 2.2, {}, [[x - 4, y, z], [x + 14, y, z], [x + 32, y, z]]];
 tubes.push(...[
+  ['vis-troch', 'Vis de refixation du trochanter', 'implants', '#cfd6dd', 1.8, {}, [[-147, -80, 802], [-128, -82, 797], [-108, -84, 792]]],
+  ['vis-troch/b', 'Vis de refixation du trochanter', 'implants', '#cfd6dd', 1.8, {}, [[-145, -84, 786], [-126, -86, 780], [-106, -88, 774]]],
   ...[[-62, -41, 786], [-68, -47, 800], [-78, -60, 850], [-70, -52, 872]].map(([x, y, z], n) => [`plaque-kl/vis${n}`, 'Vis de la plaque postérieure', 'implants', '#cfd6dd', 1.7, {}, [[x - 1, y + 2, z], [x + 7, y - 12, z], [x + 14, y - 26, z]]]),
   ['dhs/vis-cervicale', 'Vis cervicale (DHS)', 'implants', '#cfd6dd', 4.5, {}, [[-146, -86, 767], [-110, -89, 791], [-72, -92, 817]]],
   visPlaque(1, -131, -87, 742), visPlaque(2, -127, -87, 722), visPlaque(3, -123, -89, 700), visPlaque(4, -120, -91, 678),
@@ -170,6 +175,8 @@ const vues = {
   // table orthopédique, opérateur en dehors de la cuisse : tête du patient à gauche, face antérieure de la cuisse en haut
   opLat: { de: [-440, -70, 0], haut: [0, -1, 0], cible: [-125, -90, 735] }, opLatProche: { de: [-300, -45, 0], haut: [0, -1, 0], cible: [-125, -90, 735] },
   opHardinge: { de: [-440, -90, 30], haut: [0, -1, 0], cible: [-130, -92, 820] }, opHardingeProche: { de: [-300, -95, 20], haut: [0, -1, 0], cible: [-125, -98, 818] },
+  opWJ: { de: [-340, -260, 40], cible: [-128, -108, 838] }, opWJProche: { de: [-215, -165, 25], cible: [-124, -108, 835] },
+  // hanche en flexion, abduction et rotation latérale (« grenouille ») : face médiale de la racine de la cuisse
   opTroch: { de: [-400, -40, 130], haut: [0, -1, 0], cible: [-135, -78, 850] }, opTrochProche: { de: [-275, -25, 90], haut: [0, -1, 0], cible: [-135, -78, 850] },
   lat: { de: [-520, -60, 40], cible: DIAPHYSE }, latProche: { de: [-400, -90, 20], cible: DIAPHYSE },
   trochanter: { de: [-380, 60, 190], cible: [-120, -80, 835] },
@@ -284,6 +291,28 @@ const mooreKL = () => {
 };
 const FENETRE_KL = { FMA22328: { autour: [[-66, -40, 770], [-82, -56, 880]], rayon: 62 }, 'FMA58776/A': { autour: [[-152, -74, 792], [-128, -30, 866]], rayon: 40 } };
 
+// ----- Watson-Jones : intervalle entre tenseur du fascia lata (en avant) et moyen fessier (en arrière) -----
+const FOND_WJ = [0.85, 0.5, 0];
+const WJ_AVANT = [0.5, -0.85, 0];
+const WJ_ARRIERE = [-0.5, 0.85, 0];
+const INT_WJ = [[-140, -108, 896], [-148, -112, 800]];
+const boutsDe = ligne => [ligne[0], ligne[ligne.length - 1]];
+const peauLames = (peau, fond, versA, versB, e) => deuxBerges(peau, fond,
+  { vers: versA, lame: lame(boutsDe(peau), versA, fond, e, e * 2.4 + 8, { rayon: 30, profondeur: 30 }) },
+  { vers: versB, lame: lame(boutsDe(peau), versB, fond, e, e * 2.4 + 8, { rayon: 30, profondeur: 30 }) });
+const wjPeau = e => peauLames(PEAU_WJ, FOND_WJ, WJ_AVANT, WJ_ARRIERE, e);
+const wjMuscles = e => ({
+  FMA22425: lame(INT_WJ, WJ_AVANT, FOND_WJ, e, e * 2.4 + 14, { rayon: 30, profondeur: 44 }),
+  FMA22330: lame(INT_WJ, WJ_ARRIERE, FOND_WJ, e, e * 2.4 + 14, { rayon: 30, profondeur: 44 }),
+  FMA22332: lame(INT_WJ, WJ_ARRIERE, FOND_WJ, e, e * 2.4 + 14, { rayon: 30, profondeur: 44 }),
+});
+const FASCIA_WJ = { FMA58776: { autour: [[-150, -104, 900], [-160, -114, 850], [-166, -108, 800], [-172, -102, 756]], rayon: 20 } };
+
+// ----- Ganz : ostéotomie digastrique du grand trochanter, basculé en avant avec moyen fessier et vaste latéral -----
+const TROCHANTER_BASCULE = { dep: [2, -36, 4], autour: [[-134, -78, 826], [-141, -85, 776]], rayon: 48 };
+const VOLET_GANZ = { 'FMA24474/A': TROCHANTER_BASCULE, FMA22330: TROCHANTER_BASCULE, FMA22332: TROCHANTER_BASCULE, FMA38930: TROCHANTER_BASCULE };
+const CAPSULE_Z = { capsule: { autour: [[-98, -98, 846], [-112, -90, 800]], rayon: 19 } };
+
 const voies = {
   post: { court: 'Moore', titre: 'Voie postérieure (Moore)', fendre: peauFendue(PEAU_MOORE, [0.75, -0.66, 0], 'postérieure', 'antérieure'), steps: [
     { titre: 'Installation et incision', vue: 'opPost',
@@ -349,6 +378,41 @@ const voies = {
       texte: 'La colonne postérieure est réduite et fixée d’abord, la paroi ensuite. Les fragments de paroi sont replacés sur la tête, tenus par des vis de traction, puis soutenus par une plaque de reconstruction galbée, de l’ischion au toit, légèrement sous-cintrée pour appuyer sur la paroi. Aucune vis ne doit pénétrer l’articulation : contrôle scopique. Réinsertion des pelvi-trochantériens ; prévention des ossifications selon le protocole du service.',
       accent: ['FMA16586'], danger: ['sciatique', 'aglutealsup'], montrer: ['plaque-kl'], masquer: REPERES,
       ecarter: { ...mooreKL(), ...FESSIER_RELEVE, ...Object.fromEntries(ROTATEURS.map(id => [id, RABAT])) }, sectionner: { ...SECTION_ROTATEURS, ...FENETRE_KL } },
+  ] },
+  wj: { court: 'Watson-Jones', titre: 'Voie antéro-latérale de Watson-Jones (et Röttinger)', fendre: peauFendue(PEAU_WJ, FOND_WJ, 'antérieure', 'postérieure'), steps: [
+    { titre: 'Installation et incision', vue: 'opWJ',
+      texte: 'Décubitus dorsal, fesse au bord de la table (ou décubitus latéral dans la variante mini-invasive de Röttinger, jambe opérée libre en arrière). Incision de 12 à 15 cm centrée sur le sommet du grand trochanter : sa partie haute s’incline en avant vers l’épine iliaque antéro-supérieure, sa partie basse suit l’axe du fémur.',
+      montrer: ['incision-wj'], danger: ['nclc'], masquer: REPERES },
+    { titre: 'Fascia lata', vue: 'opWJ',
+      texte: 'Le fascia lata est incisé en arrière du tenseur, sur toute la longueur de l’incision. L’intervalle se cherche à mi-hauteur entre l’épine iliaque antéro-supérieure et le trochanter : en avant le tenseur du fascia lata, en arrière le moyen fessier. Ce n’est pas un plan internerveux — les deux muscles dépendent du nerf glutéal supérieur.',
+      accent: ['FMA22425', 'FMA22330'], danger: ['nglutealsup'], masquer: REPERES, ecarter: wjPeau(14), sectionner: FASCIA_WJ },
+    { titre: 'Intervalle tenseur du fascia lata / moyen fessier', vue: 'opWJProche',
+      texte: 'L’intervalle est ouvert au doigt : le tenseur est récliné en avant, le moyen et le petit fessier en arrière. La branche du nerf glutéal supérieur destinée au tenseur croise l’intervalle 4 à 5 cm au-dessus du trochanter : la dissection ne monte pas plus haut. Des vaisseaux circonflexes latéraux croisent le fond : ils sont coagulés.',
+      accent: ['FMA22425', 'FMA22330', 'FMA22332'], danger: ['nglutealsup', 'circonflexe'], masquer: REPERES, ecarter: { ...wjPeau(16), ...wjMuscles(13) }, sectionner: FASCIA_WJ },
+    { titre: 'Capsule antérieure', vue: 'opWJProche',
+      texte: 'Un écarteur contre-coudé est glissé au-dessus du col, un autre en dessous ; l’origine du vaste latéral est décollée de la crête du vaste, et la portion antérieure du moyen fessier parfois désinsérée du trochanter (ou une ostéotomie du trochanter). La capsule antérieure est exposée puis ouverte en T. La hanche est luxée en avant par rotation latérale et adduction.',
+      accent: ['capsule', 'FMA24474'], danger: ['nglutealsup', 'nfemoral', 'afemorale'], masquer: REPERES,
+      ecarter: { ...wjPeau(18), ...wjMuscles(17) }, sectionner: { ...FASCIA_WJ, ...CAPSULE_ANTERIEURE } },
+  ] },
+  ganz: { court: 'Ganz', titre: 'Trochantérotomie et luxation chirurgicale de Ganz', fendre: [...peauFendue(PEAU_MOORE, [0.75, -0.66, 0], 'postérieure', 'antérieure'), ['FMA24474', [-131, -78, 800], [-0.94, 0, 0.33], 'Fragment trochantérien (ostéotomie)', 'Fémur']], steps: [
+    { titre: 'Installation et incision', vue: 'opPost',
+      texte: 'Décubitus latéral strict, membre libre dans le champ, sac stérile en avant de la table pour recevoir la jambe. Incision latérale de Kocher-Langenbeck ou de Gibson, centrée sur le grand trochanter.',
+      montrer: ['incision-post'], masquer: REPERES },
+    { titre: 'Fascia lata : intervalle de Gibson', vue: 'opPost',
+      texte: 'Le fascia lata est incisé dans l’axe, puis l’incision se poursuit en haut au bord antérieur du grand fessier, entre lui et le moyen fessier (intervalle de Gibson), sans dissocier le grand fessier. Le bord postérieur du moyen fessier, le tendon du piriforme et la crête du vaste latéral sont repérés, membre en rotation médiale.',
+      accent: ['FMA22328', 'FMA22330'], danger: ['sciatique'], masquer: REPERES, ecarter: moore(1.1) },
+    { titre: 'Ostéotomie du grand trochanter', vue: 'opPostProche',
+      texte: 'Le trait part du bord postéro-supérieur du trochanter et sort en bas sur la crête du vaste latéral : le fragment, épais de 1,5 cm, garde en haut le moyen fessier et en bas le vaste latéral (ostéotomie « digastrique »). Le trait reste en dehors de l’insertion du piriforme et des pelvi-trochantériens : l’artère circonflexe médiale, qui monte en arrière du col sous l’obturateur externe et le carré fémoral, n’est pas menacée.',
+      accent: ['FMA24474', 'FMA22330', 'FMA38930'], montrer: ['osteotomie-troch'], danger: ['circonflexe-med', 'sciatique'], masquer: REPERES, ecarter: moore(1.3) },
+    { titre: 'Trochanter basculé en avant', vue: 'trochanter',
+      texte: 'Le fragment est basculé en avant avec le moyen fessier, le petit fessier et le vaste latéral, hanche en flexion et rotation latérale. Les fibres restantes du moyen fessier et le petit fessier sont décollés de la capsule, dans l’intervalle entre petit fessier et piriforme. Les pelvi-trochantériens restent en place, en arrière.',
+      accent: ['FMA24474', 'capsule'], danger: ['circonflexe-med', 'sciatique'], masquer: REPERES, ecarter: { ...moore(1.3), ...VOLET_GANZ } },
+    { titre: 'Capsulotomie en Z et luxation', vue: 'trochanter',
+      texte: 'La capsule est ouverte en Z : branche longitudinale dans l’axe du col, en avant ; branche fémorale antéro-inférieure ; branche acétabulaire le long du rebord, vers l’arrière. La tête est luxée en avant par flexion, rotation latérale et adduction, après section du ligament rond ; la jambe tombe dans le sac stérile. Vue de 360° sur la tête et le cotyle, vascularisation préservée.',
+      accent: ['FMA24474', 'capsule'], danger: ['circonflexe-med'], masquer: REPERES, ecarter: { ...moore(1.3), ...VOLET_GANZ }, sectionner: CAPSULE_Z },
+    { titre: 'Refixation du trochanter', vue: 'trochanter',
+      texte: 'Après fermeture lâche de la capsule, le fragment trochantérien est replacé et fixé par deux ou trois vis de 3,5 mm dirigées vers le petit trochanter. Appui protégé six à huit semaines, sans abduction active.',
+      accent: ['FMA24474'], voiler: ['FMA24474'], montrer: ['vis-troch'], masquer: REPERES, ecarter: moore(1.3) },
   ] },
   hardinge: { court: 'Hardinge', titre: 'Voie latérale transglutéale (Hardinge)', fendre: peauFendue(PEAU_HARDINGE, [1, 0, 0], 'antérieure', 'postérieure'), steps: [
     { titre: 'Installation et incision', vue: 'opHardinge',
