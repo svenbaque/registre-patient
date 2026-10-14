@@ -5,7 +5,7 @@ const VOIES_ABORD = [
     ['Antérieure de Hueter', 'PTH, prothèse intermédiaire', 'hanche:ant'],
     ['Antéro-latérale de Watson-Jones / Röttinger', 'PTH, col fémoral'],
     ['Latérale transglutéale de Hardinge', 'PTH, prothèse intermédiaire', 'hanche:hardinge'],
-    ['Smith-Petersen', 'abord antérieur étendu'],
+    ['Smith-Petersen', 'abord antérieur étendu', 'bassin:sp'],
     ['Trochantérotomie, luxation de Ganz', 'reprises, tête fémorale'],
     ['Médiale de Ludloff', 'hanche de l’enfant']]],
   ['Épaule et clavicule', [
@@ -42,12 +42,12 @@ const VOIES_ABORD = [
     ['Bruner et médio-latérale des doigts', 'fléchisseurs, Dupuytren']]],
   ['Bassin et cotyle', [
     ['Kocher-Langenbeck', 'paroi et colonne postérieures', 'hanche:kl'],
-    ['Ilio-inguinale (Letournel)', 'colonne antérieure'],
+    ['Ilio-inguinale (Letournel)', 'colonne antérieure', 'bassin:ilioinguinale'],
     ['Stoppa modifiée', 'lame quadrilatère', 'bassin:stoppa'],
-    ['Ilio-fémorale (et élargie)', 'aile iliaque, fractures complexes'],
-    ['Pararectus', 'colonne antérieure, lame quadrilatère'],
+    ['Ilio-fémorale (et élargie)', 'aile iliaque, fractures complexes', 'bassin:iliofemorale'],
+    ['Pararectus', 'colonne antérieure, lame quadrilatère', 'bassin:pararectus'],
     ['Pfannenstiel', 'symphyse pubienne', 'bassin:pfannenstiel'],
-    ['Abords de la sacro-iliaque', 'anneau pelvien postérieur']]],
+    ['Abords de la sacro-iliaque', 'anneau pelvien postérieur', 'bassin:si']]],
   ['Fémur', [
     ['Latérale du fémur proximal', 'DHS, vis-plaque', 'hanche:dhs'],
     ['Abord du grand trochanter pour clou', 'clou gamma, clou fémoral', 'hanche:clou'],
