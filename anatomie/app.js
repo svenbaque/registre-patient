@@ -23,7 +23,9 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#0e1622');
+// fond de scène pris dans la feuille de style (clair ou sombre, comme l'appli)
+scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--scene').trim() || '#eef0f3');
+document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#' + scene.background.getHexString());
 // Éclairage d'ambiance : donne les reflets des tissus humides et du métal des écarteurs.
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -775,7 +777,7 @@ function renderCard(step) {
   if (!step) {
     $('#step-count').textContent = 'Exploration libre';
     $('#step-title').textContent = R.nom;
-    $('#step-text').textContent = 'Un doigt pour tourner, deux doigts pour zoomer et déplacer. Touchez une structure pour afficher son nom, touchez-la deux fois pour tourner autour d’elle. ⟲ recentre la vue, ☰ affiche ou masque chaque structure.';
+    $('#step-text').textContent = 'Un doigt pour tourner, deux doigts pour zoomer et déplacer. Touchez une structure pour afficher son nom, touchez-la deux fois pour tourner autour d’elle. Le bouton cible recentre la vue, le bouton liste affiche ou masque chaque structure.';
     $('#chips').innerHTML = '';
     arrows.forEach(b => { b.hidden = true; });
     return;
