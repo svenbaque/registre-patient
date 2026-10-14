@@ -82,10 +82,10 @@ const VOIES_ABORD = [
   ['Pied', [
     ['Latérale étendue du calcanéus', 'fractures du calcanéus', 'pied:etendue'],
     ['Sinus du tarse', 'calcanéus mini-invasif', 'pied:st'],
-    ['Abords du talus', 'col et corps du talus'],
-    ['Dorsales du médio-pied', 'Lisfranc'],
-    ['Médiale du premier rayon', 'hallux valgus'],
-    ['Dorsales des métatarsiens', 'fractures, ostéotomies']]],
+    ['Abords du talus', 'col et corps du talus', 'pied:talus'],
+    ['Dorsales du médio-pied', 'Lisfranc', 'pied:lisfranc'],
+    ['Médiale du premier rayon', 'hallux valgus', 'pied:hallux'],
+    ['Dorsales des métatarsiens', 'fractures, ostéotomies', 'pied:meta']]],
   ['Rachis', [
     ['Postérieure médiane', 'arthrodèses, laminectomies'],
     ['Paramédiane de Wiltse', 'vis pédiculaires'],
