@@ -61,4 +61,10 @@ export default [
   ['internal-iliac-vein', "Veine iliaque interne", 'vaisseaux', '#2f4f9e', { id: 'viliaque-int', dossier: 'models-z/corps' }],
   ['inferior-epigastric-vein', "Veine épigastrique inférieure", 'vaisseaux', '#2f4f9e', { id: 'vepigastrique', dossier: 'models-z/corps' }],
   ['femoral-vein', "Veine fémorale", 'vaisseaux', '#2f4f9e', { id: 'vfemorale', dossier: 'models-z/corps' }],
+  ['gracilis-muscle', "Gracile", 'cuisse', '#a8444f', { id: 'gracile', dossier: 'models-z/corps' }],
+  ['adductor-brevis', "Court adducteur", 'cuisse', '#b84a5e', { id: 'court-adducteur', dossier: 'models-z/corps' }],
+  ['adductor-magnus', "Grand adducteur", 'cuisse', '#9c4048', { id: 'grand-adducteur', dossier: 'models-z/corps' }],
+  ['medial-circumflex-femoral-artery', "Artère circonflexe médiale", 'vaisseaux', '#c8102e', { id: 'acirconflexe-med', dossier: 'models-z/corps' }],
+  ['anterior-branch-of-obturator-nerve', "Nerf obturateur — branche antérieure", 'nerfs', '#f3d98b', { id: 'nobturateur-ant', dossier: 'models-z/corps' }],
+  ['posterior-branch-of-obturator-nerve', "Nerf obturateur — branche postérieure", 'nerfs', '#f3d98b', { id: 'nobturateur-post', dossier: 'models-z/corps' }],
 ];
