@@ -14,6 +14,7 @@ const prefs = {
       if (['auto', 'light', 'dark'].includes(saved.theme)) this.data.theme = saved.theme;
       if (ACCENTS.some(([, color]) => color === saved.accent)) this.data.accent = saved.accent;
       if ([0, 5, 10, 20].includes(saved.rappel)) this.data.rappel = saved.rappel;
+      if (typeof saved.motDePasse === 'string') this.data.motDePasse = saved.motDePasse;
     } catch (e) { /* préférences illisibles : valeurs par défaut */ }
     this.apply();
   },
@@ -44,6 +45,7 @@ const store = {
   },
   save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+    versions.schedule();
   },
 };
 
@@ -59,7 +61,12 @@ const backup = {
   set state(value) { localStorage.setItem(BACKUP_KEY, JSON.stringify(value)); },
   patientAdded() { const s = this.state; this.state = { ...s, ajouts: s.ajouts + 1 }; },
   done() { this.state = { ajouts: 0, date: new Date().toISOString() }; },
-  get due() { return prefs.data.rappel > 0 && this.state.ajouts >= prefs.data.rappel; },
+  // rappel tous les n patients, ou dès qu'une semaine passe avec des patients non sauvegardés
+  get due() {
+    const { ajouts, date } = this.state;
+    if (prefs.data.rappel <= 0 || ajouts <= 0) return false;
+    return ajouts >= prefs.data.rappel || (!!date && Date.now() - new Date(date) > 7 * 864e5);
+  },
 };
 let backupSnoozed = false;
 
@@ -69,18 +76,20 @@ const radios = {
   db: null,
   open() {
     if (!this.db) this.db = new Promise((resolve, reject) => {
-      const req = indexedDB.open('registre-operatoire', 1);
-      req.onupgradeneeded = () => req.result.createObjectStore('radios');
+      const req = indexedDB.open('registre-operatoire', 2);
+      req.onupgradeneeded = () => {
+        for (const name of ['radios', 'versions']) if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
+      };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
     return this.db;
   },
-  async run(mode, fn) {
+  async run(mode, fn, name = 'radios') {
     const db = await this.open();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction('radios', mode);
-      const req = fn(tx.objectStore('radios'));
+      const tx = db.transaction(name, mode);
+      const req = fn(tx.objectStore(name));
       tx.oncomplete = () => resolve(req.result);
       tx.onerror = tx.onabort = () => reject(tx.error);
     });
@@ -90,6 +99,42 @@ const radios = {
   remove(id) { return this.run('readwrite', s => s.delete(id)).catch(() => {}); },
   clear() { return this.run('readwrite', s => s.clear()); },
 };
+
+// Versions automatiques : une copie des données par jour (la dernière de la journée), les 14 derniers jours gardés,
+// sur l'appareil seulement. Protège d'une suppression par erreur ; ne remplace pas la sauvegarde dans iCloud.
+const VERSIONS_MAX = 14;
+const versions = {
+  timer: null,
+  schedule() { clearTimeout(this.timer); this.timer = setTimeout(() => this.add().catch(() => {}), 1500); },
+  async add() {
+    const date = new Date();
+    await radios.run('readwrite', s => s.put({ date: date.toISOString(), patients: store.data.patients.length, data: JSON.stringify(store.data) }, today()), 'versions');
+    const keys = (await this.keys()).sort().reverse();
+    for (const old of keys.slice(VERSIONS_MAX)) await radios.run('readwrite', s => s.delete(old), 'versions');
+  },
+  keys() { return radios.run('readonly', s => s.getAllKeys(), 'versions'); },
+  get(key) { return radios.run('readonly', s => s.get(key), 'versions'); },
+};
+
+// Chiffrement des sauvegardes (AES-GCM 256 bits, clé tirée du mot de passe par PBKDF2) : un fichier .registre illisible sans le mot de passe.
+const MAGIC = 'RGOP1';
+async function cryptoKey(password, salt) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function encrypt(text, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await cryptoKey(password, salt), new TextEncoder().encode(text));
+  return new Blob([new TextEncoder().encode(MAGIC), salt, iv, new Uint8Array(data)]);
+}
+async function decrypt(buffer, password) {
+  const bytes = new Uint8Array(buffer);
+  const salt = bytes.slice(5, 21), iv = bytes.slice(21, 33);
+  const data = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, await cryptoKey(password, salt), bytes.slice(33));
+  return new TextDecoder().decode(data);
+}
+const isEncrypted = buffer => new TextDecoder().decode(new Uint8Array(buffer).slice(0, 5)) === MAGIC;
 
 // Réduit la photo (les photos d'iPhone font plusieurs Mo) et la convertit en JPEG.
 async function shrinkImage(file) {
@@ -1279,7 +1324,7 @@ function openSettings() {
   const row = (id, icon, color, name, value = '') => `
     <button type="button" class="set-row" id="${id}"><span class="set-ico" style="background:${color}">${icon}</span><span class="set-name">${name}</span><span class="set-value">${value}</span><span class="set-chev">›</span></button>`;
   const fileRow = (id, icon, color, name) => `
-    <label class="set-row"><span class="set-ico" style="background:${color}">${icon}</span><span class="set-name">${name}</span><span class="set-chev">›</span><input type="file" id="${id}" accept="application/json,.json" hidden></label>`;
+    <label class="set-row"><span class="set-ico" style="background:${color}">${icon}</span><span class="set-name">${name}</span><span class="set-chev">›</span><input type="file" id="${id}"${id === 'import' ? '' : ' accept="application/json,.json"'} hidden></label>`;
   const info = (icon, color, name, value) => `
     <div class="set-row static"><span class="set-ico" style="background:${color}">${icon}</span><span class="set-name">${name}</span><span class="set-value">${value}</span></div>`;
 
@@ -1306,14 +1351,16 @@ function openSettings() {
     <div class="set-title">Sauvegarde</div>
     <div class="set-group">
       ${row('export', '💾', '#2fa56a', 'Sauvegarder mes données', lastBackup)}
+      ${row('chiffrement', '🔒', '#5f6f82', 'Chiffrement', prefs.data.motDePasse ? 'activé' : 'désactivé')}
       ${fileRow('import', '↩︎', '#ef8a24', 'Restaurer une sauvegarde')}
+      ${row('versions', '🕘', '#12a5a5', 'Versions automatiques')}
       <div class="set-row static"><span class="set-ico" style="background:#e5484d">🔔</span><span class="set-name">Rappel de sauvegarde</span>
         <select id="rappel" aria-label="Rappel de sauvegarde">${[[5, 'Tous les 5 patients'], [10, 'Tous les 10 patients'], [20, 'Tous les 20 patients'], [0, 'Jamais']].map(([value, label]) => `
           <option value="${value}"${prefs.data.rappel === value ? ' selected' : ''}>${label}</option>`).join('')}
         </select><span class="set-chev">›</span>
       </div>
     </div>
-    <p class="set-note">Patients, radios, fiches et images sont enregistrés <b>uniquement sur cet appareil</b>. Pour sauvegarder, choisissez « Enregistrer dans Fichiers » puis iCloud Drive. Supprimer l’appli efface ses données.</p>
+    <p class="set-note">Patients, radios, fiches et images sont enregistrés <b>uniquement sur cet appareil</b>. Une version est gardée automatiquement chaque jour (14 jours), mais elle disparaît avec l’appli : pour une vraie sauvegarde, choisissez « Enregistrer dans Fichiers » puis iCloud Drive. Avec le chiffrement, le fichier est illisible sans votre mot de passe.</p>
 
     <div class="set-title">Fiches</div>
     <div class="set-group">
@@ -1355,6 +1402,8 @@ function openSettings() {
   $('#cancel').addEventListener('click', closeSheet);
   $('#export').addEventListener('click', exportData);
   $('#import').addEventListener('change', importData);
+  $('#chiffrement').addEventListener('click', openChiffrement);
+  $('#versions').addEventListener('click', openVersions);
   $('#import-fiches').addEventListener('change', importFiches);
   $('#share-app').addEventListener('click', shareApp);
   $('#show-tuto').addEventListener('click', () => { closeSheet(); showTutorial(); });
@@ -1409,7 +1458,9 @@ async function exportData() {
     if (blob) images[rid] = await toDataUrl(blob);
   }
   const json = JSON.stringify({ version: 1, date: new Date().toISOString(), ...store.data, radios: images });
-  const file = new File([json], name, { type: 'application/json' });
+  const file = prefs.data.motDePasse
+    ? new File([await encrypt(json, prefs.data.motDePasse)], name.replace(/\.json$/, '.registre'), { type: 'application/octet-stream' })
+    : new File([json], name, { type: 'application/json' });
   if (navigator.canShare?.({ files: [file] })) {
     // Partage annulé : la sauvegarde n'est pas faite, le rappel reste affiché.
     try { await navigator.share({ files: [file] }); backupDone(); return; } catch (e) {
@@ -1442,11 +1493,59 @@ function backupDone() {
   render();
 }
 
+// Mot de passe des sauvegardes : gardé sur cet appareil pour chiffrer chaque sauvegarde sans le redemander.
+function openChiffrement() {
+  openSheet(`
+    <h2>Chiffrement</h2>
+    <p class="hint">Les sauvegardes seront chiffrées (AES-256). <b>Sans ce mot de passe, elles ne pourront pas être restaurées</b> : notez-le en lieu sûr.</p>
+    <label>Mot de passe<input type="password" id="mdp1" autocomplete="new-password"></label>
+    <label>Confirmer<input type="password" id="mdp2" autocomplete="new-password"></label>
+    <div class="actions">${prefs.data.motDePasse ? '<button class="btn danger" id="mdp-off">Désactiver</button>' : ''}<button class="btn ghost" id="cancel">Annuler</button><button class="btn primary" id="mdp-ok">Enregistrer</button></div>`);
+  $('#cancel').addEventListener('click', openSettings);
+  $('#mdp-off')?.addEventListener('click', () => { const p = { ...prefs.data }; delete p.motDePasse; prefs.data = p; prefs.set({}); toast('Chiffrement désactivé'); openSettings(); });
+  $('#mdp-ok').addEventListener('click', () => {
+    const a = $('#mdp1').value, b = $('#mdp2').value;
+    if (a.length < 6) { alert('Choisissez au moins 6 caractères.'); return; }
+    if (a !== b) { alert('Les deux mots de passe sont différents.'); return; }
+    prefs.set({ motDePasse: a }); toast('Sauvegardes chiffrées'); openSettings();
+  });
+}
+
+// Versions automatiques : liste des 14 derniers jours, restauration en un toucher.
+async function openVersions() {
+  let liste = [];
+  try { liste = (await Promise.all((await versions.keys()).sort().reverse().map(async k => [k, await versions.get(k)]))).filter(([, v]) => v); } catch (e) { /* stockage indisponible */ }
+  const quand = iso => new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  openSheet(`
+    <h2>Versions automatiques</h2>
+    <p class="hint">Une copie par jour, gardée 14 jours sur cet appareil. Restaurer remplace les données actuelles (les radios supprimées entre-temps ne reviennent pas).</p>
+    ${liste.length ? `<div class="set-group">${liste.map(([k, v]) => `
+      <button type="button" class="set-row" data-version="${esc(k)}"><span class="set-name">${esc(quand(v.date))}</span><span class="set-value">${plural(v.patients, 'patient')}</span><span class="set-chev">›</span></button>`).join('')}</div>`
+      : '<p class="empty small">Aucune version pour l’instant : la première sera créée à la prochaine modification.</p>'}
+    <button class="btn ghost set-close" id="cancel">Retour</button>`);
+  $('#cancel').addEventListener('click', openSettings);
+  sheetBody.querySelectorAll('[data-version]').forEach(b => b.addEventListener('click', async () => {
+    const v = await versions.get(b.dataset.version);
+    if (!v || !confirm(`Revenir à la version du ${quand(v.date)} (${plural(v.patients, 'patient')}) ? Les données actuelles seront remplacées.`)) return;
+    const saved = JSON.parse(v.data);
+    store.data = { ...store.data, ...saved };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store.data));
+    closeSheet(); render(); toast('Version restaurée');
+  }));
+}
+
 async function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
   try {
-    const saved = JSON.parse(await file.text());
+    const buffer = await file.arrayBuffer();
+    let text;
+    if (isEncrypted(buffer)) {
+      const password = prompt('Mot de passe de la sauvegarde :', '');
+      if (password == null) return;
+      try { text = await decrypt(buffer, password); } catch (err) { alert('Mot de passe incorrect.'); return; }
+    } else text = new TextDecoder().decode(buffer);
+    const saved = JSON.parse(text);
     if (!Array.isArray(saved.patients)) throw new Error('format');
     if (!confirm(`Remplacer les données actuelles (${plural(store.data.patients.length, 'patient')}) par la sauvegarde (${plural(saved.patients.length, 'patient')}) ?`)) return;
     store.data = { patients: saved.patients, fiches: saved.fiches || [], astuces: saved.astuces || {}, ficheImages: saved.ficheImages || {}, ficheEdits: saved.ficheEdits || {}, autoFiches: !!saved.autoFiches };
