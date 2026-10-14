@@ -38,8 +38,8 @@ const VOIES_ABORD = [
     ['Antérieure du scaphoïde', 'vissage, greffe'],
     ['Dorsale du scaphoïde', 'pôle proximal'],
     ['Abord du canal carpien', 'nerf médian', 'poignet:cc'],
-    ['Abords des métacarpiens et phalanges', 'ostéosynthèses de la main'],
-    ['Bruner et médio-latérale des doigts', 'fléchisseurs, Dupuytren']]],
+    ['Abords des métacarpiens et phalanges', 'ostéosynthèses de la main', 'main:mc'],
+    ['Bruner et médio-latérale des doigts', 'fléchisseurs, Dupuytren', 'main:bruner']]],
   ['Bassin et cotyle', [
     ['Kocher-Langenbeck', 'paroi et colonne postérieures', 'hanche:kl'],
     ['Ilio-inguinale (Letournel)', 'colonne antérieure', 'bassin:ilioinguinale'],
