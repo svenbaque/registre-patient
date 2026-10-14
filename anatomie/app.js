@@ -22,6 +22,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDraw
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
+renderer.localClippingEnabled = true;
 const scene = new THREE.Scene();
 // fond de scène pris dans la feuille de style (clair ou sombre, comme l'appli)
 scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--scene').trim() || '#eef0f3');
@@ -69,7 +70,16 @@ function keepSpinning(ms) {
 }
 makeControls([0, 0, 1]);
 
-function render() { renderer.render(scene, camera); }
+// Mode coupe : un plan perpendiculaire au regard, qui suit la caméra ; tout ce qui est entre l'œil et le plan est retiré.
+// La profondeur se règle par rapport au point visé (négatif : plus près de l'observateur, positif : plus loin).
+const coupe = { on: false, profondeur: 0, plan: new THREE.Plane() };
+const viewDir = new THREE.Vector3();
+function placeCoupe() {
+  if (!coupe.on || !controls) return;
+  viewDir.subVectors(controls.target, camera.position).normalize();
+  coupe.plan.setFromNormalAndCoplanarPoint(viewDir, controls.target.clone().addScaledVector(viewDir, coupe.profondeur));
+}
+function render() { placeCoupe(); renderer.render(scene, camera); }
 function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
   camera.aspect = innerWidth / innerHeight;
@@ -777,7 +787,7 @@ function renderCard(step) {
   if (!step) {
     $('#step-count').textContent = 'Exploration libre';
     $('#step-title').textContent = R.nom;
-    $('#step-text').textContent = 'Un doigt pour tourner, deux doigts pour zoomer et déplacer. Touchez une structure pour afficher son nom, touchez-la deux fois pour tourner autour d’elle. Le bouton cible recentre la vue, le bouton liste affiche ou masque chaque structure.';
+    $('#step-text').textContent = 'Un doigt pour tourner, deux doigts pour zoomer et déplacer. Touchez une structure pour afficher son nom, touchez-la deux fois pour tourner autour d’elle. Le bouton cible recentre la vue, le bouton liste affiche ou masque chaque structure, le bouton coupe tranche le modèle perpendiculairement au regard (réglette pour la profondeur).';
     $('#chips').innerHTML = '';
     arrows.forEach(b => { b.hidden = true; });
     return;
@@ -935,4 +945,15 @@ start().catch(error => {
 });
 
 // Accès depuis la console pour la mise au point.
-window.hanche3d = { parts, scene, camera, get controls() { return controls; }, render, setMode, setStep, flyTo, applyState, R };
+// Bouton et réglette du mode coupe.
+function paintCoupe() {
+  $('#coupe').classList.toggle('on', coupe.on);
+  $('#coupe-panel').hidden = !coupe.on;
+  document.body.classList.toggle('coupe-on', coupe.on);
+  renderer.clippingPlanes = coupe.on ? [coupe.plan] : [];
+  render();
+}
+$('#coupe').addEventListener('click', () => { coupe.on = !coupe.on; paintCoupe(); });
+$('#coupe-range').addEventListener('input', e => { coupe.profondeur = Number(e.target.value); render(); });
+
+window.hanche3d = { coupe, parts, scene, camera, get controls() { return controls; }, render, setMode, setStep, flyTo, applyState, R };
