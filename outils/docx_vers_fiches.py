@@ -2,7 +2,7 @@
 """Convertit les fiches Word (.docx) en un fichier privé de fiches à importer dans l'appli.
 
 Usage : python3 outils/docx_vers_fiches.py "/chemin/du/dossier des fiches" [fichier de sortie .json]
-Par défaut : ~/Documents/RegistrePatient-prive/mes-fiches.json (hors du dépôt, jamais publié).
+Par défaut : ~/Documents/RegistreBlocOperatoire-prive/mes-fiches.json (hors du dépôt, jamais publié).
 Les images des documents ne sont pas reprises (le site est public) : un repère est laissé à leur place,
 elles s'ajoutent dans l'appli (« Mes images »), où elles restent sur le téléphone.
 """
@@ -135,7 +135,7 @@ def main():
     for fiche in fiches:
         for n, sec in enumerate(fiche['sections'], 1):
             sec['id'] = f's{n}'
-    target = Path(sys.argv[2]) if len(sys.argv) > 2 else Path.home() / 'Documents' / 'RegistrePatient-prive' / 'mes-fiches.json'
+    target = Path(sys.argv[2]) if len(sys.argv) > 2 else Path.home() / 'Documents' / 'RegistreBlocOperatoire-prive' / 'mes-fiches.json'
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({'type': 'fiches-registre-operatoire', 'fiches': fiches}, ensure_ascii=False, indent=1), encoding='utf-8')
     print(f'{len(fiches)} fiches écrites dans {target}')
