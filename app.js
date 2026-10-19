@@ -586,7 +586,10 @@ function openPatientForm(id) {
       date: f.get('date') || today(), note, commentaire: ops[0].commentaire, autres: ops.slice(1), radios: radioIds,
     };
     [...(p.radios || []), ...addedIds].filter(rid => !radioIds.includes(rid)).forEach(rid => radios.remove(rid));
-    const created = ops.map(o => ficheForNewOperation(o.operation, existing?.id)).filter(Boolean);
+    // Nom d'une opération modifié : la fiche correspondante est renommée, pas recréée.
+    const renamed = existing ? renameOperations(existing, ops) : new Set();
+    const created = ops.filter(o => !renamed.has(key(o.operation))).map(o => ficheForNewOperation(o.operation, existing?.id)).filter(Boolean);
+    if (renamed.renamed?.length) toast(`Fiche renommée : ${renamed.renamed.map(n => `« ${n} »`).join(', ')}`);
     if (created.length) toast(`${created.length > 1 ? 'Fiches' : 'Fiche'} ${created.map(c => `« ${c.titre} »`).join(', ')} ${created.length > 1 ? 'créées' : 'créée'} dans l’onglet Fiches`);
     if (existing) Object.assign(existing, values);
     else {
@@ -961,6 +964,41 @@ function ficheForNewOperation(operation, patientId) {
   if (store.data.patients.some(p => p.id !== patientId && opsOf(p).some(o => key(o.operation) === k))) return null;
   if (allFiches().some(f => key(f.titre) === k)) return null;
   return createBlankFiche(operation.trim());
+}
+
+// Renomme une fiche (personnelle ou intégrée).
+function renameFiche(f, titre) {
+  if (f.integree) ((store.data.ficheEdits ||= {})[f.id] ||= {}).titre = titre;
+  else { const own = store.data.fiches.find(x => x.id === f.id); if (own) own.titre = titre; }
+}
+
+// À la modification d'un patient : chaque opération dont le nom change (même position dans la liste) entraîne sa fiche.
+// Si d'autres patients portent encore l'ancien nom, on propose de les renommer aussi (sinon la fiche garde l'ancien nom).
+// Renvoie les nouveaux noms (clés) déjà pris en charge, pour ne pas créer de fiche vierge en double.
+function renameOperations(patient, ops) {
+  const done = new Set();
+  done.renamed = [];
+  opsOf(patient).forEach((old, i) => {
+    const neu = ops[i];
+    if (!neu) return;
+    const kOld = key(old.operation), kNew = key(neu.operation);
+    if (!kOld || !kNew || kOld === kNew) return;
+    const fiche = allFiches().find(f => key(f.titre) === kOld);
+    if (!fiche) return;
+    if (allFiches().some(f => key(f.titre) === kNew)) { done.add(kNew); return; } // une fiche porte déjà le nouveau nom : on s'y rattache
+    const autres = store.data.patients.filter(p => p.id !== patient.id && opsOf(p).some(o => key(o.operation) === kOld));
+    if (autres.length) {
+      if (!confirm(`${plural(autres.length, 'autre patient')} ${autres.length > 1 ? 'ont' : 'a'} aussi « ${old.operation} ». Renommer l’opération chez eux et la fiche en « ${neu.operation} » ?`)) return;
+      for (const p of autres) {
+        if (key(p.operation) === kOld) p.operation = neu.operation;
+        for (const o of p.autres || []) if (key(o.operation) === kOld) o.operation = neu.operation;
+      }
+    }
+    renameFiche(fiche, neu.operation);
+    done.add(kNew);
+    done.renamed.push(neu.operation);
+  });
+  return done;
 }
 
 // Une seule fois : fiches vierges pour les opérations déjà saisies avant l'arrivée de cette fonction.
