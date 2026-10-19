@@ -585,3 +585,12 @@ details.classif dl { padding: 0 16px 6px; }
   border: 1px solid var(--line); border-style: solid; background: var(--card); color: var(--brand-fill); border-radius: 12px; font-weight: 600;
 }
 .sheet .segmented span { border-radius: 10px; }
+/* Fiches en double */
+.dup-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin: 0 0 12px; padding: 12px 16px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: var(--radius); background: var(--brand-soft); color: var(--text); text-align: left; }
+.dup-banner b { display: block; font-size: 15px; font-weight: 600; }
+.dup-banner small { display: block; color: var(--brand); font-size: 13px; margin-top: 2px; }
+.dup-group { margin-bottom: 14px; }
+.dup-group .set-name b { display: block; font-weight: 600; }
+.dup-group .set-name small, .set-row .set-name small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.dup-group input[type=radio] { -webkit-appearance: radio; appearance: auto; display: inline-block; flex-shrink: 0; accent-color: var(--accent); width: 20px; height: 20px; margin: 0; padding: 0; border: 0; background: none; }
+.dup-group .btn { display: block; width: calc(100% - 24px); margin: 10px 12px 12px; }

@@ -779,7 +779,9 @@ function renderFiches() {
   const fiches = allFiches();
   const ops = operationsStats(store.data.patients.filter(p => !isAide(p)));
   const opsAide = operationsStats(store.data.patients.filter(isAide));
+  const doublons = similarGroups();
   view.innerHTML = `
+    ${doublons.length ? `<button type="button" class="dup-banner" id="dup-check"><span><b>${plural(doublons.reduce((n, g) => n + g.length, 0), 'fiche')} en double probable</b><small>Vérifier et fusionner</small></span><span class="chevron">›</span></button>` : ''}
     <ul class="list">${fiches.length ? fiches.map(f => {
       const done = ops.find(o => key(o.label) === key(f.titre))?.count || 0;
       const helped = opsAide.find(o => key(o.label) === key(f.titre))?.count || 0;
@@ -821,6 +823,128 @@ function renderFiches() {
     });
   });
   $('#add-fiche').addEventListener('click', () => openFicheForm());
+  $('#dup-check')?.addEventListener('click', openDoublons);
+}
+
+/* ---------- Fusion de fiches en double ---------- */
+
+// Titre réduit à l'essentiel : sans accents, ponctuation ni petits mots.
+const titreSimple = s => key(s).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w && !['de', 'du', 'des', 'la', 'le', 'les', 'l', 'd', 'et', 'en', 'a', 'au', 'par', 'sur'].includes(w)).join(' ');
+function distance(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function ressemble(t1, t2) {
+  const a = titreSimple(t1), b = titreSimple(t2);
+  if (!a || !b) return false;
+  if (a === b || a.replace(/ /g, '') === b.replace(/ /g, '')) return true;
+  const court = a.length < b.length ? a : b, long = a.length < b.length ? b : a;
+  if (court.length >= 4 && (` ${long} `).includes(` ${court} `)) return true;
+  return 1 - distance(a, b) / Math.max(a.length, b.length) >= 0.8;
+}
+// Groupes de fiches personnelles qui se ressemblent (au moins deux par groupe).
+function similarGroups() {
+  const fiches = store.data.fiches;
+  const groupe = fiches.map((_, i) => i);
+  const racine = i => (groupe[i] === i ? i : (groupe[i] = racine(groupe[i])));
+  for (let i = 0; i < fiches.length; i++) for (let j = i + 1; j < fiches.length; j++) if (ressemble(fiches[i].titre, fiches[j].titre)) groupe[racine(j)] = racine(i);
+  const parRacine = {};
+  fiches.forEach((f, i) => (parRacine[racine(i)] ||= []).push(f));
+  return Object.values(parRacine).filter(g => g.length > 1);
+}
+// Contenu d'une fiche : rubriques remplies, images, patients qui la portent (pour proposer la fiche à garder).
+function poidsFiche(f) {
+  const rubriques = (f.sections || []).filter(s => sectionHtml(s).replace(/<[^>]*>/g, '').trim()).length;
+  const images = ficheImages(f.id).length + (f.sections || []).reduce((n, s) => n + ficheImages(`${f.id}/${s.id}`).length, 0);
+  const patients = store.data.patients.filter(p => opsOf(p).some(o => key(o.operation) === key(f.titre))).length;
+  return { rubriques, images, patients, total: rubriques * 3 + images * 2 + patients };
+}
+const deplaceImages = (de, vers) => {
+  const liste = ficheImages(de);
+  if (!liste.length) return;
+  (store.data.ficheImages ||= {})[vers] = [...ficheImages(vers), ...liste];
+  delete store.data.ficheImages[de];
+};
+// Fusionne les fiches « sources » dans « cible » : rubriques complétées (ou ajoutées), images, astuces,
+// et les patients opérés sous l'ancien nom passent au nom de la fiche gardée.
+function mergeFiches(cible, sources) {
+  for (const src of sources) {
+    for (const s of src.sections || []) {
+      const html = sectionHtml(s);
+      const vide = !html.replace(/<[^>]*>/g, '').trim();
+      const t = (cible.sections ||= []).find(x => key(x.titre) === key(s.titre));
+      if (t) {
+        const actuel = sectionHtml(t);
+        if (!vide) {
+          if (!actuel.replace(/<[^>]*>/g, '').trim()) t.html = html;
+          else if (actuel !== html) t.html = `${actuel}<p><i>— Ajouté depuis « ${esc(src.titre)} » :</i></p>${html}`;
+          delete t.texte;
+        }
+        deplaceImages(`${src.id}/${s.id}`, `${cible.id}/${t.id}`);
+      } else if (!vide || ficheImages(`${src.id}/${s.id}`).length) {
+        cible.sections.push({ id: s.id, titre: s.titre, html });
+        deplaceImages(`${src.id}/${s.id}`, `${cible.id}/${s.id}`);
+      }
+    }
+    if (!cible.entete && src.entete) cible.entete = src.entete;
+    deplaceImages(src.id, cible.id);
+    const a = store.data.astuces[cible.id], b = store.data.astuces[src.id];
+    if (b) store.data.astuces[cible.id] = typeof a === 'string' && typeof b === 'string' ? `${a}\n\n${b}` : (a || b);
+    delete store.data.astuces[src.id];
+    for (const p of store.data.patients) {
+      if (key(p.operation) === key(src.titre)) p.operation = cible.titre;
+      for (const o of p.autres || []) if (key(o.operation) === key(src.titre)) o.operation = cible.titre;
+    }
+    store.data.fiches = store.data.fiches.filter(x => x.id !== src.id);
+  }
+  store.save();
+}
+const resumeFiche = f => { const w = poidsFiche(f); const s = w.rubriques > 1 ? 's' : ''; return [`${w.rubriques} rubrique${s} remplie${s}`, w.images ? plural(w.images, 'image') : '', w.patients ? plural(w.patients, 'patient') : ''].filter(Boolean).join(' · '); };
+
+// Fenêtre des doublons : pour chaque groupe, on choisit la fiche à garder (celle qui a le plus de contenu est proposée).
+function openDoublons() {
+  const groupes = similarGroups();
+  if (!groupes.length) { closeSheet(); render(); return; }
+  openSheet(`
+    <h2>Fiches en double</h2>
+    <p class="hint">Choisissez la fiche à garder : le contenu des autres y est ajouté (rubriques, images, astuces) et leurs patients passent sous son nom.</p>
+    ${groupes.map((g, i) => {
+      const garde = g.reduce((m, f) => (poidsFiche(f).total > poidsFiche(m).total ? f : m), g[0]);
+      return `<div class="set-group dup-group" data-groupe="${i}">${g.map(f => `
+        <label class="set-row"><input type="radio" name="garde-${i}" value="${esc(f.id)}"${f === garde ? ' checked' : ''}><span class="set-name"><b>${esc(f.titre)}</b><small>${esc(resumeFiche(f))}</small></span></label>`).join('')}
+        <button type="button" class="btn primary dup-merge" data-groupe="${i}">Fusionner ces ${g.length} fiches</button>
+      </div>`;
+    }).join('')}
+    <button class="btn ghost set-close" id="cancel">Fermer</button>`);
+  $('#cancel').addEventListener('click', () => { closeSheet(); render(); });
+  sheetBody.querySelectorAll('.dup-merge').forEach(b => b.addEventListener('click', () => {
+    const g = groupes[Number(b.dataset.groupe)];
+    const id = sheetBody.querySelector(`input[name="garde-${b.dataset.groupe}"]:checked`).value;
+    const cible = g.find(f => f.id === id);
+    mergeFiches(cible, g.filter(f => f !== cible));
+    toast(`Fusionnées dans « ${cible.titre} »`);
+    openDoublons();
+  }));
+}
+
+// Fusion manuelle depuis une fiche : on choisit l'autre fiche, dont le contenu rejoint celle-ci.
+function openMergeWith(cible) {
+  const autres = store.data.fiches.filter(f => f.id !== cible.id).sort((a, b) => Number(ressemble(b.titre, cible.titre)) - Number(ressemble(a.titre, cible.titre)) || a.titre.localeCompare(b.titre, 'fr'));
+  openSheet(`
+    <h2>Fusionner avec…</h2>
+    <p class="hint">La fiche choisie est ajoutée à « ${esc(cible.titre)} », puis supprimée ; ses patients passent sous ce nom.</p>
+    <div class="set-group">${autres.map(f => `
+      <button type="button" class="set-row" data-src="${esc(f.id)}"><span class="set-name"><b>${esc(f.titre)}</b><small>${esc(resumeFiche(f))}</small></span><span class="set-chev">›</span></button>`).join('') || '<p class="empty small">Aucune autre fiche.</p>'}</div>
+    <button class="btn ghost set-close" id="cancel">Annuler</button>`);
+  $('#cancel').addEventListener('click', closeSheet);
+  sheetBody.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => {
+    const src = store.data.fiches.find(f => f.id === b.dataset.src);
+    if (!confirm(`Ajouter « ${src.titre} » à « ${cible.titre} » puis supprimer « ${src.titre} » ?`)) return;
+    mergeFiches(cible, [src]);
+    closeSheet(); render(); toast('Fiches fusionnées');
+  }));
 }
 
 // Retire une fiche personnelle avec tout ce qui lui est rattaché (astuces, images de la fiche et de ses rubriques).
@@ -1122,6 +1246,7 @@ function renderFiche() {
       <button class="btn ghost" id="add-section">+ Ajouter une rubrique</button>
       ${hidden.length ? `<button class="btn ghost" id="restore-sections">Rétablir ${hidden.length > 1 ? `les ${hidden.length} rubriques supprimées` : 'la rubrique supprimée'}</button>` : ''}
       <button class="btn ghost" id="edit-fiche">${f.integree ? 'Renommer la fiche' : 'Renommer ou supprimer la fiche'}</button>
+      ${f.integree ? '' : '<button class="btn ghost" id="merge-fiche">Fusionner avec une autre fiche</button>'}
     </div>`;
   view.querySelectorAll('.section').forEach(d => d.addEventListener('toggle', () => {
     openSections[d.open ? 'add' : 'delete'](`${f.id}/${d.dataset.id}`);
@@ -1176,6 +1301,7 @@ function renderFiche() {
   });
   $('#back').addEventListener('click', () => { openFicheId = null; render(); });
   $('#edit-fiche').addEventListener('click', () => (f.integree ? openRenameForm(f) : openFicheForm(f.id)));
+  $('#merge-fiche')?.addEventListener('click', () => openMergeWith(store.data.fiches.find(x => x.id === f.id)));
   mountImageBlocks();
 }
 
