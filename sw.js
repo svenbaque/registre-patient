@@ -1,6 +1,6 @@
 // Service worker : garde l'appli disponible hors connexion (au bloc, sans réseau).
 // Réseau d'abord pour récupérer les mises à jour, copie enregistrée sinon.
-const CACHE = 'registre-shell-v6';
+const CACHE = 'registre-shell-v7';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'fiches.js', 'voies.js', 'classifications.js', 'img/squelette.webp', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', event => {

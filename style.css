@@ -594,3 +594,6 @@ details.classif dl { padding: 0 16px 6px; }
 .dup-group .set-name small, .set-row .set-name small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
 .dup-group input[type=radio] { -webkit-appearance: radio; appearance: auto; display: inline-block; flex-shrink: 0; accent-color: var(--accent); width: 20px; height: 20px; margin: 0; padding: 0; border: 0; background: none; }
 .dup-group .btn { display: block; width: calc(100% - 24px); margin: 10px 12px 12px; }
+.dup-row { gap: 12px; cursor: default; }
+.dup-group input[type=checkbox] { -webkit-appearance: checkbox; appearance: auto; display: inline-block; flex-shrink: 0; accent-color: var(--accent); width: 20px; height: 20px; margin: 0; padding: 0; border: 0; background: none; }
+.dup-garde { display: flex !important; align-items: center; gap: 6px; margin: 0 !important; font-size: 13px !important; font-weight: 500 !important; color: var(--muted) !important; flex-shrink: 0; }

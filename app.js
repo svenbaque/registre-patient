@@ -828,21 +828,36 @@ function renderFiches() {
 
 /* ---------- Fusion de fiches en double ---------- */
 
-// Titre réduit à l'essentiel : sans accents, ponctuation ni petits mots.
-const titreSimple = s => key(s).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w && !['de', 'du', 'des', 'la', 'le', 'les', 'l', 'd', 'et', 'en', 'a', 'au', 'par', 'sur'].includes(w)).join(' ');
-function distance(a, b) {
-  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
-  for (let j = 1; j <= b.length; j++) d[0][j] = j;
-  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-  return d[a.length][b.length];
+// Ressemblance de deux titres d'opération, même formulés autrement (« Clou tibial » / « Enclouage tibial »,
+// « PTH » / « Prothèse totale de hanche ») : abréviations développées, synonymes ramenés à un même mot, mots trop
+// généraux ignorés (fracture, ostéosynthèse, droit…), puis comparaison des racines (5 premières lettres).
+const MOTS_VIDES = new Set(['de', 'du', 'des', 'la', 'le', 'les', 'l', 'd', 'et', 'en', 'a', 'au', 'aux', 'par', 'sur', 'sous', 'avec', 'pour', 'un', 'une']);
+const ABREVIATIONS = { pth: 'prothese totale hanche', ptg: 'prothese totale genou', pih: 'prothese intermediaire hanche', pte: 'prothese totale epaule',
+  ecm: 'enclouage centromedullaire', lca: 'ligament croise anterieur', lcp: 'ligament croise posterieur', ost: 'osteosynthese', amo: 'ablation materiel', cc: 'canal carpien', rd: 'radius distal', esf: 'extremite superieure femur', fesf: 'fracture extremite superieure femur' };
+const SYNONYMES = { enclouage: 'clou', clouage: 'clou', intramedullaire: 'clou', centromedullaire: 'clou', tibial: 'tibia', tibiale: 'tibia', femoral: 'femur', femorale: 'femur', humeral: 'humerus', humerale: 'humerus',
+  poignet: 'radius', bimalleolaire: 'cheville', trimalleolaire: 'cheville', malleole: 'cheville', malleolaire: 'cheville', pilon: 'cheville', rotule: 'patella', rotulien: 'patella', patellaire: 'patella',
+  cotyle: 'acetabulum', acetabulaire: 'acetabulum', claviculaire: 'clavicule', vertebral: 'rachis', lombaire: 'rachis', cervical: 'rachis', pertrochanterien: 'trochanter', pertrochanterienne: 'trochanter',
+  trochanterien: 'trochanter', trochanterienne: 'trochanter', gamma: 'trochanter' };
+const GENERAUX = new Set(['fracture', 'osteosynthese', 'reduction', 'prothese', 'totale', 'total', 'chirurgie', 'traitement', 'cure', 'reprise', 'ablation', 'materiel', 'droite', 'droit', 'gauche',
+  'abord', 'voie', 'mise', 'place', 'pose', 'proximal', 'proximale', 'distal', 'distale', 'court', 'courte', 'long', 'longue', 'simple', 'ouverte', 'fermee', 'percutanee', 'externe', 'interne', 'dynamique']);
+const FAIBLES = new Set(['clou', 'plaque', 'vis', 'broche', 'haubanage', 'fixateur', 'embrochage']); // implants : ne suffisent pas seuls
+function racines(titre) {
+  const mots = key(titre).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean).flatMap(w => (ABREVIATIONS[w] || w).split(' '));
+  const fortes = new Set(), faibles = new Set();
+  for (let w of mots) {
+    if (MOTS_VIDES.has(w) || w.length < 3) continue;
+    w = SYNONYMES[w] || w;
+    if (GENERAUX.has(w)) continue;
+    (FAIBLES.has(w) ? faibles : fortes).add(w.slice(0, 5));
+  }
+  return { fortes, faibles };
 }
 function ressemble(t1, t2) {
-  const a = titreSimple(t1), b = titreSimple(t2);
-  if (!a || !b) return false;
-  if (a === b || a.replace(/ /g, '') === b.replace(/ /g, '')) return true;
-  const court = a.length < b.length ? a : b, long = a.length < b.length ? b : a;
-  if (court.length >= 4 && (` ${long} `).includes(` ${court} `)) return true;
-  return 1 - distance(a, b) / Math.max(a.length, b.length) >= 0.8;
+  if (key(t1).replace(/[^a-z0-9]/g, '') === key(t2).replace(/[^a-z0-9]/g, '')) return true;
+  const a = racines(t1), b = racines(t2);
+  if (!a.fortes.size || !b.fortes.size) return !a.fortes.size && !b.fortes.size && a.faibles.size > 0 && [...a.faibles].every(w => b.faibles.has(w));
+  const communes = [...a.fortes].filter(w => b.fortes.has(w)).length;
+  return communes > 0 && communes / Math.min(a.fortes.size, b.fortes.size) >= 0.5;
 }
 // Groupes de fiches personnelles qui se ressemblent (au moins deux par groupe).
 function similarGroups() {
@@ -909,20 +924,26 @@ function openDoublons() {
   if (!groupes.length) { closeSheet(); render(); return; }
   openSheet(`
     <h2>Fiches en double</h2>
-    <p class="hint">Choisissez la fiche à garder : le contenu des autres y est ajouté (rubriques, images, astuces) et leurs patients passent sous son nom.</p>
+    <p class="hint">Décochez les fiches qui ne sont pas la même opération, choisissez celle à <b>garder</b> : le contenu des autres y est ajouté (rubriques, images, astuces) et leurs patients passent sous son nom.</p>
     ${groupes.map((g, i) => {
       const garde = g.reduce((m, f) => (poidsFiche(f).total > poidsFiche(m).total ? f : m), g[0]);
       return `<div class="set-group dup-group" data-groupe="${i}">${g.map(f => `
-        <label class="set-row"><input type="radio" name="garde-${i}" value="${esc(f.id)}"${f === garde ? ' checked' : ''}><span class="set-name"><b>${esc(f.titre)}</b><small>${esc(resumeFiche(f))}</small></span></label>`).join('')}
-        <button type="button" class="btn primary dup-merge" data-groupe="${i}">Fusionner ces ${g.length} fiches</button>
+        <div class="set-row dup-row"><input type="checkbox" class="dup-inclus" value="${esc(f.id)}" checked aria-label="Inclure dans la fusion">
+          <span class="set-name"><b>${esc(f.titre)}</b><small>${esc(resumeFiche(f))}</small></span>
+          <label class="dup-garde"><input type="radio" name="garde-${i}" value="${esc(f.id)}"${f === garde ? ' checked' : ''}>garder</label></div>`).join('')}
+        <button type="button" class="btn primary dup-merge" data-groupe="${i}">Fusionner</button>
       </div>`;
     }).join('')}
     <button class="btn ghost set-close" id="cancel">Fermer</button>`);
   $('#cancel').addEventListener('click', () => { closeSheet(); render(); });
   sheetBody.querySelectorAll('.dup-merge').forEach(b => b.addEventListener('click', () => {
-    const g = groupes[Number(b.dataset.groupe)];
-    const id = sheetBody.querySelector(`input[name="garde-${b.dataset.groupe}"]:checked`).value;
+    const bloc = b.closest('.dup-group');
+    const inclus = new Set([...bloc.querySelectorAll('.dup-inclus:checked')].map(c => c.value));
+    const id = bloc.querySelector(`input[name="garde-${b.dataset.groupe}"]:checked`).value;
+    const g = groupes[Number(b.dataset.groupe)].filter(f => inclus.has(f.id) || f.id === id);
     const cible = g.find(f => f.id === id);
+    if (g.length < 2) { alert('Cochez au moins deux fiches à fusionner.'); return; }
+    if (!confirm(`Fusionner ${g.filter(f => f !== cible).map(f => `« ${f.titre} »`).join(', ')} dans « ${cible.titre} » ?`)) return;
     mergeFiches(cible, g.filter(f => f !== cible));
     toast(`Fusionnées dans « ${cible.titre} »`);
     openDoublons();
